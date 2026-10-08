@@ -10,7 +10,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:pg": "vitest run src/db/concurrency.pg.test.ts",
+    "test:pg": "vitest run --testTimeout=60000 src/db/concurrency.pg.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs"

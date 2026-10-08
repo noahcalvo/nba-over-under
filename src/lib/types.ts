@@ -1,3 +1,4 @@
+import type { RecordStatus } from "@/lib/records/types";
 /** NBA tricode, e.g. "MIN". */
 export type TeamId = string;
 export type Side = "OVER" | "UNDER";
@@ -129,4 +130,6 @@ export interface LeagueView {
   teams: Team[];
   /** Before the draft: the lines to review. Null once lines are frozen. */
   lineReview: LineReview | null;
+  /** When this league's season records last updated. Null for the demo league, whose records are mock data. */
+  records: RecordStatus | null;
 }

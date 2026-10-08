@@ -55,3 +55,16 @@ export function formatDateTimeET(iso: string): string {
   const part = Object.fromEntries(ET_PARTS.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
   return `${part.month} ${part.day}, ${part.hour}:${part.minute} ${part.dayPeriod} ET`;
 }
+
+/** "Nov 1, 6:02 AM" in the viewer's time zone (or `timeZone`). */
+export function formatUpdatedAt(iso: string, timeZone?: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  })
+    .format(new Date(iso))
+    .replace(/\u202f/g, " ");
+}

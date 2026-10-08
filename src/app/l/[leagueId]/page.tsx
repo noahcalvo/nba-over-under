@@ -14,5 +14,5 @@ export default function OverviewPage({ params }: PageProps<"/l/[leagueId]">) {
 async function Overview({ params }: { params: PageProps<"/l/[leagueId]">["params"] }) {
   const { leagueId } = await params;
   const view = await toLeagueView(await getLeagueOrNotFound(leagueId));
-  return <LeagueOverview league={view.league} teams={view.teams} viewerId={view.viewerId} />;
+  return <LeagueOverview league={view.league} teams={view.teams} viewerId={view.viewerId} records={view.records} />;
 }

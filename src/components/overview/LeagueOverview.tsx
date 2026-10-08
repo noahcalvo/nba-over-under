@@ -2,18 +2,31 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { canRefreshRecords } from "@/lib/league/permissions";
 import { findManager } from "@/lib/league/managers";
 import { indexTeams } from "@/lib/lines";
 import type { Basis } from "@/lib/scoring";
 import { closestCalls, computeStandings } from "@/lib/standings";
+import type { RecordStatus } from "@/lib/records/types";
 import type { League, Team } from "@/lib/types";
 import { ClosestCalls } from "./ClosestCalls";
 import { FadesPanel } from "./FadesPanel";
 import { PicksPanel } from "./PicksPanel";
+import { RecordsStatus } from "./RecordsStatus";
 import { StandingsPanel } from "./StandingsPanel";
 import { SummaryStats } from "./SummaryStats";
 
-export function LeagueOverview({ league, teams, viewerId }: { league: League; teams: Team[]; viewerId: string | null }) {
+export function LeagueOverview({
+  league,
+  teams,
+  viewerId,
+  records,
+}: {
+  league: League;
+  teams: Team[];
+  viewerId: string | null;
+  records: RecordStatus | null;
+}) {
   const [selectedId, setSelectedId] = useState(viewerId ?? league.managers[0].id);
   const [basis, setBasis] = useState<Basis>("projected");
 
@@ -31,6 +44,9 @@ export function LeagueOverview({ league, teams, viewerId }: { league: League; te
         subtitle={`${league.seasonLabel} • League overview`}
         tag={league.isDemo ? "Demo data" : undefined}
       />
+      {records && (
+        <RecordsStatus leagueId={league.id} status={records} canRefresh={canRefreshRecords(league, viewerId)} />
+      )}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <PicksPanel
           leagueId={league.id}

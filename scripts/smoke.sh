@@ -58,6 +58,15 @@ check "Ben claims seat 2" 200 '"managerId":"m2"'
 call ben POST /api/links/claim "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m3\",\"displayName\":\"Ben\"}"
 check "a second seat for the same browser is refused" 409 '"already_joined"'
 
+call ana POST "/api/leagues/$LEAGUE/records/refresh"
+check "commissioner refreshes records" 200 '"records"'
+call ben POST "/api/leagues/$LEAGUE/records/refresh"
+check "another seat can't refresh records" 403
+call ana POST "/api/leagues/demo/records/refresh"
+check "demo records are read-only" 403
+call ana GET "/api/cron/refresh-records"
+check "cron needs its secret" "$([ -n "${CRON_SECRET:-}" ] && echo 401 || echo 503)"
+
 call ana PUT "/api/leagues/$LEAGUE/lines" '{"overrides":{"BOS":44.5}}'
 check "commissioner overrides a line" 200 '"BOS":44.5'
 call ben PUT "/api/leagues/$LEAGUE/lines" '{"overrides":{"BOS":40.5}}'

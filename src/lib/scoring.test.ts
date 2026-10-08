@@ -128,6 +128,14 @@ describe("evaluateCall", () => {
     expect(result.margin).toBeCloseTo(2.5);
     expect(result.points).toBeCloseTo(1.25);
   });
+
+  it("counts a projected pace exactly on the line as a miss", () => {
+    // 10–30 paces to exactly 20.5 wins.
+    const result = evaluateCall("OVER", team({ line: 20.5, wins: 10, losses: 30 }), "projected");
+    expect(result.margin).toBe(0);
+    expect(result.correct).toBe(false);
+    expect(result.points).toBe(-1);
+  });
 });
 
 describe("evaluateFade", () => {

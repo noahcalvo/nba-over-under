@@ -13,7 +13,7 @@ Plan: `docs/superpowers/plans/2026-10-08-courtline-prototype.md`. Mockups: `wire
 
 ## Stack
 Next.js 16.4 App Router (`src/app`), React 19, TypeScript strict, Tailwind CSS v4 (tokens in `src/app/globals.css`),
-Vitest, lucide-react. Cache Components is on: wrap anything that reads `params`, `cookies()` or the league store in
+Vitest 4.1 (Node 20; Vitest 5 needs Node ≥ 22.12) with config `vitest.config.mts`, lucide-react. Cache Components is on: wrap anything that reads `params`, `cookies()` or the league store in
 `<Suspense>` (copy the pattern in existing pages). Read `node_modules/next/dist/docs/` before using an unfamiliar Next API.
 
 ## Architecture
@@ -47,7 +47,7 @@ Vitest, lucide-react. Cache Components is on: wrap anything that reads `params`,
   colors from data are the exception.
 - Format numbers at the edge with `src/lib/format.ts` (one decimal, U+2212 minus, en-dash records). Compare unrounded.
 - Over = lime (`over`), Under = purple (`under`); positive = `positive`, negative = `negative`.
-- Logos: `TeamLogo` loads `https://cdn.nba.com/logos/nba/{nbaId}/global/L/logo.svg` and falls back to `TeamBadge`.
+- Logos: `TeamLogo` loads `https://cdn.nba.com/logos/nba/{nbaId}/global/D/logo.svg` and falls back to `TeamBadge`.
   NBA logos are trademarks — licensing check required before any public launch.
 - Unfinished pages render `NotBuiltYet`; their nav items show "Soon".
 - Responsive: `lg+` sidebar, below `lg` a bottom tab bar; `xl+` two-column panels; tables switch to cards by container

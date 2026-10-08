@@ -49,13 +49,13 @@ export function DraftBoard({ league }: { league: League }) {
         ref={scrollerRef}
         tabIndex={0}
         aria-label="Draft board (scrollable)"
-        className="relative max-h-[28rem] overflow-auto rounded-b-xl focus-visible:outline-2 focus-visible:outline-accent"
+        className="relative isolate @container max-h-72 overflow-auto rounded-b-xl focus-visible:outline-2 focus-visible:outline-accent"
       >
         <div
           role="table"
           aria-label="Draft board"
-          className="grid min-w-[46rem]"
-          style={{ gridTemplateColumns: `4rem repeat(${seatCount}, minmax(10.5rem, 1fr))` }}
+          className="grid min-w-[56rem]"
+          style={{ gridTemplateColumns: `4rem repeat(${seatCount}, minmax(13rem, 1fr))` }}
         >
           <div role="row" className="contents">
             <div role="columnheader" className="sticky left-0 top-0 z-20 border-b border-ink-700 bg-ink-850">
@@ -124,7 +124,7 @@ function BoardCell({
       <div role="cell" data-pick={pickNumber} className={base}>
         <span className="w-5 shrink-0 text-xs tabular-nums text-fog-400">{pickNumber}</span>
         <TeamLogo team={team} size={26} />
-        <span className="min-w-0 flex-1 truncate">{team.name}</span>
+        <span className="min-w-0 flex-1 truncate" title={`${team.city} ${team.name}`}><span className="@5xl:hidden">{team.id}</span><span className="hidden @5xl:inline">{team.name}</span></span>
         <SidePill side={pick.side} size="sm" />
         <span className="shrink-0 font-semibold tabular-nums">{formatNumber(team.line)}</span>
       </div>

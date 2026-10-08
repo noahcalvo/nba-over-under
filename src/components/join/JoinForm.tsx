@@ -40,12 +40,12 @@ export function JoinForm({ league, viewerId }: { league: League; viewerId: strin
       const data = await response.json();
       if (!response.ok) {
         setError(typeof data?.message === "string" ? data.message : "Couldn't join the league.");
+        setPending(false);
         return;
       }
       router.push(`/l/${league.id}/draft`);
     } catch {
       setError("Couldn't reach the server. Try again.");
-    } finally {
       setPending(false);
     }
   }

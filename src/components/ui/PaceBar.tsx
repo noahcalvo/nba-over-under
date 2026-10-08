@@ -1,12 +1,13 @@
+import { SCORING } from "@/config/scoring";
 import { formatNumber } from "@/lib/format";
 import type { Side } from "@/lib/types";
 
-/** Fill = projected wins, tick = the line, both on a 0–82 scale. */
+/** Fill = projected wins, tick = the line, both on a 0–season-length scale. */
 export function PaceBar({
   value,
   line,
   side,
-  max = 82,
+  max = SCORING.seasonGames,
   className = "",
 }: {
   value: number | null;

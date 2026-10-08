@@ -30,7 +30,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
 
   // A selection someone else drafts (seen via polling) stops being active and explains why.
   const takenBy = selection ? findPickForSide(draft, selection.teamId, selection.side) : undefined;
-  const activeSelection = selection && !takenBy ? selection : null;
+  const activeSelection = selection && !takenBy && draft.status === "live" ? selection : null;
   const takenNotice =
     selection && takenBy
       ? `${TEAMS_BY_ID[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
@@ -114,8 +114,15 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
           </Panel>
         </div>
       </div>
-      <SelectionBar selection={activeSelection} canPick={canPick} pending={pending} onConfirm={confirm} onClear={clear} />
-      {activeSelection && <div aria-hidden className="h-20 xl:hidden" />}
+      <SelectionBar
+        selection={activeSelection}
+        notice={takenNotice}
+        canPick={canPick}
+        pending={pending}
+        onConfirm={confirm}
+        onClear={clear}
+      />
+      {(activeSelection || takenNotice) && <div aria-hidden className="h-20 xl:hidden" />}
     </div>
   );
 }

@@ -7,21 +7,35 @@ import { formatNumber } from "@/lib/format";
 
 export function SelectionBar({
   selection,
+  notice,
   canPick,
   pending,
   onConfirm,
   onClear,
 }: {
   selection: SideRef | null;
+  notice: string | null;
   canPick: boolean;
   pending: boolean;
   onConfirm: () => void;
   onClear: () => void;
 }) {
-  if (!selection) return null;
+  if (!selection && !notice) return null;
+  const frame =
+    "fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 rounded-xl border bg-ink-900/95 p-3 shadow-2xl backdrop-blur lg:bottom-4 lg:left-[17rem] xl:hidden";
+  if (!selection) {
+    return (
+      <div className={`${frame} border-negative/50`}>
+        <p className="min-w-0 flex-1 text-sm">{notice}</p>
+        <Button size="sm" variant="ghost" onClick={onClear} aria-label="Dismiss">
+          <X aria-hidden className="size-4" />
+        </Button>
+      </div>
+    );
+  }
   const team = TEAMS_BY_ID[selection.teamId];
   return (
-    <div className="fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 rounded-xl border border-ink-600 bg-ink-900/95 p-3 shadow-2xl backdrop-blur lg:bottom-4 lg:left-[17rem] xl:hidden">
+    <div className={`${frame} border-ink-600`}>
       <TeamLogo team={team} size={36} />
       <p className="min-w-0 flex-1 truncate text-sm">
         <span className="font-semibold">{team.name}</span>{" "}

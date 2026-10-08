@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Courtline
 
-## Getting Started
+Courtline — draft Overs and Unders on every NBA season win total (prototype).
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The demo league is at http://localhost:3000/l/demo (read-only). To draft for real, use **Create league** on the landing page, then share the invite link from the draft room with the other managers.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test          # Vitest unit tests
+npm run lint
+npm run typecheck
+npm run build
+npm start         # serve the production build
+```
 
-## Learn More
+## Requirements
 
-To learn more about Next.js, take a look at the following resources:
+Node 20. The project uses Vitest 4.1; Vitest 5 needs Node ≥ 22.12.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Limitations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Leagues live in server memory and are wiped on restart. The demo league is re-seeded.
+- Works only on a single long-running `next dev` / `next start` process. Not suitable for serverless hosting.
+- Identity is a cookie with no authentication.
+- Rosters and League settings are not built yet.
 
-## Deploy on Vercel
+## Notices
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+NBA team logos load from NBA's CDN and are NBA trademarks. Licensing review is required before any public launch.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Docs
+
+- [CLAUDE.md](CLAUDE.md): project conventions
+- [Design spec](docs/superpowers/specs/2026-10-08-courtline-prototype-design.md)
+- [Implementation plan](docs/superpowers/plans/2026-10-08-courtline-prototype.md)
+- [`wiremocks/`](wiremocks/): desktop mockups

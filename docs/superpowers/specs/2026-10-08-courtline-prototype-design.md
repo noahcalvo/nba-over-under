@@ -34,7 +34,7 @@ settings pages themselves.
 | Live updates | Draft room polls `GET /api/leagues/{id}/draft` every 2 s. A `version` counter prevents stale responses overwriting newer state. |
 | Demo league | `demo` — "National Balla Association", completed draft, one fade per manager, mid-season records, read-only. |
 | Mockup data conflicts | The mockups contradict each other (e.g. Celtics UNDER is Manager 1's in the overview but Manager 3's in the draft room). One consistent dataset is used instead; the demo draft's first 8 picks match the draft-room mockup. |
-| Logos | Official logos from NBA's CDN (`https://cdn.nba.com/logos/nba/{nbaId}/global/L/logo.svg`) with an abbreviation-badge fallback. Trademark/licensing review needed before any public launch. |
+| Logos | Official logos from NBA's CDN (`https://cdn.nba.com/logos/nba/{nbaId}/global/D/logo.svg`) with an abbreviation-badge fallback. Trademark/licensing review needed before any public launch. |
 | Mobile nav | Below `lg`, the sidebar becomes a fixed bottom tab bar; the league name moves into a small top header. |
 | Fades in new leagues | None (no fade creation UI in scope). The demo league has seeded fades. |
 
@@ -53,6 +53,7 @@ All weights live in one object, `SCORING` in `src/config/scoring.ts`:
 
 - **Signed margin**: Over → wins − line. Under → line − wins.
 - **Call points**: (margin > 0 ? correct : missed) + margin × marginWeight. Lines end in .5, so there are no pushes.
+- A projected pace exactly on the line counts as a miss (margin 0 is not > 0); final results can't land exactly on a .5 line.
 - **Projected wins**: wins ÷ games played × 82. Zero games played → "Not available" (call is unscored, adds nothing).
 - **Fade**: scores `fadeHit` when its targeted opponent pick misses, otherwise `fadeMiss`. It inherits "Not available"
   or "Pending" from its target.

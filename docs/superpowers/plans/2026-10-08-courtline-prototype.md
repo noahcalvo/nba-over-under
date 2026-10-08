@@ -22,13 +22,14 @@
 - League defaults: `4` managers, `11` rounds → `44` picks. `30` teams × 2 sides = `60` sides.
 - Snake order: odd rounds seat 0→3, even rounds seat 3→0.
 - Cookie name `courtline_seats`, value format `leagueId:managerId|leagueId:managerId`.
-- Logo URL: `https://cdn.nba.com/logos/nba/{nbaId}/global/L/logo.svg`, with abbreviation-badge fallback.
+- Logo URL: `https://cdn.nba.com/logos/nba/{nbaId}/global/D/logo.svg`, with abbreviation-badge fallback.
 - Exact UI copy: `Not available`, `Available when results are final.`, `Partial results`, `On track`, `Off track`, `Pending`, `Lines lock when drafted.`, `Not built yet`, `Soon`, `Win pace`, `Final results`, `Confirm pick`, `Clear selection`.
 - Number formatting: one decimal, U+2212 `−` for negatives, `+` for positives, en dash in records (`30–18`), `•` between league and season in subtitles.
 - Breakpoints: `lg` (1024px) sidebar ↔ bottom tab bar; `xl` (1280px) two-column panels; tables ↔ cards by **container** width (`@container`); the page itself never scrolls horizontally (check 375px and 1440px).
 - Dark theme only. Use the theme tokens defined in Task 1 (`ink-*`, `fog-*`, `accent`, `over`, `under`, `positive`, `negative`, `link`, `seat-*`).
 - Every commit message ends with a blank line then `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` (use a second `-m`).
 - Work happens on branch `feat/courtline-prototype` (the controller creates it before Task 1).
+- As built: Vitest 4.1.x with `vitest.config.mts` (Node 20); logos use the `global/D` dark-background variant; draft board viewport `max-h-72`, columns `minmax(13rem, 1fr)`, tricodes below a 64rem board width.
 
 ## Model guidance
 

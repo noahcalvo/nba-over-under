@@ -27,12 +27,12 @@ export function CreateLeagueForm() {
       const data = await response.json();
       if (!response.ok) {
         setError(typeof data?.message === "string" ? data.message : "Couldn't create the league.");
+        setPending(false);
         return;
       }
       router.push(`/l/${data.leagueId}/draft`);
     } catch {
       setError("Couldn't reach the server. Try again.");
-    } finally {
       setPending(false);
     }
   }

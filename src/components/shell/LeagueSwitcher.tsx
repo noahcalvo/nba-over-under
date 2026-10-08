@@ -38,7 +38,9 @@ export function LeagueSwitcher({
         <ChevronDown aria-hidden className="size-4 shrink-0 text-fog-300" />
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 w-64 rounded-lg border border-ink-600 bg-ink-900 p-2 shadow-xl">
+        <div
+          className={`absolute z-40 mt-2 rounded-lg border border-ink-600 bg-ink-900 p-2 shadow-xl ${compact ? "right-0 w-64" : "inset-x-0"}`}
+        >
           {otherLeagues.length > 0 && (
             <ul className="mb-2 border-b border-ink-700 pb-2">
               {otherLeagues.map((other) => (

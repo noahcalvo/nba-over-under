@@ -18,15 +18,14 @@ export function SegmentedControl<T extends string>({
   ariaLabel: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="inline-flex rounded-lg border border-ink-700 bg-ink-900 p-1">
+    <div role="group" aria-label={ariaLabel} className="inline-flex rounded-lg border border-ink-700 bg-ink-900 p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (
           <button
             key={option.value}
             type="button"
-            role="radio"
-            aria-checked={active}
+            aria-pressed={active}
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${

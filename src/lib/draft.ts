@@ -54,6 +54,11 @@ export function findPickForSide(state: DraftState, teamId: TeamId, side: Side): 
   return state.picks.find((pick) => pick.teamId === teamId && pick.side === side);
 }
 
+/** The side of a team a manager already drafted. Each manager gets at most one pick per team. */
+export function findPickForTeam(state: DraftState, managerId: string, teamId: TeamId): DraftPick | undefined {
+  return state.picks.find((pick) => pick.managerId === managerId && pick.teamId === teamId);
+}
+
 export function picksForManager(state: DraftState, managerId: string): DraftPick[] {
   return state.picks.filter((pick) => pick.managerId === managerId);
 }
@@ -64,13 +69,13 @@ export type DraftAction =
   | { type: "resume" }
   | { type: "confirm"; teamId: TeamId; side: Side };
 
-export type DraftError = "invalid_transition" | "not_live" | "side_taken" | "unknown_team";
+export type DraftError = "invalid_transition" | "not_live" | "side_taken" | "team_owned" | "unknown_team";
 
 export type DraftResult = { ok: true; state: DraftState } | { ok: false; error: DraftError };
 
 /**
  * Applies one draft action. Who is allowed to act is decided by the caller (see league/permissions);
- * this only enforces draft rules: status transitions, side availability and snake order.
+ * this only enforces draft rules: status transitions, side availability, one pick per team per manager and snake order.
  */
 export function applyDraftAction(state: DraftState, action: DraftAction, teamIds: ReadonlySet<TeamId>): DraftResult {
   switch (action.type) {
@@ -87,6 +92,7 @@ export function applyDraftAction(state: DraftState, action: DraftAction, teamIds
       const pickNumber = state.picks.length + 1;
       const managerId = managerForPick(state, pickNumber);
       if (managerId === null) return fail("not_live");
+      if (findPickForTeam(state, managerId, action.teamId)) return fail("team_owned");
       const picks = [...state.picks, { pickNumber, managerId, teamId: action.teamId, side: action.side }];
       return ok({ ...state, picks, status: picks.length === draftTotalPicks(state) ? "complete" : "live" });
     }

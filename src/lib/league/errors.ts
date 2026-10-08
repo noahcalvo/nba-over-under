@@ -12,6 +12,7 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   demo_league: "The demo league is read-only.",
   not_live: "The draft isn't live.",
   side_taken: "That side was just drafted.",
+  team_owned: "Each manager can draft only one side of a team.",
   unknown_team: "Unknown team.",
   invalid_transition: "The draft can't do that from its current state.",
   invalid_request: "Invalid request.",

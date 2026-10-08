@@ -6,11 +6,11 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
 import { TEAMS_BY_ID } from "@/data/teams";
-import { findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
+import { findPickForSide, managerOnTheClock, picksForManager, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
-import { describeTurn } from "@/lib/league/turn";
+import { describeTurn, pickingManagerId } from "@/lib/league/turn";
 import type { LeagueView } from "@/lib/types";
 import { AvailablePicks } from "./AvailablePicks";
 import { DraftBoard } from "./DraftBoard";
@@ -28,15 +28,27 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
 
-  // A selection someone else drafts (seen via polling) stops being active and explains why.
+  // A manager drafts at most one side of a team, so the other side is off-limits to whoever is picking.
+  const pickingId = pickingManagerId(league, viewerId);
+  const ownedTeamIds = new Set(pickingId ? picksForManager(draft, pickingId).map((pick) => pick.teamId) : []);
+  const ownedNotice =
+    pickingId === viewerId
+      ? "You already drafted this team."
+      : `${managerLabel(findManager(league.managers, pickingId)!)} already drafted this team.`;
+
+  // A selection someone else drafts (seen via polling), or one the picking manager can no longer take,
+  // stops being active and explains why.
   const takenBy = selection ? findPickForSide(draft, selection.teamId, selection.side) : undefined;
-  const activeSelection = selection && !takenBy && draft.status === "live" ? selection : null;
-  const takenNotice =
-    selection && takenBy
-      ? `${TEAMS_BY_ID[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
-          findManager(league.managers, takenBy.managerId)!,
-        )}. Pick another side.`
-      : null;
+  const selectionOwned = selection !== null && ownedTeamIds.has(selection.teamId);
+  const activeSelection = selection && !takenBy && !selectionOwned && draft.status === "live" ? selection : null;
+  let notice: string | null = null;
+  if (selection && takenBy) {
+    notice = `${TEAMS_BY_ID[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
+      findManager(league.managers, takenBy.managerId)!,
+    )}. Pick another side.`;
+  } else if (selection && selectionOwned) {
+    notice = `${TEAMS_BY_ID[selection.teamId].name} ${selection.side}: ${ownedNotice}`;
+  }
 
   const turn = describeTurn(league, viewerId);
   const canPick = canPickNow(league, viewerId);
@@ -93,13 +105,15 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
           selection={activeSelection}
           onSelect={setSelection}
           selectable={draft.status === "live"}
+          ownedTeamIds={ownedTeamIds}
+          ownedNotice={ownedNotice}
         />
         <div className="min-w-0 xl:sticky xl:top-8 xl:self-start">
           <Panel title={viewerId ? "Your selection" : "Selection"} bodyClassName="flex flex-col gap-5 p-4 sm:p-5">
             <SelectionPreview
               league={league}
               selection={activeSelection}
-              notice={takenNotice}
+              notice={notice}
               turn={turn}
               canPick={canPick}
               pending={pending}
@@ -116,13 +130,13 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
       </div>
       <SelectionBar
         selection={activeSelection}
-        notice={takenNotice}
+        notice={notice}
         canPick={canPick}
         pending={pending}
         onConfirm={confirm}
         onClear={clear}
       />
-      {(activeSelection || takenNotice) && <div aria-hidden className="h-20 xl:hidden" />}
+      {(activeSelection || notice) && <div aria-hidden className="h-20 xl:hidden" />}
     </div>
   );
 }

@@ -12,6 +12,7 @@ const STATUS: Record<ApiError, number> = {
   seat_taken: 409,
   already_joined: 409,
   side_taken: 409,
+  team_owned: 409,
   not_live: 409,
   invalid_transition: 409,
 };

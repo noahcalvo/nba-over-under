@@ -19,3 +19,8 @@ export function describeTurn(league: DraftAccess, viewerId: string | null): Turn
   if (canPickNow(league, viewerId)) return { kind: "picking_for_open_seat", managerId };
   return { kind: "on_the_clock", managerId };
 }
+
+/** Whose picks limit what the viewer can choose: the seat they're picking for right now, otherwise their own. */
+export function pickingManagerId(league: DraftAccess, viewerId: string | null): string | null {
+  return canPickNow(league, viewerId) ? managerOnTheClock(league.draft) : viewerId;
+}

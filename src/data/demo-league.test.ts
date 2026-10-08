@@ -47,6 +47,11 @@ describe("buildDemoLeague", () => {
     expect(sides.size).toBe(44);
   });
 
+  it("never gives a manager both sides of a team", () => {
+    const owned = new Set(league.draft.picks.map((pick) => `${pick.managerId}:${pick.teamId}`));
+    expect(owned.size).toBe(league.draft.picks.length);
+  });
+
   it("opens with the same eight picks as the draft room mockup", () => {
     expect(league.draft.picks.slice(0, 8).map((p) => `${p.managerId} ${p.teamId} ${p.side}`)).toEqual([
       "m1 MIN OVER",

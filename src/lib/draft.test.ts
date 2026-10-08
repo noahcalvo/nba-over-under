@@ -87,6 +87,33 @@ describe("applyDraftAction", () => {
     });
   });
 
+  describe("one pick per team per manager", () => {
+    // Seat 4 picks 4th and 5th, back to back across the snake turn.
+    function seatFourOwnsCle(): DraftState {
+      let state = liveDraft();
+      const sides: Array<[string, "OVER" | "UNDER"]> = [["MIN", "OVER"], ["OKC", "OVER"], ["BOS", "UNDER"], ["CLE", "OVER"]];
+      for (const [teamId, side] of sides) state = mustApply(state, { type: "confirm", teamId, side });
+      return state;
+    }
+
+    it("rejects the other side of a team the manager already drafted", () => {
+      const state = seatFourOwnsCle();
+      expect(managerOnTheClock(state)).toBe("m4");
+      expect(applyDraftAction(state, { type: "confirm", teamId: "CLE", side: "UNDER" }, TEAM_IDS)).toEqual({
+        ok: false,
+        error: "team_owned",
+      });
+    });
+
+    it("lets another manager draft the remaining side", () => {
+      let state = mustApply(seatFourOwnsCle(), { type: "confirm", teamId: "MIN", side: "UNDER" });
+      expect(managerOnTheClock(state)).toBe("m3");
+      state = mustApply(state, { type: "confirm", teamId: "CLE", side: "UNDER" });
+      expect(findPickForSide(state, "CLE", "OVER")?.managerId).toBe("m4");
+      expect(findPickForSide(state, "CLE", "UNDER")?.managerId).toBe("m3");
+    });
+  });
+
   it("rejects unknown teams", () => {
     expect(applyDraftAction(liveDraft(), { type: "confirm", teamId: "XXX", side: "OVER" }, TEAM_IDS)).toEqual({
       ok: false,

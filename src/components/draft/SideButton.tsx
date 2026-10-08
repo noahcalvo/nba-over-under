@@ -21,6 +21,7 @@ export function SideButton({
   selected,
   managers,
   disabled,
+  describedBy,
   onSelect,
 }: {
   team: Team;
@@ -29,6 +30,8 @@ export function SideButton({
   selected: boolean;
   managers: Manager[];
   disabled: boolean;
+  /** Id of the visible text explaining why this side can't be chosen. */
+  describedBy?: string;
   onSelect: (ref: SideRef) => void;
 }) {
   if (pick) {
@@ -50,6 +53,7 @@ export function SideButton({
       aria-pressed={selected}
       aria-label={`${side} ${formatNumber(team.line)}, ${team.city} ${team.name}`}
       disabled={disabled}
+      aria-describedby={describedBy}
       onClick={() => onSelect({ teamId: team.id, side })}
       className={`${BASE} font-display font-bold tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         selected ? STYLES[side].selected : STYLES[side].idle

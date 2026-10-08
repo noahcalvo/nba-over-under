@@ -8,7 +8,7 @@ import { TEAMS, TOTAL_SIDES } from "@/data/teams";
 import { findPickForSide } from "@/lib/draft";
 import { availableSideCount, filterTeams, SIDES, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
-import type { DraftState, Manager, Side, Team } from "@/lib/types";
+import type { DraftState, Manager, Side, Team, TeamId } from "@/lib/types";
 import { SideButton } from "./SideButton";
 
 export function AvailablePicks({
@@ -19,6 +19,8 @@ export function AvailablePicks({
   selection,
   onSelect,
   selectable,
+  ownedTeamIds,
+  ownedNotice,
 }: {
   draft: DraftState;
   managers: Manager[];
@@ -27,19 +29,32 @@ export function AvailablePicks({
   selection: SideRef | null;
   onSelect: (ref: SideRef) => void;
   selectable: boolean;
+  /** Teams the picking manager already drafted a side of: the other side is disabled for them. */
+  ownedTeamIds: ReadonlySet<TeamId>;
+  ownedNotice: string;
 }) {
   const teams = filterTeams(TEAMS, draft, filters);
-  const button = (team: Team, side: Side) => (
-    <SideButton
-      team={team}
-      side={side}
-      pick={findPickForSide(draft, team.id, side)}
-      selected={selection?.teamId === team.id && selection.side === side}
-      managers={managers}
-      disabled={!selectable}
-      onSelect={onSelect}
-    />
-  );
+  const button = (team: Team, side: Side, noticeId: string) => {
+    const owned = ownedTeamIds.has(team.id);
+    return (
+      <SideButton
+        team={team}
+        side={side}
+        pick={findPickForSide(draft, team.id, side)}
+        selected={selection?.teamId === team.id && selection.side === side}
+        managers={managers}
+        disabled={!selectable || owned}
+        describedBy={owned ? noticeId : undefined}
+        onSelect={onSelect}
+      />
+    );
+  };
+  const ownedNote = (team: Team, id: string, className: string) =>
+    ownedTeamIds.has(team.id) && SIDES.some((side) => !findPickForSide(draft, team.id, side)) ? (
+      <p id={id} className={`text-xs text-fog-400 ${className}`}>
+        {ownedNotice}
+      </p>
+    ) : null;
 
   return (
     <Panel
@@ -95,15 +110,18 @@ export function AvailablePicks({
               <td className="px-5 py-2.5">
                 <div className="flex items-center gap-3">
                   <TeamLogo team={team} size={32} />
-                  <span className="font-medium">
-                    {team.city} {team.name}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="font-medium">
+                      {team.city} {team.name}
+                    </span>
+                    {ownedNote(team, `owned-row-${team.id}`, "mt-0.5")}
+                  </div>
                 </div>
               </td>
               <td className="px-3 py-2.5 text-right text-base font-semibold tabular-nums">{formatNumber(team.line)}</td>
               {SIDES.map((side) => (
                 <td key={side} className="px-3 py-2.5">
-                  {button(team, side)}
+                  {button(team, side, `owned-row-${team.id}`)}
                 </td>
               ))}
             </tr>
@@ -123,9 +141,10 @@ export function AvailablePicks({
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {SIDES.map((side) => (
-                <div key={side}>{button(team, side)}</div>
+                <div key={side}>{button(team, side, `owned-card-${team.id}`)}</div>
               ))}
             </div>
+            {ownedNote(team, `owned-card-${team.id}`, "mt-2")}
           </li>
         ))}
       </ul>

@@ -9,6 +9,7 @@ function team(id: string, line: number, wins: number, losses: number): Team {
 
 const TEAMS: Record<TeamId, Team> = {
   P: team("P", 40.5, 24, 24), // pace 41.0
+  R: team("R", 40.5, 24, 24), // same record and line as P
   Q: team("Q", 40.5, 25, 23), // pace 42.708
   Z: team("Z", 30.5, 0, 0), // no games played
   F: team("F", 45.5, 50, 32), // settled: 50 wins
@@ -72,12 +73,26 @@ describe("computeStandings — projected", () => {
   });
 
   it("breaks ties on points by margin, using the configured weights", () => {
+    // marginWeight 0: both managers score exactly 1. m2 (seat 1) has the larger margin, so it must rank first.
     const tied = input([
-      ["m2", "P", "OVER"],
-      ["m1", "Q", "OVER"],
+      ["m1", "P", "OVER"], // margin +0.5
+      ["m2", "Q", "OVER"], // margin +2.208
     ]);
     const { rows } = computeStandings(tied, TEAMS, "projected", { ...SCORING, marginWeight: 0 });
     expect(rows.map((row) => row.totalPoints)).toEqual([1, 1]);
+    expect(rows.map((row) => row.managerId)).toEqual(["m2", "m1"]);
+  });
+
+  it("breaks ties on points and margin by seat", () => {
+    const tied = input([
+      ["m2", "R", "OVER"],
+      ["m1", "P", "OVER"],
+    ]);
+    // Managers listed out of seat order, so only the seat tie-break can put m1 first.
+    const reordered = { ...tied, managers: [...MANAGERS].reverse() };
+    const { rows } = computeStandings(reordered, TEAMS, "projected");
+    expect(rows[0].totalPoints).toBeCloseTo(rows[1].totalPoints);
+    expect(rows[0].totalMargin).toBeCloseTo(rows[1].totalMargin);
     expect(rows.map((row) => row.managerId)).toEqual(["m1", "m2"]);
   });
 

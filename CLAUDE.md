@@ -2,30 +2,42 @@
 
 # Courtline — project conventions
 
-NBA season win-total draft league prototype. Spec: `docs/superpowers/specs/2026-10-08-courtline-prototype-design.md`.
-Plan: `docs/superpowers/plans/2026-10-08-courtline-prototype.md`. Mockups: `wiremocks/`.
+NBA season win-total draft league prototype. Specs: `docs/superpowers/specs/2026-10-08-courtline-prototype-design.md`,
+`docs/superpowers/specs/2026-10-08-durable-storage-sessions-design.md`. Plans in `docs/superpowers/plans/`.
+Mockups: `wiremocks/`.
 
 ## Commands
 - `npm run dev` — dev server on :3000 (`.claude/launch.json` → "dev")
-- `npm test` — Vitest unit tests (`npm run test:watch` to watch)
+- `npm test` — Vitest unit tests (`npm run test:watch` to watch); database tests run on in-memory PGlite
 - `npm run lint`, `npm run typecheck`, `npm run build`
+- `npm run db:generate -- --name <change>` after editing `src/db/schema.ts`; commit the new file in `drizzle/`
+- `npm run db:migrate` — apply migrations to `DATABASE_URL` (Postgres). PGlite migrates itself on open.
+- `TEST_DATABASE_URL=postgres://… npm run test:pg` — row-lock concurrency tests on a real Postgres
+- `scripts/smoke.sh http://localhost:3000` — two-browser API smoke test against a running server
 - Before claiming work is done: `npm test && npm run lint && npm run typecheck && npm run build`
 
 ## Stack
 Next.js 16.4 App Router (`src/app`), React 19, TypeScript strict, Tailwind CSS v4 (tokens in `src/app/globals.css`),
-Vitest 4.1 (Node 20; Vitest 5 needs Node ≥ 22.12) with config `vitest.config.mts`, lucide-react. Cache Components is on: wrap anything that reads `params`, `cookies()` or the league store in
-`<Suspense>` (copy the pattern in existing pages). Read `node_modules/next/dist/docs/` before using an unfamiliar Next API.
+Vitest 4.1 (Node 20; Vitest 5 needs Node ≥ 22.12) with config `vitest.config.mts`, lucide-react, Drizzle ORM 0.45 on
+Postgres (`pg` in production, PGlite for local dev and tests). Cache Components is on: wrap anything that reads
+`params`, `cookies()` or the database in `<Suspense>` (copy the pattern in existing pages); `getDb()` awaits
+`connection()` so queries never run during a prerender. Read `node_modules/next/dist/docs/` before using an unfamiliar
+Next API.
 
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
-  11 rounds), `SEASON`, `DRAFT_POLL_INTERVAL_MS`.
+  11 rounds), `SEASON`, `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
-  formatting, permissions, league store.
-- `src/data/` — the single mock dataset: `teams.ts` (30 teams: line, prior wins, current record) and
-  `demo-league.ts`. Never add per-page fixtures.
-- `src/server/` — server-only glue (`import "server-only"`): store singleton, cookie identity, HTTP helpers.
-- `src/app/api/` — JSON route handlers for every mutation. Pages read the store directly in server components and pass
-  plain data to client components.
+  formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
+  (`access/`), lines (`lines.ts`), environment checks (`env.ts`).
+- `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
+  mock lines) and `demo-league.ts`. Never add per-page fixtures.
+- `src/db/` — Drizzle schema, repositories and `actions.ts` (every league mutation). No `server-only`, so Vitest can
+  load it; only `src/server/` imports it. Migrations live in `drizzle/`.
+- `src/server/` — server-only glue (`import "server-only"`): database singleton, session cookie, league loading, links,
+  line source, HTTP helpers.
+- `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
+  pass plain data to client components.
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area.
 
 ## Domain rules
@@ -35,12 +47,25 @@ Vitest 4.1 (Node 20; Vitest 5 needs Node ≥ 22.12) with config `vitest.config.m
   team has played 82 games).
 - Zero games played → "Not available". Unsettled pick on the final basis → "Pending".
 - Draft: snake order; each team's Over and Under are separate sides; 4 × 11 = 44 picks out of 60 sides.
-- Commissioner = seat 1. Only the commissioner starts, pauses and resumes, and they pick for unclaimed seats.
+- A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick
+  number is `stale_pick`.
+- Lines come from `lineSource` (`src/server/lines.ts`, static for now) and freeze into `League.lines` when the draft
+  starts. Components read teams with lines from `LeagueView.teams`, never from `src/data`.
+- Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
+  league invite and resets seats.
 
 ## State and identity
-- Leagues live in server memory (`src/server/store.ts`, a `globalThis` singleton). A restart wipes them; the seeded
-  demo league (`/l/demo`) always exists. Works on a single long-running Node process only.
-- Identity cookie `courtline_seats` = `leagueId:managerId|…`. No auth — prototype only.
+- Leagues live in Postgres (`DATABASE_URL`). Without it, outside production, PGlite at `.data/pglite` (delete the
+  folder to reset). Production refuses to start without `DATABASE_URL` and `LINK_SECRET` (`src/lib/env.ts`,
+  `src/instrumentation.ts`). The demo league (`/l/demo`) lives in code, never in the database, and is read-only.
+- Every league write goes through `withLockedLeague` (`src/db/leagues.ts`): it locks the league row, re-reads the
+  caller's seat and any link under the lock, then runs the pure decision. Never authorize a write with
+  `getViewerId()`; it is for rendering.
+- Identity: cookie `courtline_session` holds a random token; the database stores only its SHA-256. A session holds one
+  seat per league (`session_seats`). No accounts.
+- Links (`/i/{token}`, HMAC-signed with `LINK_SECRET`): one shared league invite (claims any open seat), a single-use
+  seat invite (issued by a seat reset; the seat stays claimed), and a personal link per manager (signs in another
+  browser). Opening a link never changes anything; only the claim POST does.
 
 ## UI conventions
 - Dark theme only. Use tokens (`bg-ink-850`, `text-fog-400`, `text-accent`, `bg-under-deep`, …), not raw hex — team

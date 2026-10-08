@@ -1,0 +1,1078 @@
+{
+ "name": "National Basketball Association",
+ "abbreviation": "NBA",
+ "children": [
+  {
+   "name": "Eastern Conference",
+   "abbreviation": "East",
+   "standings": {
+    "season": 2026,
+    "seasonType": 2,
+    "seasonDisplayName": "2025-26",
+    "entries": [
+     {
+      "team": {
+       "id": "8",
+       "location": "Detroit",
+       "name": "Pistons",
+       "abbreviation": "DET",
+       "displayName": "Detroit Pistons"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 22,
+        "displayValue": "22"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.73170733,
+        "displayValue": ".732"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 60,
+        "displayValue": "60"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "1",
+       "location": "Atlanta",
+       "name": "Hawks",
+       "abbreviation": "ATL",
+       "displayName": "Atlanta Hawks"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 14,
+        "displayValue": "14"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 36,
+        "displayValue": "36"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5609756,
+        "displayValue": ".561"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 46,
+        "displayValue": "46"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2",
+       "location": "Boston",
+       "name": "Celtics",
+       "abbreviation": "BOS",
+       "displayName": "Boston Celtics"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 4,
+        "displayValue": "4"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 26,
+        "displayValue": "26"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.68292683,
+        "displayValue": ".683"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 56,
+        "displayValue": "56"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "20",
+       "location": "Philadelphia",
+       "name": "76ers",
+       "abbreviation": "PHI",
+       "displayName": "Philadelphia 76ers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 15,
+        "displayValue": "15"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 37,
+        "displayValue": "37"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5487805,
+        "displayValue": ".549"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 45,
+        "displayValue": "45"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "19",
+       "location": "Orlando",
+       "name": "Magic",
+       "abbreviation": "ORL",
+       "displayName": "Orlando Magic"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 15,
+        "displayValue": "15"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 37,
+        "displayValue": "37"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5487805,
+        "displayValue": ".549"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 45,
+        "displayValue": "45"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "28",
+       "location": "Toronto",
+       "name": "Raptors",
+       "abbreviation": "TOR",
+       "displayName": "Toronto Raptors"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 14,
+        "displayValue": "14"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 36,
+        "displayValue": "36"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5609756,
+        "displayValue": ".561"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 46,
+        "displayValue": "46"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "5",
+       "location": "Cleveland",
+       "name": "Cavaliers",
+       "abbreviation": "CLE",
+       "displayName": "Cleveland Cavaliers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 8,
+        "displayValue": "8"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 30,
+        "displayValue": "30"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.63414633,
+        "displayValue": ".634"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 52,
+        "displayValue": "52"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "18",
+       "location": "New York",
+       "name": "Knicks",
+       "abbreviation": "NY",
+       "displayName": "New York Knicks"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 7,
+        "displayValue": "7"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 29,
+        "displayValue": "29"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.64634144,
+        "displayValue": ".646"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 53,
+        "displayValue": "53"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "14",
+       "location": "Miami",
+       "name": "Heat",
+       "abbreviation": "MIA",
+       "displayName": "Miami Heat"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 17,
+        "displayValue": "17"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 39,
+        "displayValue": "39"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5243902,
+        "displayValue": ".524"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 43,
+        "displayValue": "43"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "30",
+       "location": "Charlotte",
+       "name": "Hornets",
+       "abbreviation": "CHA",
+       "displayName": "Charlotte Hornets"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 16,
+        "displayValue": "16"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 38,
+        "displayValue": "38"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5365854,
+        "displayValue": ".537"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 44,
+        "displayValue": "44"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "27",
+       "location": "Washington",
+       "name": "Wizards",
+       "abbreviation": "WSH",
+       "displayName": "Washington Wizards"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 43,
+        "displayValue": "43"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 65,
+        "displayValue": "65"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.20731707,
+        "displayValue": ".207"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 17,
+        "displayValue": "17"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "11",
+       "location": "Indiana",
+       "name": "Pacers",
+       "abbreviation": "IND",
+       "displayName": "Indiana Pacers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 41,
+        "displayValue": "41"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 63,
+        "displayValue": "63"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.23170732,
+        "displayValue": ".232"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 19,
+        "displayValue": "19"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "17",
+       "location": "Brooklyn",
+       "name": "Nets",
+       "abbreviation": "BKN",
+       "displayName": "Brooklyn Nets"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 40,
+        "displayValue": "40"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 62,
+        "displayValue": "62"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.24390244,
+        "displayValue": ".244"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 20,
+        "displayValue": "20"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4",
+       "location": "Chicago",
+       "name": "Bulls",
+       "abbreviation": "CHI",
+       "displayName": "Chicago Bulls"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 29,
+        "displayValue": "29"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 51,
+        "displayValue": "51"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.37804878,
+        "displayValue": ".378"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 31,
+        "displayValue": "31"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "15",
+       "location": "Milwaukee",
+       "name": "Bucks",
+       "abbreviation": "MIL",
+       "displayName": "Milwaukee Bucks"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 28,
+        "displayValue": "28"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 50,
+        "displayValue": "50"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.3902439,
+        "displayValue": ".390"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 32,
+        "displayValue": "32"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Western Conference",
+   "abbreviation": "West",
+   "standings": {
+    "season": 2026,
+    "seasonType": 2,
+    "seasonDisplayName": "2025-26",
+    "entries": [
+     {
+      "team": {
+       "id": "13",
+       "location": "Los Angeles",
+       "name": "Lakers",
+       "abbreviation": "LAL",
+       "displayName": "Los Angeles Lakers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 11,
+        "displayValue": "11"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 29,
+        "displayValue": "29"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.64634144,
+        "displayValue": ".646"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 53,
+        "displayValue": "53"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "24",
+       "location": "San Antonio",
+       "name": "Spurs",
+       "abbreviation": "SA",
+       "displayName": "San Antonio Spurs"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 2,
+        "displayValue": "2"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 20,
+        "displayValue": "20"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.75609756,
+        "displayValue": ".756"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 62,
+        "displayValue": "62"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "22",
+       "location": "Portland",
+       "name": "Trail Blazers",
+       "abbreviation": "POR",
+       "displayName": "Portland Trail Blazers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 22,
+        "displayValue": "22"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 40,
+        "displayValue": "40"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5121951,
+        "displayValue": ".512"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 42,
+        "displayValue": "42"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "21",
+       "location": "Phoenix",
+       "name": "Suns",
+       "abbreviation": "PHX",
+       "displayName": "Phoenix Suns"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 19,
+        "displayValue": "19"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 37,
+        "displayValue": "37"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5487805,
+        "displayValue": ".549"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 45,
+        "displayValue": "45"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "16",
+       "location": "Minnesota",
+       "name": "Timberwolves",
+       "abbreviation": "MIN",
+       "displayName": "Minnesota Timberwolves"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 15,
+        "displayValue": "15"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 33,
+        "displayValue": "33"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.597561,
+        "displayValue": ".598"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 49,
+        "displayValue": "49"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "10",
+       "location": "Houston",
+       "name": "Rockets",
+       "abbreviation": "HOU",
+       "displayName": "Houston Rockets"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 12,
+        "displayValue": "12"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 30,
+        "displayValue": "30"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.63414633,
+        "displayValue": ".634"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 52,
+        "displayValue": "52"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "7",
+       "location": "Denver",
+       "name": "Nuggets",
+       "abbreviation": "DEN",
+       "displayName": "Denver Nuggets"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 10,
+        "displayValue": "10"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 28,
+        "displayValue": "28"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.6585366,
+        "displayValue": ".659"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 54,
+        "displayValue": "54"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "9",
+       "location": "Golden State",
+       "name": "Warriors",
+       "abbreviation": "GS",
+       "displayName": "Golden State Warriors"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 27,
+        "displayValue": "27"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 45,
+        "displayValue": "45"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.4512195,
+        "displayValue": ".451"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 37,
+        "displayValue": "37"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "12",
+       "location": "LA",
+       "name": "Clippers",
+       "abbreviation": "LAC",
+       "displayName": "LA Clippers"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 22,
+        "displayValue": "22"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 40,
+        "displayValue": "40"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.5121951,
+        "displayValue": ".512"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 42,
+        "displayValue": "42"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "23",
+       "location": "Sacramento",
+       "name": "Kings",
+       "abbreviation": "SAC",
+       "displayName": "Sacramento Kings"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 42,
+        "displayValue": "42"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 60,
+        "displayValue": "60"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.2682927,
+        "displayValue": ".268"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 22,
+        "displayValue": "22"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "26",
+       "location": "Utah",
+       "name": "Jazz",
+       "abbreviation": "UTAH",
+       "displayName": "Utah Jazz"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 42,
+        "displayValue": "42"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 60,
+        "displayValue": "60"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.2682927,
+        "displayValue": ".268"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 22,
+        "displayValue": "22"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "29",
+       "location": "Memphis",
+       "name": "Grizzlies",
+       "abbreviation": "MEM",
+       "displayName": "Memphis Grizzlies"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 39,
+        "displayValue": "39"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 57,
+        "displayValue": "57"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.30487806,
+        "displayValue": ".305"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 25,
+        "displayValue": "25"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "3",
+       "location": "New Orleans",
+       "name": "Pelicans",
+       "abbreviation": "NO",
+       "displayName": "New Orleans Pelicans"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 38,
+        "displayValue": "38"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 56,
+        "displayValue": "56"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.31707317,
+        "displayValue": ".317"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 26,
+        "displayValue": "26"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "6",
+       "location": "Dallas",
+       "name": "Mavericks",
+       "abbreviation": "DAL",
+       "displayName": "Dallas Mavericks"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 38,
+        "displayValue": "38"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 56,
+        "displayValue": "56"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.31707317,
+        "displayValue": ".317"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 26,
+        "displayValue": "26"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "25",
+       "location": "Oklahoma City",
+       "name": "Thunder",
+       "abbreviation": "OKC",
+       "displayName": "Oklahoma City Thunder"
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "Games Back",
+        "value": 0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "Losses",
+        "value": 18,
+        "displayValue": "18"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "Win Percentage",
+        "value": 0.7804878,
+        "displayValue": ".780"
+       },
+       {
+        "name": "wins",
+        "displayName": "Wins",
+        "value": 64,
+        "displayValue": "64"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

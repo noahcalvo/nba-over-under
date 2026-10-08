@@ -19,6 +19,12 @@ describe("formatSigned", () => {
     expect(formatSigned(1.234, 2)).toBe("+1.23");
     expect(formatSigned(2, 0)).toBe("+2");
   });
+
+  it("rounds negative halves away from zero, like positive halves", () => {
+    expect(formatSigned(-1.75)).toBe("−1.8");
+    expect(formatSigned(-0.25)).toBe("−0.3");
+    expect(formatSigned(0.25)).toBe("+0.3");
+  });
 });
 
 describe("formatNumber", () => {
@@ -30,6 +36,11 @@ describe("formatNumber", () => {
   it("uses a true minus sign and supports zero decimals", () => {
     expect(formatNumber(-1.5)).toBe("−1.5");
     expect(formatNumber(41, 0)).toBe("41");
+  });
+
+  it("rounds halves away from zero for negatives", () => {
+    expect(formatNumber(-1.25)).toBe("−1.3");
+    expect(formatNumber(-0.04)).toBe("0.0");
   });
 });
 

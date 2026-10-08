@@ -2,9 +2,10 @@ const MINUS = "−";
 
 export const NOT_AVAILABLE = "Not available";
 
+// Rounds half away from zero so Over and Under margins of equal size display symmetrically.
 function roundTo(value: number, digits: number): number {
   const factor = 10 ** digits;
-  const rounded = Math.round(value * factor) / factor;
+  const rounded = (Math.sign(value) * Math.round(Math.abs(value) * factor)) / factor;
   return Object.is(rounded, -0) ? 0 : rounded;
 }
 

@@ -2,12 +2,23 @@
 
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { sendJson } from "@/components/access/send-json";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { formatUpdatedAt } from "@/lib/format";
 import type { RecordStatus } from "@/lib/records/types";
+
+const subscribe = () => () => {};
+
+/** False during server render and hydration, true once mounted in the browser. */
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+}
 
 /** "Records updated …" for everyone; the commissioner can refresh. */
 export function RecordsStatus({
@@ -22,6 +33,9 @@ export function RecordsStatus({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const mounted = useMounted();
+  // Format in the viewer's time zone only after mount, so the server render and first client render match.
+  const updatedAt = status.asOf && mounted ? formatUpdatedAt(status.asOf) : "";
 
   async function refresh() {
     setPending(true);
@@ -40,8 +54,8 @@ export function RecordsStatus({
           {status.asOf ? (
             <>
               Records updated{" "}
-              <time dateTime={status.asOf} suppressHydrationWarning className="text-fog-50">
-                {formatUpdatedAt(status.asOf)}
+              <time dateTime={status.asOf} className="text-fog-50">
+                {updatedAt}
               </time>{" "}
               · {status.source}
             </>
@@ -59,7 +73,7 @@ export function RecordsStatus({
       {reason && (
         <Alert onDismiss={failure ? () => setFailure(null) : undefined}>
           Couldn&apos;t refresh records: {reason}{" "}
-          {status.asOf ? `Showing records from ${formatUpdatedAt(status.asOf)}.` : "No records are loaded yet."}
+          {status.asOf ? `Showing records from ${updatedAt}.` : "No records are loaded yet."}
         </Alert>
       )}
     </div>

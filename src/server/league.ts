@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { buildDemoLeague, DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_INFO } from "@/data/teams";
 import { listSessionLeagues, loadLeague, type SeatedLeague } from "@/db/leagues";
-import { loadRefresh, loadSeasonRecords, recordStatus } from "@/db/records";
+import { loadRefresh, loadTeamInfo, recordStatus } from "@/db/records";
 import { LINES } from "@/config/lines";
 import { buildLineReview, withAvailableLines, withLines } from "@/lib/lines";
-import { withRecords } from "@/lib/records/merge";
 import { seasonEndYear } from "@/lib/records/season";
 import type { RecordStatus } from "@/lib/records/types";
 import type { League, LeagueView, LineReview, TeamInfo } from "@/lib/types";
@@ -33,11 +32,9 @@ export async function reviewLines(league: League): Promise<LineReview> {
   return buildLineReview(TEAM_INFO, await readLines(), league.lineOverrides, { book: LINES.book, season: LINES.season });
 }
 
-/** Team metadata with this league's records: mock records for the demo, stored season records otherwise (0–0 until loaded). */
+/** Team metadata with this league's records (see `loadTeamInfo`). */
 export async function teamInfoFor(league: League): Promise<TeamInfo[]> {
-  if (league.isDemo) return [...TEAM_INFO];
-  const season = seasonEndYear(league.seasonLabel);
-  return withRecords(TEAM_INFO, season === null ? {} : await loadSeasonRecords(await getDb(), season));
+  return loadTeamInfo(await getDb(), league);
 }
 
 async function recordStatusFor(league: League): Promise<RecordStatus | null> {

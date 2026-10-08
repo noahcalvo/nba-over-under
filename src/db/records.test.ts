@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { createLeagueFor } from "@/db/actions";
-import { loadRefresh, loadSeasonRecords, recordStatus, refreshSeasonRecords, seasonsInUse } from "@/db/records";
+import { loadRefresh, loadSeasonRecords, loadTeamInfo, recordStatus, refreshSeasonRecords, seasonsInUse } from "@/db/records";
 import { createSession } from "@/db/sessions";
 import { createTestDb } from "@/db/test-db";
+import { TEAM_INFO } from "@/data/teams";
 import { FeedError } from "@/lib/feed-error";
 import type { RecordSource, SeasonRecords } from "@/lib/records/types";
 
@@ -122,5 +123,35 @@ describe("seasonsInUse", () => {
     const seasons = await seasonsInUse(db);
     expect(seasons).toHaveLength(1);
     expect(seasons[0]).toMatch(/^\d{4}–\d{2}$/);
+  });
+});
+
+describe("loadTeamInfo", () => {
+  const stored = { isDemo: false, seasonLabel: "2026–27" };
+  const rec = (teams: { id: string; wins: number; losses: number }[], id: string) => teams.find((t) => t.id === id)!;
+
+  it("keeps the mock records for the demo league", async () => {
+    const teams = await loadTeamInfo(db, { isDemo: true, seasonLabel: "2026–27" });
+    expect(teams).toEqual([...TEAM_INFO]);
+    expect(rec(teams, "BOS")).toMatchObject({ wins: 22, losses: 26 });
+  });
+
+  it("shows every team at 0–0 for a stored league with no stored records", async () => {
+    const teams = await loadTeamInfo(db, stored);
+    expect(teams).toHaveLength(30);
+    expect(teams.every((t) => t.wins === 0 && t.losses === 0)).toBe(true);
+  });
+
+  it("uses the stored records for the league's season after a refresh", async () => {
+    await refreshSeasonRecords(db, SEASON, source({ BOS: { wins: 3, losses: 1 } }), { now: T0 });
+    const teams = await loadTeamInfo(db, stored);
+    expect(rec(teams, "BOS")).toMatchObject({ wins: 3, losses: 1 });
+    expect(rec(teams, "MIN")).toMatchObject({ wins: 0, losses: 0 });
+  });
+
+  it("does not show another season's records", async () => {
+    await refreshSeasonRecords(db, SEASON, source({ BOS: { wins: 3, losses: 1 } }), { now: T0 });
+    const teams = await loadTeamInfo(db, { isDemo: false, seasonLabel: "2025–26" });
+    expect(rec(teams, "BOS")).toMatchObject({ wins: 0, losses: 0 });
   });
 });

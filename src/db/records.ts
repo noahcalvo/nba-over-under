@@ -1,9 +1,12 @@
 import { asc, eq, sql } from "drizzle-orm";
 import { RECORDS } from "@/config/records";
+import { TEAM_INFO } from "@/data/teams";
 import { FeedError } from "@/lib/feed-error";
 import type { RecordSource, RecordStatus, TeamRecord } from "@/lib/records/types";
+import { withRecords } from "@/lib/records/merge";
+import { seasonEndYear } from "@/lib/records/season";
 import { checkNoRegression } from "@/lib/records/validate";
-import type { TeamId } from "@/lib/types";
+import type { League, TeamId, TeamInfo } from "@/lib/types";
 import type { Db, Tx } from "./client";
 import { leagues, recordRefreshes, teamRecords } from "./schema";
 
@@ -23,6 +26,13 @@ const UNEXPECTED = "Something went wrong while refreshing records.";
 export async function loadSeasonRecords(db: Db | Tx, season: number): Promise<Record<TeamId, TeamRecord>> {
   const rows = await db.select().from(teamRecords).where(eq(teamRecords.season, season));
   return Object.fromEntries(rows.map((row) => [row.teamId, { wins: row.wins, losses: row.losses }]));
+}
+
+/** Team metadata with this league's records: the demo keeps its mock records; others get stored season records (0–0 until loaded). */
+export async function loadTeamInfo(db: Db | Tx, league: Pick<League, "isDemo" | "seasonLabel">): Promise<TeamInfo[]> {
+  if (league.isDemo) return [...TEAM_INFO];
+  const season = seasonEndYear(league.seasonLabel);
+  return withRecords(TEAM_INFO, season === null ? {} : await loadSeasonRecords(db, season));
 }
 
 export async function loadRefresh(db: Db | Tx, season: number): Promise<StoredRefresh | null> {

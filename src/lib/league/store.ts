@@ -93,6 +93,7 @@ export function createLeagueStore({
         managers,
         draft: createDraftState(seatOrder, LEAGUE_DEFAULTS.rounds),
         fades: [],
+        lines: null,
       };
       leagues.set(league.id, league);
       return succeed({ league, managerId: seatOrder[0] });

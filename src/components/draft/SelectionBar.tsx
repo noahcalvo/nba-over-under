@@ -1,11 +1,13 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { TEAMS_BY_ID } from "@/data/teams";
+
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
+import type { TeamLookup } from "@/lib/standings";
 
 export function SelectionBar({
+  teams,
   selection,
   notice,
   canPick,
@@ -13,6 +15,7 @@ export function SelectionBar({
   onConfirm,
   onClear,
 }: {
+  teams: TeamLookup;
   selection: SideRef | null;
   notice: string | null;
   canPick: boolean;
@@ -33,7 +36,7 @@ export function SelectionBar({
       </div>
     );
   }
-  const team = TEAMS_BY_ID[selection.teamId];
+  const team = teams[selection.teamId];
   return (
     <div className={`${frame} border-ink-600`}>
       <TeamLogo team={team} size={36} />

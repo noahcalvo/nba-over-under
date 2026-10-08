@@ -1,16 +1,17 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
-import { TEAMS_BY_ID } from "@/data/teams";
+
 import { findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
 import { describeTurn } from "@/lib/league/turn";
+import { indexTeams } from "@/lib/lines";
 import type { LeagueView } from "@/lib/types";
 import { AvailablePicks } from "./AvailablePicks";
 import { DraftBoard } from "./DraftBoard";
@@ -25,6 +26,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
   const { view, error, pending, dispatch, dismissError } = useLeagueDraft(initial);
   const { league, viewerId } = view;
   const { draft } = league;
+  const teamsById = useMemo(() => indexTeams(view.teams), [view.teams]);
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
 
@@ -33,7 +35,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
   const activeSelection = selection && !takenBy && draft.status === "live" ? selection : null;
   const takenNotice =
     selection && takenBy
-      ? `${TEAMS_BY_ID[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
+      ? `${teamsById[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
           findManager(league.managers, takenBy.managerId)!,
         )}. Pick another side.`
       : null;
@@ -83,9 +85,10 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
           onResume={() => run({ type: "resume" })}
         />
       )}
-      <DraftBoard league={league} />
+      <DraftBoard league={league} teams={teamsById} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         <AvailablePicks
+          teams={view.teams}
           draft={draft}
           managers={league.managers}
           filters={filters}
@@ -98,6 +101,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
           <Panel title={viewerId ? "Your selection" : "Selection"} bodyClassName="flex flex-col gap-5 p-4 sm:p-5">
             <SelectionPreview
               league={league}
+              teams={teamsById}
               selection={activeSelection}
               notice={takenNotice}
               turn={turn}
@@ -106,7 +110,12 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
               onConfirm={confirm}
               onClear={clear}
             />
-            <ManagerPicks league={league} managerId={focusManagerId} isViewer={focusManagerId === viewerId} />
+            <ManagerPicks
+              league={league}
+              teams={teamsById}
+              managerId={focusManagerId}
+              isViewer={focusManagerId === viewerId}
+            />
             <p className="flex items-center gap-2 text-sm text-fog-400">
               <Info aria-hidden className="size-4 shrink-0" />
               Lines lock when drafted.
@@ -115,6 +124,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
         </div>
       </div>
       <SelectionBar
+        teams={teamsById}
         selection={activeSelection}
         notice={takenNotice}
         canPick={canPick}

@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/Button";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { SEASON } from "@/config/league";
-import { TEAMS_BY_ID } from "@/data/teams";
+
 import { currentPickNumber } from "@/lib/draft";
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import type { TurnSummary } from "@/lib/league/turn";
+import type { TeamLookup } from "@/lib/standings";
 import type { DraftStatus, League } from "@/lib/types";
 
 const EMPTY_MESSAGE: Record<DraftStatus, string> = {
@@ -18,6 +19,7 @@ const EMPTY_MESSAGE: Record<DraftStatus, string> = {
 
 export function SelectionPreview({
   league,
+  teams,
   selection,
   notice,
   turn,
@@ -27,6 +29,7 @@ export function SelectionPreview({
   onClear,
 }: {
   league: League;
+  teams: TeamLookup;
   selection: SideRef | null;
   notice: string | null;
   turn: TurnSummary;
@@ -48,7 +51,7 @@ export function SelectionPreview({
     );
   }
 
-  const team = TEAMS_BY_ID[selection.teamId];
+  const team = teams[selection.teamId];
   const onClock = findManager(league.managers, turn.managerId);
   const pickNumber = currentPickNumber(league.draft);
   const waiting = league.draft.status === "paused" ? "The draft is paused." : onClock ? `Waiting on ${managerLabel(onClock)}.` : "";

@@ -1,5 +1,5 @@
 import { parseDraftAction } from "@/lib/league/parse-action";
-import type { LeagueView } from "@/lib/types";
+
 import { errorResponse, readJsonBody } from "@/server/http";
 import { leagueStore } from "@/server/store";
 import { getViewerId, toLeagueView } from "@/server/viewer";
@@ -20,6 +20,5 @@ export async function POST(request: Request, ctx: RouteContext<"/api/leagues/[le
   const viewerId = await getViewerId(league);
   const result = leagueStore.act(leagueId, viewerId, action);
   if (!result.ok) return errorResponse(result.error);
-  const view: LeagueView = { league: result.value, viewerId };
-  return Response.json(view);
+  return Response.json(await toLeagueView(result.value));
 }

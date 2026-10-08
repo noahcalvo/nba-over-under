@@ -14,6 +14,7 @@ const DEMO: League = {
   managers: [{ id: "m1", seat: 0, displayName: null }],
   draft: { status: "complete", rounds: 1, seatOrder: ["m1"], picks: [] },
   fades: [],
+  lines: null,
 };
 
 function newStore(): LeagueStore {

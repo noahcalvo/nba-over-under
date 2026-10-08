@@ -6,13 +6,14 @@ import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { TEAMS_BY_ID } from "@/data/teams";
+
 import { currentPickNumber, draftTotalPicks, pickNumberFor } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
-import type { DraftPick, DraftStatus, League } from "@/lib/types";
+import type { TeamLookup } from "@/lib/standings";
+import type { DraftPick, DraftStatus, League, Team } from "@/lib/types";
 
-export function DraftBoard({ league }: { league: League }) {
+export function DraftBoard({ league, teams }: { league: League; teams: TeamLookup }) {
   const { draft, managers } = league;
   const seatCount = draft.seatOrder.length;
   const current = currentPickNumber(draft);
@@ -88,11 +89,13 @@ export function DraftBoard({ league }: { league: League }) {
               </div>
               {seats.map((manager, seat) => {
                 const pickNumber = pickNumberFor(round, seat, seatCount);
+                const pick = picksByNumber.get(pickNumber);
                 return (
                   <BoardCell
                     key={manager.id}
                     pickNumber={pickNumber}
-                    pick={picksByNumber.get(pickNumber)}
+                    pick={pick}
+                    team={pick ? teams[pick.teamId] : undefined}
                     state={pickNumber === current ? "current" : pickNumber === upNext ? "next" : "open"}
                     status={draft.status}
                   />
@@ -109,17 +112,18 @@ export function DraftBoard({ league }: { league: League }) {
 function BoardCell({
   pickNumber,
   pick,
+  team,
   state,
   status,
 }: {
   pickNumber: number;
   pick: DraftPick | undefined;
+  team: Team | undefined;
   state: "current" | "next" | "open";
   status: DraftStatus;
 }) {
   const base = "flex min-h-14 items-center gap-2 border-b border-l border-ink-700 px-3 py-2 text-sm";
-  if (pick) {
-    const team = TEAMS_BY_ID[pick.teamId];
+  if (pick && team) {
     return (
       <div role="cell" data-pick={pickNumber} className={base}>
         <span className="w-5 shrink-0 text-xs tabular-nums text-fog-400">{pickNumber}</span>

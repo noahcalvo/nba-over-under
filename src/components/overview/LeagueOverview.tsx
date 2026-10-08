@@ -2,23 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
-import { TEAMS_BY_ID } from "@/data/teams";
+
 import { findManager } from "@/lib/league/managers";
+import { indexTeams } from "@/lib/lines";
 import type { Basis } from "@/lib/scoring";
 import { closestCalls, computeStandings } from "@/lib/standings";
-import type { League } from "@/lib/types";
+import type { League, Team } from "@/lib/types";
 import { ClosestCalls } from "./ClosestCalls";
 import { FadesPanel } from "./FadesPanel";
 import { PicksPanel } from "./PicksPanel";
 import { StandingsPanel } from "./StandingsPanel";
 import { SummaryStats } from "./SummaryStats";
 
-export function LeagueOverview({ league, viewerId }: { league: League; viewerId: string | null }) {
+export function LeagueOverview({ league, teams, viewerId }: { league: League; teams: Team[]; viewerId: string | null }) {
   const [selectedId, setSelectedId] = useState(viewerId ?? league.managers[0].id);
   const [basis, setBasis] = useState<Basis>("projected");
 
-  const projected = useMemo(() => computeStandings(league, TEAMS_BY_ID, "projected"), [league]);
-  const final = useMemo(() => computeStandings(league, TEAMS_BY_ID, "final"), [league]);
+  const teamsById = useMemo(() => indexTeams(teams), [teams]);
+  const projected = useMemo(() => computeStandings(league, teamsById, "projected"), [league, teamsById]);
+  const final = useMemo(() => computeStandings(league, teamsById, "final"), [league, teamsById]);
   const standings = basis === "final" && final.anyScored ? final : projected;
   const row = standings.rows.find((candidate) => candidate.managerId === selectedId) ?? standings.rows[0];
   const manager = findManager(league.managers, row.managerId)!;

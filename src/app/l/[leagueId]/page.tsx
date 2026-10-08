@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { LeagueOverview } from "@/components/overview/LeagueOverview";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { getLeagueOrNotFound } from "@/server/league";
-import { getViewerId } from "@/server/viewer";
+import { toLeagueView } from "@/server/viewer";
 
 export default function OverviewPage({ params }: PageProps<"/l/[leagueId]">) {
   return (
@@ -14,7 +14,6 @@ export default function OverviewPage({ params }: PageProps<"/l/[leagueId]">) {
 
 async function Overview({ params }: { params: PageProps<"/l/[leagueId]">["params"] }) {
   const { leagueId } = await params;
-  const league = getLeagueOrNotFound(leagueId);
-  const viewerId = await getViewerId(league);
-  return <LeagueOverview league={league} viewerId={viewerId} />;
+  const view = await toLeagueView(getLeagueOrNotFound(leagueId));
+  return <LeagueOverview league={view.league} teams={view.teams} viewerId={view.viewerId} />;
 }

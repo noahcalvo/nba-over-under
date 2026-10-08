@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { TEAMS, TOTAL_SIDES } from "@/data/teams";
+import { TOTAL_SIDES } from "@/data/teams";
 import { findPickForSide } from "@/lib/draft";
 import { availableSideCount, filterTeams, SIDES, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
@@ -12,6 +12,7 @@ import type { DraftState, Manager, Side, Team } from "@/lib/types";
 import { SideButton } from "./SideButton";
 
 export function AvailablePicks({
+  teams: allTeams,
   draft,
   managers,
   filters,
@@ -20,6 +21,7 @@ export function AvailablePicks({
   onSelect,
   selectable,
 }: {
+  teams: Team[];
   draft: DraftState;
   managers: Manager[];
   filters: TeamFilters;
@@ -28,7 +30,7 @@ export function AvailablePicks({
   onSelect: (ref: SideRef) => void;
   selectable: boolean;
 }) {
-  const teams = filterTeams(TEAMS, draft, filters);
+  const teams = filterTeams(allTeams, draft, filters);
   const button = (team: Team, side: Side) => (
     <SideButton
       team={team}
@@ -132,7 +134,7 @@ export function AvailablePicks({
 
       {teams.length === 0 && <p className="px-5 py-6 text-sm text-fog-400">No teams match these filters.</p>}
       <p className="border-t border-ink-700 px-5 py-3 text-sm text-fog-300">
-        {availableSideCount(draft, TEAMS.length)} of {TOTAL_SIDES} sides available
+        {availableSideCount(draft, allTeams.length)} of {TOTAL_SIDES} sides available
       </p>
     </Panel>
   );

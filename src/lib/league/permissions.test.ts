@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { canControlDraft, canManageSeats, canPickNow, canResetSeat, type DraftAccess } from "@/lib/league/permissions";
+import {
+  canControlDraft,
+  canManageSeats,
+  canPickNow,
+  canRefreshRecords,
+  canResetSeat,
+  type DraftAccess,
+} from "@/lib/league/permissions";
 import type { DraftStatus, Manager } from "@/lib/types";
 
 const MANAGERS: Manager[] = [
@@ -83,5 +90,14 @@ describe("canResetSeat", () => {
     expect(canResetSeat(league("live"), "m1", "m1")).toBe(false);
     expect(canResetSeat(league("live"), "m2", "m1")).toBe(false);
     expect(canResetSeat(league("live", 0, true), "m1", "m2")).toBe(false);
+  });
+});
+
+describe("canRefreshRecords", () => {
+  it("allows only the commissioner, never in the demo league", () => {
+    expect(canRefreshRecords(league("not_started"), "m1")).toBe(true);
+    expect(canRefreshRecords(league("not_started"), "m2")).toBe(false);
+    expect(canRefreshRecords(league("not_started"), null)).toBe(false);
+    expect(canRefreshRecords(league("not_started", 0, true), "m1")).toBe(false);
   });
 });

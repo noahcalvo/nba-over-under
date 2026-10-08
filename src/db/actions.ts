@@ -1,4 +1,6 @@
+import { eq } from "drizzle-orm";
 import { ACCESS } from "@/config/access";
+import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_IDS } from "@/data/teams";
 import { linkStatus } from "@/lib/access/links";
 import type { DraftAction } from "@/lib/draft";
@@ -13,11 +15,16 @@ import {
   type ClaimInput,
 } from "@/lib/league/commands";
 import { fail, succeed, type Result } from "@/lib/league/errors";
+import { canRefreshRecords } from "@/lib/league/permissions";
+import { seasonEndYear } from "@/lib/records/season";
+import type { RecordSource, RecordStatus } from "@/lib/records/types";
 import type { League, LineSet } from "@/lib/types";
 import type { Db } from "./client";
 import { insertLeague, saveLeague, withLockedLeague } from "./leagues";
 import { findLink, findLinkAt, issueLink, markSeatInviteUsed, revokeLinks } from "./links";
-import { bindSeat, unbindSeat } from "./sessions";
+import { recordStatus, refreshSeasonRecords } from "./records";
+import { leagues } from "./schema";
+import { bindSeat, seatInLeague, unbindSeat } from "./sessions";
 
 // Every league mutation. Each one runs its pure decision from src/lib/league/commands.ts inside withLockedLeague,
 // so permissions and links are checked against the locked state, then persists the outcome.
@@ -171,4 +178,34 @@ export function resetOwnLink(
     if (options.signOutOtherDevices && sessionId) await unbindSeat(tx, league.id, managerId, sessionId);
     return succeed(null);
   });
+}
+
+export type RecordRefreshResult =
+  | { ok: true; status: RecordStatus }
+  | { ok: false; status: RecordStatus; message: string };
+
+/**
+ * Commissioner: refresh team records for the league's season (shared by every league in that season). Records are not
+ * league state, so this doesn't take the league lock; the seat is still read from the database, never the cookie
+ * alone, and refreshSeasonRecords serializes refreshes of a season with its own row lock. Call with no lock held.
+ */
+export async function refreshLeagueRecords(
+  db: Db,
+  leagueId: string,
+  sessionId: string | null,
+  source: RecordSource,
+): Promise<Result<RecordRefreshResult>> {
+  if (leagueId === DEMO_LEAGUE_ID) return fail("demo_league");
+  const [row] = await db
+    .select({ commissionerId: leagues.commissionerId, seasonLabel: leagues.seasonLabel })
+    .from(leagues)
+    .where(eq(leagues.id, leagueId));
+  if (!row) return fail("not_found");
+  const actorId = sessionId ? await seatInLeague(db, sessionId, leagueId) : null;
+  if (!canRefreshRecords({ isDemo: false, commissionerId: row.commissionerId }, actorId)) return fail("forbidden");
+  const season = seasonEndYear(row.seasonLabel);
+  if (season === null) return fail("records_unavailable");
+  const outcome = await refreshSeasonRecords(db, season, source);
+  const status = recordStatus(row.seasonLabel, outcome.refresh);
+  return succeed(outcome.ok ? { ok: true, status } : { ok: false, status, message: outcome.message });
 }

@@ -33,3 +33,8 @@ export function canResetSeat(
   const target = league.managers.find((manager) => manager.id === targetId);
   return target !== undefined && target.displayName !== null;
 }
+
+/** Refreshing team records belongs to the commissioner. The demo league is read-only. */
+export function canRefreshRecords(league: Pick<League, "isDemo" | "commissionerId">, actorId: string | null): boolean {
+  return !league.isDemo && actorId !== null && actorId === league.commissionerId;
+}

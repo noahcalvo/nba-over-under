@@ -11,6 +11,7 @@ export type DomainError =
   | "demo_league"
   | "invalid_link"
   | "lines_unavailable"
+  | "records_unavailable"
   | DraftError;
 
 export type ApiError = DomainError | "invalid_request";
@@ -35,6 +36,7 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   demo_league: "The demo league is read-only.",
   invalid_link: "This link no longer works. Ask your commissioner for a new one.",
   lines_unavailable: "Lines aren't available right now. Try again in a minute.",
+  records_unavailable: "Team records couldn't be refreshed. Try again in a minute.",
   not_live: "The draft isn't live.",
   side_taken: "That side was just drafted.",
   unknown_team: "Unknown team.",

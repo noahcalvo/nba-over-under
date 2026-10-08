@@ -18,6 +18,7 @@ const STATUS: Record<ApiError, number> = {
   stale_pick: 409,
   team_already_held: 409,
   lines_unavailable: 503,
+  records_unavailable: 502,
 };
 
 export function errorResponse(error: ApiError): Response {

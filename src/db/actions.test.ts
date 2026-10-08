@@ -5,6 +5,7 @@ import {
   claimLink,
   claimLinkInLeague,
   createLeagueFor,
+  refreshLeagueRecords,
   resetOwnLink,
   resetSeat,
   revokeLeagueInvite,
@@ -13,11 +14,15 @@ import {
 } from "@/db/actions";
 import type { Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
+import { loadSeasonRecords } from "@/db/records";
 import { findLink, listActiveLinks } from "@/db/links";
 import { accessLinks } from "@/db/schema";
 import { createSession, findSession, seatInLeague } from "@/db/sessions";
 import { createTestDb } from "@/db/test-db";
 import type { LinkKind } from "@/lib/access/links";
+import { FeedError } from "@/lib/feed-error";
+import { seasonEndYear } from "@/lib/records/season";
+import type { RecordSource } from "@/lib/records/types";
 import type { Side } from "@/lib/types";
 
 const LEAGUE = "lg0001";
@@ -295,5 +300,36 @@ describe("draft actions", () => {
       ok: false,
       error: "forbidden",
     });
+  });
+});
+
+describe("refreshLeagueRecords", () => {
+  const records = { BOS: { wins: 1, losses: 0 } };
+  const ok: RecordSource = { name: "ESPN", fetch: async (season) => ({ season, records }) };
+  const down: RecordSource = {
+    name: "ESPN",
+    fetch: async () => {
+      throw new FeedError("ESPN returned HTTP 503.");
+    },
+  };
+
+  it("lets the commissioner refresh the league's season", async () => {
+    const result = await refreshLeagueRecords(db, LEAGUE, ana, ok);
+    expect(result).toMatchObject({ ok: true, value: { ok: true, status: { source: "ESPN", error: null } } });
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(await loadSeasonRecords(db, seasonEndYear(league.seasonLabel)!)).toEqual(records);
+  });
+
+  it("reports a feed failure with the reason and keeps the status", async () => {
+    const result = await refreshLeagueRecords(db, LEAGUE, ana, down);
+    expect(result).toMatchObject({ ok: true, value: { ok: false, message: "ESPN returned HTTP 503." } });
+  });
+
+  it("refuses everyone but the commissioner, the demo league and unknown leagues", async () => {
+    await joinAs(ben, "m2", "Ben");
+    expect(await refreshLeagueRecords(db, LEAGUE, ben, ok)).toEqual({ ok: false, error: "forbidden" });
+    expect(await refreshLeagueRecords(db, LEAGUE, null, ok)).toEqual({ ok: false, error: "forbidden" });
+    expect(await refreshLeagueRecords(db, "demo", ana, ok)).toEqual({ ok: false, error: "demo_league" });
+    expect(await refreshLeagueRecords(db, "nope00", ana, ok)).toEqual({ ok: false, error: "not_found" });
   });
 });

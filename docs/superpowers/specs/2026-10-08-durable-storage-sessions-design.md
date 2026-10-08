@@ -1,6 +1,6 @@
 # Durable storage, invite links and sessions — design
 
-Date: 2026-10-08 · Status: approved in chat, pending written review
+Date: 2026-10-08 · Status: approved · Plan: `docs/superpowers/plans/2026-10-08-durable-storage-sessions.md`
 
 Courtline's prototype keeps leagues in server memory and identifies managers with an editable cookie
 (`courtline_seats = leagueId:managerId|…`). This design moves leagues into Postgres, replaces the cookie with an opaque
@@ -103,7 +103,7 @@ create unique index access_links_one_seat_link on access_links (league_id, manag
 
 create table sessions (
   id           uuid primary key default gen_random_uuid(),
-  token_hash   bytea not null unique,              -- sha256(cookie token); the token is never stored
+  token_hash   text not null unique,               -- hex sha256(cookie token); the token is never stored
   created_at   timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
   expires_at   timestamptz not null
@@ -163,7 +163,7 @@ them from `npm run db:migrate`, which runs in `vercel-build` before `next build`
     for a new one." No hint about which.
   - A browser that already holds a seat in the league goes straight to the league when it opens the league invite, or
     a seat invite or personal link for the seat it already holds.
-- **Claim** (`POST /api/links/claim { token, managerId?, displayName? }`), one `mutateLeague` transaction:
+- **Claim** (`POST /api/links/claim { token, managerId?, displayName? }`), one `withLockedLeague` transaction:
   - Before the transaction: verify the signature (no database read), then read the link row only to learn which league
     to lock. Neither this read nor anything the link page showed is trusted for the write.
   - After the league lock, re-read the link row and recheck it against the database clock (`now()`): it exists,
@@ -204,7 +204,7 @@ to hold that seat.
 
 ### Viewer resolution
 
-`getViewer()` reads the cookie, hashes the token, loads the unexpired session (deleting it if expired) and its seats,
+`getSession()` reads the cookie, hashes the token, loads the unexpired session (deleting it if expired) and its seats,
 and is wrapped in React `cache()` so a request does it once. `viewerId` for a league is the session's seat there, or
 `null`. The demo league always gets `null`. The old `courtline_seats` cookie is ignored and deleted the next time a
 route handler sets the session cookie.
@@ -218,14 +218,15 @@ the commissioner (league and seat invites) or the seat's own manager (personal l
 
 ## Atomic mutations
 
-Every league write goes through `mutateLeague(leagueId, sessionId, decide)` in the league repository:
+Every league write goes through `withLockedLeague(db, leagueId, sessionId, work)` in `src/db/leagues.ts`; the actions in
+`src/db/actions.ts` wrap it:
 
 1. `BEGIN`, then `SELECT … FROM leagues WHERE id = $1 FOR UPDATE`. Writers to one league run one at a time. Reads,
    including the 2-second draft poll, are not blocked.
 2. Recheck every credential **inside the transaction**, against the database clock:
    - The actor: this session's seat for the league from `session_seats`, joined to an unexpired `sessions` row. The
      result (a manager id or `null`) is the only actor `decide` sees. An actor id resolved before the lock (for
-     example by `getViewer()` while rendering) is never used for a write.
+     example by `getViewerId()` while rendering) is never used for a write.
    - For a claim, the link: re-read and recheck revocation, expiry and single use (see Claim).
 3. Load managers and picks into a `League`.
 4. Call `decide(league, actorId)`, a pure function from `src/lib/league/commands.ts` that returns the next `League`
@@ -237,7 +238,7 @@ Every league write goes through `mutateLeague(leagueId, sessionId, decide)` in t
    rolls back.
 
 Draft actions, claims, seat resets and personal-link resets all take this lock, so none of them can interleave. Every
-write to `access_links` and `session_seats` happens inside `mutateLeague`, so a check made after the lock sees every
+write to `access_links` and `session_seats` happens inside `withLockedLeague`, so a check made after the lock sees every
 revocation, rotation, reset and claim that committed before it. A seat
 reset or "sign out my other devices" deletes `session_seats` rows under the lock, so a request from a just-revoked
 browser that was already in flight finds no seat in step 2 and fails with `forbidden`.
@@ -272,6 +273,8 @@ browser that was already in flight finds no seat in step 2 and fails with `forbi
 - Components stop importing `TEAMS` / `TEAMS_BY_ID` and read `view.teams` (DraftRoom, AvailablePicks, DraftBoard,
   ManagerPicks, SelectionBar, SelectionPreview, LeagueOverview). `computeStandings(league, teams, basis)` already takes
   the lookup, so `scoring.ts` and `standings.ts` are untouched.
+- The draft room's note changes from "Lines lock when drafted." to "Lines lock when the draft starts." before the start
+  and "Lines locked when the draft started." after it.
 - Scoring still treats a margin of exactly 0 as a miss. Static lines all end in .5, so no push can occur in spec 1.
   Spec 2 must settle push scoring before accepting whole-number lines.
 
@@ -279,17 +282,17 @@ browser that was already in flight finds no seat in step 2 and fails with `forbi
 
 Production must never fall back to storage that doesn't persist.
 
-- A pure `validateServerEnv(env)` (`src/lib/env.ts`) returns the database choice or a list of problems:
+- A pure `readServerConfig(env)` (`src/lib/env.ts`) returns the database choice or a list of problems:
   - `DATABASE_URL` set to a `postgres://` / `postgresql://` URL: Postgres.
   - `DATABASE_URL=pglite:<path>`: PGlite at that path. This explicit opt-in is the only way to run a production build
     (`npm start`) on PGlite, for local testing.
   - Unset outside production: PGlite (`.data/pglite`, or in-memory under Vitest).
   - Unset in production (`NODE_ENV=production`): error "DATABASE_URL is required in production. Courtline will not
     start on non-persistent storage." `LINK_SECRET` missing in production is also an error.
-- `src/instrumentation.ts` `register()` calls it once per server instance. Next runs `register` before the server
-  handles any request, so a misconfigured production server fails at startup instead of serving requests on PGlite.
-  The check is skipped during `next build` (`NEXT_PHASE === "phase-production-build"`), so local builds don't need a
-  database.
+- `src/instrumentation.ts` `register()` calls it once per server instance, before the server handles any request. A
+  misconfigured production server never serves a page: Next logs the problem at startup and answers every request with
+  a 500 (verified on Next 16.4). Next 16.4 doesn't run `register` during `next build` (verified), so local builds need
+  no database; a `NEXT_PHASE === "phase-production-build"` guard keeps it that way.
 - `vercel-build` runs `db:migrate` first, which exits non-zero with the same message when `DATABASE_URL` is missing,
   so a Vercel deployment without a database fails before it goes live.
 - `src/db/client.ts` takes the validated choice; it never reads `DATABASE_URL` itself.
@@ -308,17 +311,19 @@ revoked, get `forbidden`. Existing errors keep their statuses. `already_joined` 
   `league/store.ts`), `league/permissions.ts` (+ seat permissions), `league/parse-action.ts` (+ `pickNumber`),
   `access/tokens.ts` (session token and hash, link sign and verify, via Web Crypto), `access/links.ts` (link validity
   rules), `lines.ts`. Delete `league/store.ts` and `league/seats-cookie.ts` with their tests.
-- `src/db/` (new): `schema.ts`, `client.ts` (`pg` when `DATABASE_URL` is set, else PGlite), `migrate.ts`, `leagues.ts`,
-  `links.ts`, `sessions.ts`, and a test helper that returns a fresh migrated in-memory PGlite. It does not import
-  `server-only`, so Vitest can load it; only `src/server/` imports it.
-- `src/server/`: `db.ts` (singleton on `globalThis`, replaces `store.ts`), `session.ts` (cookie and `getViewer`,
-  replaces `viewer.ts`), `league.ts` (demo short-circuit, then load or `notFound()`), `lines.ts` (static source),
-  `http.ts` (+ origin check, new statuses).
+- `src/db/` (new): `schema.ts`, `client.ts` (`pg` or PGlite; PGlite migrates on open), `leagues.ts` (including
+  `withLockedLeague`), `links.ts`, `sessions.ts`, `actions.ts` (every league mutation), and a test helper that returns
+  a fresh migrated in-memory PGlite. It does not import `server-only`, so Vitest can load it; only `src/server/` and
+  `src/app/` import it. `scripts/migrate.mjs` applies migrations to Postgres.
+- `src/server/`: `db.ts` (`getDb()`: singleton on `globalThis`, awaits `connection()` so no query runs during a
+  prerender; replaces `store.ts`), `session.ts` (cookie, `getSession`, `getViewerId`, `ensureSession`; replaces
+  `viewer.ts`), `league.ts` (demo short-circuit, then load or `notFound()`), `lines.ts` (static source), `access.ts`
+  (which links a viewer sees), `http.ts` (+ origin check, new statuses).
 - `src/app/`: `i/[token]/page.tsx`; `api/links/claim`; `api/leagues/[leagueId]/invite` (POST rotate, DELETE revoke);
   `api/leagues/[leagueId]/seats/[managerId]/reset`; `api/leagues/[leagueId]/me/link`; existing create and draft routes
   rewritten; settings page sections; join page becomes the notice.
-- `src/components/access/`: link claim form, seats-and-links panel, your-access panel. `InviteLink` takes a URL instead
-  of a league id.
+- `src/components/access/`: `CopyLink` (replaces `InviteLink`; takes a path), link claim form, seats-and-links panel,
+  your-access panel.
 - `next.config.ts`: `serverExternalPackages: ["@electric-sql/pglite"]` (Next externalizes `pg` already) and the `/i/*`
   referrer header.
 - Environment: `DATABASE_URL`, `LINK_SECRET`, validated by `src/lib/env.ts` from `src/instrumentation.ts`. `.data/` is
@@ -332,10 +337,10 @@ revoked, get `forbidden`. Existing errors keep their statuses. `already_joined` 
 - **Pure units, test-first**: commands (ported store tests, plus `stale_pick`, lines frozen at start,
   `lines_unavailable`, claim rules, seat reset, reclaiming a reset seat keeps its picks), the one-side-per-team rule in
   `applyDraftAction` (including the commissioner picking for an open seat), permissions, tokens (round trip, tampered
-  signature, wrong secret), link validity (revoked, used, expired), `validateServerEnv` (production without
+  signature, wrong secret), link validity (revoked, used, expired), `readServerConfig` (production without
   `DATABASE_URL` or `LINK_SECRET` fails, `pglite:` opt-in works, unset in dev picks PGlite), `withLines`,
   `parse-action`. A demo-data test pins that the demo draft obeys the one-side-per-team rule.
-- **Repositories against in-memory PGlite with migrations applied**: create league transaction, `mutateLeague` persists
+- **Repositories against in-memory PGlite with migrations applied**: create league transaction, `withLockedLeague` persists
   the diff and bumps `version`, the unique-constraint backstops map to `side_taken` / `team_already_held`, a seat
   invite can be claimed once, seat reset removes that seat's sessions, a mutation from a session whose seat was reset
   gets `forbidden` even though its viewer was resolved before the reset, a claim whose link was valid at the
@@ -345,39 +350,35 @@ revoked, get `forbidden`. Existing errors keep their statuses. `already_joined` 
   `TEST_DATABASE_URL` (real Postgres) and fires parallel confirms for the same pick, and parallel claims of the same
   seat invite: exactly one of each succeeds. Skipped when
   the variable is unset.
-- **End to end**: a two-cookie-jar API smoke run (create, copy invite, claim, start, pick, `stale_pick`, seat reset
-  signs the old browser out, revoked link shows the generic message), and browser checks of the link page, lobby and
-  settings at 375 px and 1440 px.
+- **End to end**: `scripts/smoke.sh`, a two-cookie-jar API smoke run (create, copy invite, claim, start, pick,
+  `stale_pick`, `team_already_held`, seat reset signs the old browser out, the rejoin link works once, a rotated or
+  forged link shows the generic message, the old seat cookie grants nothing), and browser checks of the link page,
+  lobby and settings at 375 px and 1440 px.
 - Before claiming done: `npm test && npm run lint && npm run typecheck && npm run build`.
 
 ## Implementation steps
 
-The app works after every step.
+The app works after every step. The planned spike (PGlite and `pg` under Turbopack, `register()` during builds) was
+done while writing the plan; its findings are recorded there.
 
-1. **Spike**: PGlite and `pg` under `next dev` and `next build` with Turbopack and `serverExternalPackages`. Throwaway
-   code; findings feed step 2.
-2. **Database foundation**: dependencies, schema, first migration, `validateServerEnv` and `instrumentation.ts`,
+1. **Database foundation**: dependencies, schema, first migration, `readServerConfig` and `instrumentation.ts`,
    client, PGlite test helper, `db:generate` / `db:migrate` scripts, `.gitignore`.
-3. **Lines refactor** (still on the in-memory store): `TeamInfo`, `static-lines.ts`, `LineSource`, `League.lines`,
+2. **Lines refactor** (still on the in-memory store): `TeamInfo`, `static-lines.ts`, `LineSource`, `League.lines`,
    `LeagueView.teams`, components off `TEAMS`.
-4. **Pure commands**: move store logic into `commands.ts`, then add `pickNumber` / `stale_pick`, the one-side-per-team
-   rule (with the draft room disabling the held team's other side), lines frozen at start, seat permissions and reset.
-5. **Access primitives**: tokens, link validity, `config/access.ts`.
-6. **Repositories**: leagues (`mutateLeague`), links, sessions, tested on PGlite.
-7. **Switch over**: server glue, create and draft routes, pages on the database and sessions. Delete the in-memory store
-   and the seat cookie.
-8. **Invite and claim**: `/i/[token]`, claim route, league invite in the lobby, commissioner link reminder, draft UI
-   sends `pickNumber` and handles `stale_pick`, join page notice.
-9. **Seat management**: Settings sections, rotate and revoke invite, seat reset with seat invite, personal link reset.
-10. **Operations and docs**: `vercel-build`, optional `test:pg`, README and CLAUDE.md ("State and identity", the
-    one-side-per-team domain rule, commands), full verification.
+3. **Pure rules and primitives**: `pickNumber` / `stale_pick`, the one-side-per-team rule (the draft room disables the
+   held team's other side), seat permissions, `DomainError` / `Result`, `commands.ts`, tokens, link rules,
+   `config/access.ts`.
+4. **Repositories and actions**: sessions, links, leagues (`withLockedLeague`), `actions.ts`, tested on PGlite; the
+   optional `test:pg` file.
+5. **Switch over**: server glue, create and draft routes, pages on the database and sessions. Delete the in-memory store,
+   the seat cookie and the public join flow.
+6. **Invite and claim**: `/i/[token]`, claim route, league invite and commissioner link reminder in the lobby.
+7. **Seat management**: Settings sections, rotate and revoke invite, seat reset with seat invite, personal link reset.
+8. **Operations and docs**: `vercel-build`, `scripts/smoke.sh`, README and CLAUDE.md, full verification.
 
 ## Risks
 
-- PGlite under Turbopack is unverified. Step 1 settles it. Fallback: local Postgres via Docker for dev, PGlite only in
-  Vitest.
-- Whether `register()` runs during `next build` (and that `NEXT_PHASE` identifies it) is unverified. Step 1 checks it.
 - `attachDatabasePool` with a client checked out mid-transaction is not documented. The `test:pg` run and a preview
-  deployment smoke test cover it.
+  deployment smoke test cover it. Neither could run while planning (no Postgres available).
 - A commissioner who loses both their cookie and personal link cannot recover the league. Accepted for now; the lobby
   warns them to save the link.

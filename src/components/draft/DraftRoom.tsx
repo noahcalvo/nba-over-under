@@ -7,7 +7,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
 import type { LeagueAccess } from "@/lib/access/links";
 
-import { currentPickNumber, findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
+import { currentPickNumber, findPickForSide, holdsTeam, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
@@ -31,15 +31,21 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
 
-  // A selection someone else drafts (seen via polling) stops being active and explains why.
+  // A selection stops being active, and says why, when someone else drafts that side (seen via polling) or when the
+  // manager now on the clock holds the team's other side (the list disables it for them too).
   const takenBy = selection ? findPickForSide(draft, selection.teamId, selection.side) : undefined;
-  const activeSelection = selection && !takenBy && draft.status === "live" ? selection : null;
-  const takenNotice =
-    selection && takenBy
-      ? `${teamsById[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
-          findManager(league.managers, takenBy.managerId)!,
-        )}. Pick another side.`
-      : null;
+  const onClock = findManager(league.managers, managerOnTheClock(draft));
+  const heldByOnClock =
+    draft.status === "live" && selection !== null && onClock !== undefined && holdsTeam(draft, onClock.id, selection.teamId);
+  const activeSelection = selection && !takenBy && !heldByOnClock && draft.status === "live" ? selection : null;
+  let notice: string | null = null;
+  if (selection && takenBy) {
+    notice = `${teamsById[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
+      findManager(league.managers, takenBy.managerId)!,
+    )}. Pick another side.`;
+  } else if (selection && heldByOnClock) {
+    notice = `${teamsById[selection.teamId].name} ${selection.side}: ${managerLabel(onClock)} has the other side. Pick another side.`;
+  }
 
   const turn = describeTurn(league, viewerId);
   const canPick = canPickNow(league, viewerId);
@@ -107,7 +113,7 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
               league={league}
               teams={teamsById}
               selection={activeSelection}
-              notice={takenNotice}
+              notice={notice}
               turn={turn}
               canPick={canPick}
               pending={pending}
@@ -130,13 +136,13 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
       <SelectionBar
         teams={teamsById}
         selection={activeSelection}
-        notice={takenNotice}
+        notice={notice}
         canPick={canPick}
         pending={pending}
         onConfirm={confirm}
         onClear={clear}
       />
-      {(activeSelection || takenNotice) && <div aria-hidden className="h-20 xl:hidden" />}
+      {(activeSelection || notice) && <div aria-hidden className="h-20 xl:hidden" />}
     </div>
   );
 }

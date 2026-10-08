@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #060d19;
+  --color-ink-900: #0a1424;
+  --color-ink-850: #0d1a2e;
+  --color-ink-800: #12223a;
+  --color-ink-700: #1b2d4a;
+  --color-ink-600: #2a3f62;
+  --color-fog-50: #f2f6fc;
+  --color-fog-300: #b4c2d8;
+  --color-fog-400: #8596b0;
+  --color-accent: #86f53c;
+  --color-accent-strong: #a4ff5c;
+  --color-accent-ink: #0b1a05;
+  --color-over: #86f53c;
+  --color-over-deep: #17320c;
+  --color-under: #9b6bff;
+  --color-under-deep: #2b1a5c;
+  --color-under-ink: #e2d8ff;
+  --color-positive: #86f53c;
+  --color-negative: #ff4d6d;
+  --color-link: #b39dff;
+  --color-seat-1: #2463d6;
+  --color-seat-2: #12a15b;
+  --color-seat-3: #1f8fe5;
+  --color-seat-4: #6b35c9;
+}
+
+@theme inline {
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-barlow), ui-sans-serif, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-fog-50);
+}

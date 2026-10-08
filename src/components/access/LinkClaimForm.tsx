@@ -39,7 +39,7 @@ export function LinkClaimForm({
   if (kind === "league_invite" && open.length === 0) {
     return (
       <div className="flex flex-col items-start gap-4">
-        <p className="text-fog-300">Every seat in {league.name} is taken.</p>
+        <p className="text-fog-300">This league is full. Every seat in {league.name} is taken.</p>
         <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
           View the league
         </Link>
@@ -57,7 +57,7 @@ export function LinkClaimForm({
       setPending(false);
       return;
     }
-    router.push(kind === "personal" ? `/l/${league.id}` : `/l/${league.id}/draft`);
+    router.push(`/l/${league.id}/draft`);
   }
 
   const errorMessage = error && (

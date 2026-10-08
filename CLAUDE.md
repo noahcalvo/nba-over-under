@@ -26,7 +26,8 @@ Next API.
 
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
-  11 rounds), `SEASON`, `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
+  11 rounds), `SEASON` (demo and mock data), `LINES` (book, drafted season, feed cache timings),
+  `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), environment checks (`env.ts`).
@@ -50,8 +51,12 @@ Next API.
 - Draft: snake order; each team's Over and Under are separate sides; 4 × 11 = 44 picks out of 60 sides.
 - A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick
   number is `stale_pick`.
-- Lines come from `lineSource` (`src/server/lines.ts`, static for now) and freeze into `League.lines` when the draft
-  starts. Components read teams with lines from `LeagueView.teams`, never from `src/data`.
+- Lines come from `lineSource` (`src/server/lines.ts`): FanDuel's public NBA JSON (one book, never mixed; unofficial
+  and keyless, so it can break), cached 5 min, failures retried after 30 s; `LINE_SOURCE=static` serves the mock
+  lines. Before the draft `LeagueView.lineReview` shows each team's book line plus the commissioner's overrides
+  (`PUT /api/leagues/{id}/lines`); the start request names the reviewed lines (`lines_changed` if they moved) and
+  freezes them into `League.lines` with `season` and the `manual` teams. Components read teams with lines from
+  `LeagueView.teams`, never from `src/data`.
 - Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
   league invite and resets seats.
 

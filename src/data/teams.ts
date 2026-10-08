@@ -38,3 +38,17 @@ export const TEAM_IDS: ReadonlySet<TeamId> = new Set(TEAM_INFO.map((team) => tea
 
 /** Every team has a separately draftable Over and Under. */
 export const TOTAL_SIDES = TEAM_INFO.length * 2;
+
+/**
+ * Our id for a team named by its nickname ("Trail Blazers") or a full name ending in one ("Los Angeles Clippers").
+ * Case-insensitive. Shared by every outside feed (ESPN records, FanDuel lines). Null when nothing matches.
+ */
+export function teamIdByNickname(name: string): TeamId | null {
+  const wanted = name.trim().toLowerCase();
+  if (wanted === "") return null;
+  const team = TEAM_INFO.find((candidate) => {
+    const nickname = candidate.name.toLowerCase();
+    return wanted === nickname || wanted.endsWith(` ${nickname}`);
+  });
+  return team?.id ?? null;
+}

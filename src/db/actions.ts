@@ -7,13 +7,14 @@ import {
   decideClaim,
   decideDraftAction,
   decideInviteChange,
+  decideLineOverrides,
   decideOwnLinkReset,
   decideSeatReset,
   randomLeagueId,
   type ClaimInput,
 } from "@/lib/league/commands";
 import { fail, succeed, type Result } from "@/lib/league/errors";
-import type { League, LineSet } from "@/lib/types";
+import type { League, LineSet, TeamId } from "@/lib/types";
 import type { Db } from "./client";
 import { insertLeague, saveLeague, withLockedLeague } from "./leagues";
 import { findLink, findLinkAt, issueLink, markSeatInviteUsed, revokeLinks } from "./links";
@@ -53,16 +54,33 @@ export interface DraftOutcome {
   actorId: string | null;
 }
 
-/** Start, pause, resume or confirm. Fetch `lines` before calling (no network calls while holding the lock). */
+/**
+ * Start, pause, resume or confirm. Fetch the source's lines before calling (no network calls while holding the lock);
+ * the decision adds the stored overrides.
+ */
 export function runDraftAction(
   db: Db,
   leagueId: string,
   sessionId: string | null,
   action: DraftAction,
-  lines: LineSet | null,
+  sourceLines: LineSet | null,
 ): Promise<Result<DraftOutcome>> {
   return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
-    const decided = decideDraftAction(league, actorId, action, TEAM_IDS, lines);
+    const decided = decideDraftAction(league, actorId, action, TEAM_IDS, sourceLines);
+    if (!decided.ok) return fail(decided.error);
+    return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
+  });
+}
+
+/** Replaces the commissioner's line overrides. Validate the values (parseLineValues) before calling. */
+export function setLineOverrides(
+  db: Db,
+  leagueId: string,
+  sessionId: string | null,
+  overrides: Readonly<Record<TeamId, number>>,
+): Promise<Result<DraftOutcome>> {
+  return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
+    const decided = decideLineOverrides(league, actorId, overrides);
     if (!decided.ok) return fail(decided.error);
     return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
   });

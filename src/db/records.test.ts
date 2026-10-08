@@ -95,6 +95,16 @@ describe("refreshSeasonRecords", () => {
     expect(second.calls).toBe(2);
   });
 
+  it("lets a late failure leave a newer success untouched", async () => {
+    await refreshSeasonRecords(db, SEASON, source({ BOS: { wins: 1, losses: 0 } }), { now: later(10) });
+    const outcome = await refreshSeasonRecords(db, SEASON, source(new FeedError("ESPN returned HTTP 503.")), {
+      now: T0,
+      force: true,
+    });
+    expect(outcome).toMatchObject({ ok: false, message: "ESPN returned HTTP 503." });
+    expect(await loadRefresh(db, SEASON)).toMatchObject({ error: null, succeededAt: later(10), attemptedAt: later(10) });
+  });
+
   it("refuses impossible records at the database", async () => {
     const outcome = await refreshSeasonRecords(db, SEASON, source({ BOS: { wins: 80, losses: 3 } }), { now: T0 });
     expect(outcome.ok).toBe(false);

@@ -97,7 +97,12 @@ export async function refreshSeasonRecords(
     await db
       .insert(recordRefreshes)
       .values({ season, source: source.name, attemptedAt: now, error: message })
-      .onConflictDoUpdate({ target: recordRefreshes.season, set: { attemptedAt: now, error: message } });
+      .onConflictDoUpdate({
+        target: recordRefreshes.season,
+        set: { attemptedAt: now, error: message },
+        // A late failure must not overwrite a newer attempt (or success).
+        setWhere: sql`${recordRefreshes.attemptedAt} <= excluded.attempted_at`,
+      });
     const refresh = await loadRefresh(db, season);
     if (!refresh) throw error;
     return { ok: false, refresh, message };

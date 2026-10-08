@@ -62,6 +62,8 @@ Next API.
   year) and team in `team_records`; every stored league in a season shares them. A refresh saves all 30 or nothing and
   never lets games played go down. The commissioner refreshes from the Overview; `/api/cron/refresh-records` runs daily
   at 10:00 UTC with `CRON_SECRET`. The demo league keeps its mock records in code. `prevWins` is still mock.
+  A refresh with `RECORD_SOURCE=static` stores mock records under the real season; games played may never go down, so
+  later ESPN refreshes of it then fail. Delete `.data/pglite` (or those `team_records` rows) after testing with it.
 - Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
   league invite and resets seats.
 

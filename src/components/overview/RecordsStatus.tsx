@@ -33,6 +33,7 @@ export function RecordsStatus({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
   const mounted = useMounted();
   // Format in the viewer's time zone only after mount, so the server render and first client render match.
   const updatedAt = status.asOf && mounted ? formatUpdatedAt(status.asOf) : "";
@@ -40,13 +41,14 @@ export function RecordsStatus({
   async function refresh() {
     setPending(true);
     setFailure(null);
+    setDismissed(false);
     const result = await sendJson(`/api/leagues/${leagueId}/records/refresh`, "POST");
     setPending(false);
     if (!result.ok) setFailure(result.message);
     router.refresh();
   }
 
-  const reason = failure ?? (canRefresh ? status.error : null);
+  const reason = dismissed ? null : (failure ?? (canRefresh ? status.error : null));
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-fog-400">
@@ -71,9 +73,14 @@ export function RecordsStatus({
         )}
       </div>
       {reason && (
-        <Alert onDismiss={failure ? () => setFailure(null) : undefined}>
+        <Alert
+          onDismiss={() => {
+            setFailure(null);
+            setDismissed(true);
+          }}
+        >
           Couldn&apos;t refresh records: {reason}{" "}
-          {status.asOf ? `Showing records from ${updatedAt}.` : "No records are loaded yet."}
+          {status.asOf ? (updatedAt ? `Showing records from ${updatedAt}.` : "") : "No records are loaded yet."}
         </Alert>
       )}
     </div>

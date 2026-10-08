@@ -119,7 +119,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
             />
             <p className="flex items-center gap-2 text-sm text-fog-400">
               <Info aria-hidden className="size-4 shrink-0" />
-              Lines lock when drafted.
+              {draft.status === "not_started" ? "Lines lock when the draft starts." : "Lines locked when the draft started."}
             </p>
           </Panel>
         </div>

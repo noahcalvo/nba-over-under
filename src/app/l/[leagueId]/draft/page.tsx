@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { DraftRoom } from "@/components/draft/DraftRoom";
 import { PageFallback } from "@/components/ui/PageFallback";
-import { getLeagueOrNotFound } from "@/server/league";
-import { toLeagueView } from "@/server/viewer";
+import { getLeagueOrNotFound, toLeagueView } from "@/server/league";
 
 export default function DraftPage({ params }: PageProps<"/l/[leagueId]/draft">) {
   return (
@@ -14,6 +13,5 @@ export default function DraftPage({ params }: PageProps<"/l/[leagueId]/draft">) 
 
 async function DraftContent({ params }: { params: PageProps<"/l/[leagueId]/draft">["params"] }) {
   const { leagueId } = await params;
-  const league = getLeagueOrNotFound(leagueId);
-  return <DraftRoom initial={await toLeagueView(league)} />;
+  return <DraftRoom initial={await toLeagueView(await getLeagueOrNotFound(leagueId))} />;
 }

@@ -1,28 +1,20 @@
-import { Suspense } from "react";
-import { JoinForm } from "@/components/join/JoinForm";
+import Link from "next/link";
 import { PageHeader } from "@/components/shell/PageHeader";
-import { PageFallback } from "@/components/ui/PageFallback";
+import { buttonClasses } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
-import { getLeagueOrNotFound } from "@/server/league";
-import { getViewerId } from "@/server/viewer";
 
-export default function JoinPage({ params }: PageProps<"/l/[leagueId]/join">) {
-  return (
-    <Suspense fallback={<PageFallback label="Loading league…" />}>
-      <JoinContent params={params} />
-    </Suspense>
-  );
-}
-
-async function JoinContent({ params }: { params: PageProps<"/l/[leagueId]/join">["params"] }) {
-  const { leagueId } = await params;
-  const league = getLeagueOrNotFound(leagueId);
-  const viewerId = await getViewerId(league);
+/** Old public join links land here. Joining now needs the league's private invite link. */
+export default function JoinPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <PageHeader title="Join league" subtitle={`${league.name} • ${league.seasonLabel}`} />
-      <Panel bodyClassName="p-4 sm:p-5">
-        <JoinForm league={league} viewerId={viewerId} />
+      <PageHeader title="Join league" subtitle="Invites are private" />
+      <Panel bodyClassName="flex flex-col items-start gap-4 p-4 sm:p-5">
+        <p className="text-fog-300">
+          Ask your commissioner for the league&apos;s invite link. It opens a page where you pick an open seat.
+        </p>
+        <Link href="/" className={buttonClasses("secondary")}>
+          All leagues
+        </Link>
       </Panel>
     </div>
   );

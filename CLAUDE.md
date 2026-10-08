@@ -55,14 +55,16 @@ Next API.
   league invite and resets seats.
 
 ## State and identity
-- Leagues live in Postgres (`DATABASE_URL`). Without it, outside production, PGlite at `.data/pglite` (delete the
-  folder to reset). Production refuses to start without `DATABASE_URL` and `LINK_SECRET` (`src/lib/env.ts`,
-  `src/instrumentation.ts`). The demo league (`/l/demo`) lives in code, never in the database, and is read-only.
+- Leagues live in Postgres (`DATABASE_URL`; `DATABASE_URL_UNPOOLED` is used for migrations when present). Without
+  `DATABASE_URL`, outside production, PGlite at `.data/pglite` (delete the folder to reset). Production refuses to
+  start without `DATABASE_URL` and `LINK_SECRET` (`src/lib/env.ts`, `src/instrumentation.ts`). The demo league
+  (`/l/demo`) lives in code, never in the database, and is read-only.
 - Every league write goes through `withLockedLeague` (`src/db/leagues.ts`): it locks the league row, re-reads the
   caller's seat and any link under the lock, then runs the pure decision. Never authorize a write with
   `getViewerId()`; it is for rendering.
 - Identity: cookie `courtline_session` holds a random token; the database stores only its SHA-256. A session holds one
-  seat per league (`session_seats`). No accounts.
+  seat per league (`session_seats`). No accounts. The old `courtline_seats` cookie grants nothing and is deleted the next
+  time a route handler sets the session cookie.
 - Links (`/i/{token}`, HMAC-signed with `LINK_SECRET`): one shared league invite (claims any open seat), a single-use
   seat invite (issued by a seat reset; the seat stays claimed), and a personal link per manager (signs in another
   browser). Opening a link never changes anything; only the claim POST does.

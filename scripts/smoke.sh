@@ -42,6 +42,7 @@ ANA_LINK=$(links | sed -n 2p)
   { echo "FAIL commissioner links missing"; FAILED=1; }
 
 call nobody GET "/l/$LEAGUE/draft"
+check "a spectator can open the draft room" 200 "Waiting for the commissioner to start the draft."
 [ -z "$(links)" ] && echo "PASS spectators see no links" || { echo "FAIL spectator sees links"; FAILED=1; }
 
 call ben GET "$INVITE"
@@ -95,7 +96,7 @@ call eve GET "$INVITE"
 check "the old invite stops working" 200 "This link no longer works"
 call eve GET "/i/AAAAAAAAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAA"
 check "a forged link gets the same message" 200 "This link no longer works"
-grep -qi "referrer-policy: no-referrer" <(curl -s -D - -o /dev/null "$BASE$INVITE") &&
+grep -qiE '^referrer-policy: no-referrer[[:space:]]*$' <(curl -s -D - -o /dev/null "$BASE$INVITE") &&
   echo "PASS link pages send no Referer" || { echo "FAIL Referrer-Policy header missing"; FAILED=1; }
 
 call ana GET /

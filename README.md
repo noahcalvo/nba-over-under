@@ -16,7 +16,7 @@ Locally the app stores leagues in PGlite (Postgres in WebAssembly) under `.data/
 ## Deploying to Vercel
 
 1. Add Neon Postgres from the Vercel Marketplace. It sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED`; enable a database branch per preview deployment.
-2. Set `LINK_SECRET` to at least 32 random characters, e.g. `openssl rand -base64 48`. Changing it invalidates every invite and sign-in link (not sessions).
+2. Set `LINK_SECRET` to at least 32 random characters, e.g. `openssl rand -base64 48`, for both Production and Preview, using a different value for each: Neon preview branches copy the link table, so a shared secret would make production links work against preview data. Changing it invalidates every invite and sign-in link (not sessions).
 3. Deploy. `vercel-build` runs `npm run db:migrate` (over the unpooled URL) before `next build`, so a deployment without a database fails instead of going live.
 
 A production server started without `DATABASE_URL` or `LINK_SECRET` refuses to serve: every request returns 500 and the log names what is missing. To try a production build locally, run `DATABASE_URL=pglite:.data/prod LINK_SECRET=$(openssl rand -base64 48) npm start`.

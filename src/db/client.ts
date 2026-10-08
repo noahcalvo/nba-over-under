@@ -19,7 +19,8 @@ export const MIGRATIONS_FOLDER = path.join(process.cwd(), "drizzle");
 /** Postgres for deployments; PGlite (in-process, migrated on open) for development and tests. */
 export async function openDatabase(config: DatabaseConfig): Promise<Db> {
   if (config.kind === "postgres") {
-    const pool = new Pool({ connectionString: config.url, max: 5 });
+    // Fail fast when the database is unreachable instead of hanging until the function times out.
+    const pool = new Pool({ connectionString: config.url, max: 5, connectionTimeoutMillis: 10_000 });
     // pg re-emits errors from idle clients on the pool; without a listener they would crash the process.
     pool.on("error", (error) => console.error("Postgres pool error", error));
     // On Vercel Fluid compute this closes idle clients before the instance suspends. Elsewhere it does nothing.

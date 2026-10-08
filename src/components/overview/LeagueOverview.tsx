@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
-
 import { findManager } from "@/lib/league/managers";
 import { indexTeams } from "@/lib/lines";
 import type { Basis } from "@/lib/scoring";

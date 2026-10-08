@@ -34,22 +34,33 @@ export function AvailablePicks({
   const teams = filterTeams(allTeams, draft, filters);
   // A manager may hold one side per team: block the other side of teams the manager on the clock already has.
   const onClock = findManager(managers, managerOnTheClock(draft));
-  const button = (team: Team, side: Side) => (
-    <SideButton
-      team={team}
-      side={side}
-      pick={findPickForSide(draft, team.id, side)}
-      selected={selection?.teamId === team.id && selection.side === side}
-      managers={managers}
-      disabled={!selectable}
-      blockedNote={
-        selectable && onClock && holdsTeam(draft, onClock.id, team.id)
-          ? `${managerLabel(onClock)} has the other side`
-          : undefined
-      }
-      onSelect={onSelect}
-    />
-  );
+  const blockedNote = (team: Team) =>
+    selectable && onClock && holdsTeam(draft, onClock.id, team.id) ? `${managerLabel(onClock)} has the other side` : undefined;
+  const button = (team: Team, side: Side, noteId: string) => {
+    const reason = blockedNote(team);
+    return (
+      <SideButton
+        team={team}
+        side={side}
+        pick={findPickForSide(draft, team.id, side)}
+        selected={selection?.teamId === team.id && selection.side === side}
+        managers={managers}
+        disabled={!selectable}
+        blockedNote={reason}
+        describedBy={reason ? noteId : undefined}
+        onSelect={onSelect}
+      />
+    );
+  };
+  // Shown once per layout, and only while a side is left to explain (a drafted side renders as a label, not a button).
+  const note = (team: Team, id: string, className: string) => {
+    const reason = blockedNote(team);
+    return reason && SIDES.some((side) => !findPickForSide(draft, team.id, side)) ? (
+      <p id={id} className={`text-xs text-fog-400 ${className}`}>
+        {reason}
+      </p>
+    ) : null;
+  };
 
   return (
     <Panel
@@ -105,15 +116,18 @@ export function AvailablePicks({
               <td className="px-5 py-2.5">
                 <div className="flex items-center gap-3">
                   <TeamLogo team={team} size={32} />
-                  <span className="font-medium">
-                    {team.city} {team.name}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="font-medium">
+                      {team.city} {team.name}
+                    </span>
+                    {note(team, `blocked-row-${team.id}`, "mt-0.5")}
+                  </div>
                 </div>
               </td>
               <td className="px-3 py-2.5 text-right text-base font-semibold tabular-nums">{formatNumber(team.line)}</td>
               {SIDES.map((side) => (
                 <td key={side} className="px-3 py-2.5">
-                  {button(team, side)}
+                  {button(team, side, `blocked-row-${team.id}`)}
                 </td>
               ))}
             </tr>
@@ -133,9 +147,10 @@ export function AvailablePicks({
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {SIDES.map((side) => (
-                <div key={side}>{button(team, side)}</div>
+                <div key={side}>{button(team, side, `blocked-card-${team.id}`)}</div>
               ))}
             </div>
+            {note(team, `blocked-card-${team.id}`, "mt-2")}
           </li>
         ))}
       </ul>

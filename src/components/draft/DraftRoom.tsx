@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
 import type { LeagueAccess } from "@/lib/access/links";
-
 import { currentPickNumber, findPickForSide, holdsTeam, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { findManager, managerLabel } from "@/lib/league/managers";

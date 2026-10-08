@@ -6,7 +6,6 @@ import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-
 import { currentPickNumber, draftTotalPicks, pickNumberFor } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";

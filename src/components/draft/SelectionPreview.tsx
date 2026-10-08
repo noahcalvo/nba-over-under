@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { SEASON } from "@/config/league";
-
 import { currentPickNumber } from "@/lib/draft";
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";

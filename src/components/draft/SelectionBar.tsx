@@ -1,7 +1,6 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
 import type { TeamLookup } from "@/lib/standings";

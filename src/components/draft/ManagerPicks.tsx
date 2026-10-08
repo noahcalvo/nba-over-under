@@ -1,6 +1,5 @@
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-
 import { picksForManager } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";

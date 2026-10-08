@@ -33,7 +33,8 @@ Next API.
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
   mock lines) and `demo-league.ts`. Never add per-page fixtures.
 - `src/db/` — Drizzle schema, repositories and `actions.ts` (every league mutation). No `server-only`, so Vitest can
-  load it; only `src/server/` imports it. Migrations live in `drizzle/`.
+  load it; only `src/server/` and `src/app/` (the route handlers) import it, never components. Migrations live in
+  `drizzle/`.
 - `src/server/` — server-only glue (`import "server-only"`): database singleton, session cookie, league loading, links,
   line source, HTTP helpers.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
@@ -56,8 +57,9 @@ Next API.
 
 ## State and identity
 - Leagues live in Postgres (`DATABASE_URL`; `DATABASE_URL_UNPOOLED` is used for migrations when present). Without
-  `DATABASE_URL`, outside production, PGlite at `.data/pglite` (delete the folder to reset). Production refuses to
-  start without `DATABASE_URL` and `LINK_SECRET` (`src/lib/env.ts`, `src/instrumentation.ts`). The demo league
+  `DATABASE_URL`, outside production, PGlite at `.data/pglite` (delete the folder to reset). A production server
+  without `DATABASE_URL` or `LINK_SECRET` still boots, but `register()` (`src/instrumentation.ts`, checks in
+  `src/lib/env.ts`) logs what is missing and every request returns 500. The demo league
   (`/l/demo`) lives in code, never in the database, and is read-only.
 - Every league write goes through `withLockedLeague` (`src/db/leagues.ts`): it locks the league row, re-reads the
   caller's seat and any link under the lock, then runs the pure decision. Never authorize a write with

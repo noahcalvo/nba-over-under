@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { alt as ogImageAlt, size as ogImageSize } from "@/app/opengraph-image";
 import { LinkClaimForm } from "@/components/access/LinkClaimForm";
 import { Logo } from "@/components/shell/Logo";
 import { buttonClasses } from "@/components/ui/Button";
@@ -8,6 +10,7 @@ import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
 import { linkStatus, type LinkKind } from "@/lib/access/links";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
+import { managerLabel } from "@/lib/league/managers";
 import { readLinkToken } from "@/server/access";
 import { findLeague } from "@/server/league";
 import { getViewerId } from "@/server/session";
@@ -17,6 +20,24 @@ const TITLES: Record<LinkKind, string> = {
   seat_invite: "Rejoin your seat",
   personal: "Sign in",
 };
+
+// The link preview chat apps show. Like the page, reading the link here changes nothing.
+export async function generateMetadata({ params }: PageProps<"/i/[token]">): Promise<Metadata> {
+  const { token } = await params;
+  const link = await readLinkToken(token);
+  const league = link && linkStatus(link, new Date()) === "active" ? await findLeague(link.leagueId) : null;
+  if (!link || !league) return { title: "Courtline" };
+
+  const seat = league.managers.find((manager) => manager.id === link.managerId);
+  const title =
+    link.kind === "league_invite" || !seat
+      ? `Join ${league.name} — NBA over/under pick'em`
+      : `Sign in as ${managerLabel(seat)}`;
+  const description = `${league.name} • ${league.seasonLabel}. Draft Overs and Unders on every NBA win total.`;
+  // A page's openGraph replaces the root's, so name the site-wide card again.
+  const images = [{ url: "/opengraph-image", alt: ogImageAlt, ...ogImageSize }];
+  return { title, description, openGraph: { title, description, siteName: "Courtline", images } };
+}
 
 export default function LinkPage({ params }: PageProps<"/i/[token]">) {
   return (

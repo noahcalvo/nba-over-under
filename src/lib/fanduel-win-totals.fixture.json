@@ -1,0 +1,1690 @@
+{
+ "attachments": {
+  "markets": {
+   "734.173810280": {
+    "marketId": "734.173810280",
+    "marketName": "26-27 NBA Cleveland Cavaliers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921397,
+      "runnerName": "Cleveland Cavaliers Over 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99920987,
+      "runnerName": "Cleveland Cavaliers Under 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810270": {
+    "marketId": "734.173810270",
+    "marketName": "26-27 NBA New Orleans Pelicans Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922989,
+      "runnerName": "New Orleans Pelicans Over 28.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99923234,
+      "runnerName": "New Orleans Pelicans Under 28.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810272": {
+    "marketId": "734.173810272",
+    "marketName": "26-27 NBA Golden State Warriors Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922492,
+      "runnerName": "Golden State Warriors Over 36.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922787,
+      "runnerName": "Golden State Warriors Under 36.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810271": {
+    "marketId": "734.173810271",
+    "marketName": "26-27 NBA Detroit Pistons Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99923063,
+      "runnerName": "Detroit Pistons Over 47.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921037,
+      "runnerName": "Detroit Pistons Under 47.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810274": {
+    "marketId": "734.173810274",
+    "marketName": "26-27 NBA Indiana Pacers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922436,
+      "runnerName": "Indiana Pacers Over 44.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921970,
+      "runnerName": "Indiana Pacers Under 44.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810273": {
+    "marketId": "734.173810273",
+    "marketName": "26-27 NBA Milwaukee Bucks Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922541,
+      "runnerName": "Milwaukee Bucks Over 25.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922588,
+      "runnerName": "Milwaukee Bucks Under 25.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810276": {
+    "marketId": "734.173810276",
+    "marketName": "26-27 NBA Oklahoma City Thunder Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921923,
+      "runnerName": "Oklahoma City Thunder Over 61.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921063,
+      "runnerName": "Oklahoma City Thunder Under 61.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810275": {
+    "marketId": "734.173810275",
+    "marketName": "26-27 NBA Sacramento Kings Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921452,
+      "runnerName": "Sacramento Kings Over 20.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921720,
+      "runnerName": "Sacramento Kings Under 20.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810278": {
+    "marketId": "734.173810278",
+    "marketName": "26-27 NBA Minnesota Timberwolves Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922901,
+      "runnerName": "Minnesota Timberwolves Over 47.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 100,
+        "americanOddsInt": 100
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 100
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922390,
+      "runnerName": "Minnesota Timberwolves Under 47.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810277": {
+    "marketId": "734.173810277",
+    "marketName": "26-27 NBA Brooklyn Nets Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922224,
+      "runnerName": "Brooklyn Nets Over 24.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99923143,
+      "runnerName": "Brooklyn Nets Under 24.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810279": {
+    "marketId": "734.173810279",
+    "marketName": "26-27 NBA Charlotte Hornets Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921546,
+      "runnerName": "Charlotte Hornets Over 37.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922351,
+      "runnerName": "Charlotte Hornets Under 37.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 100,
+        "americanOddsInt": 100
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 100
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810261": {
+    "marketId": "734.173810261",
+    "marketName": "26-27 NBA San Antonio Spurs Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922892,
+      "runnerName": "San Antonio Spurs Over 60.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921743,
+      "runnerName": "San Antonio Spurs Under 60.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810260": {
+    "marketId": "734.173810260",
+    "marketName": "26-27 NBA Los Angeles Clippers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922249,
+      "runnerName": "Los Angeles Clippers Over 27.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922230,
+      "runnerName": "Los Angeles Clippers Under 27.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 100,
+        "americanOddsInt": 100
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 100
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810263": {
+    "marketId": "734.173810263",
+    "marketName": "26-27 NBA Toronto Raptors Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99923071,
+      "runnerName": "Toronto Raptors Over 46.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922097,
+      "runnerName": "Toronto Raptors Under 46.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810262": {
+    "marketId": "734.173810262",
+    "marketName": "26-27 NBA Boston Celtics Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921738,
+      "runnerName": "Boston Celtics Over 50.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922289,
+      "runnerName": "Boston Celtics Under 50.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810265": {
+    "marketId": "734.173810265",
+    "marketName": "26-27 NBA Houston Rockets Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921062,
+      "runnerName": "Houston Rockets Over 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 100,
+        "americanOddsInt": 100
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 100
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922210,
+      "runnerName": "Houston Rockets Under 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810264": {
+    "marketId": "734.173810264",
+    "marketName": "26-27 NBA Dallas Mavericks Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99920988,
+      "runnerName": "Dallas Mavericks Over 33.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921041,
+      "runnerName": "Dallas Mavericks Under 33.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810267": {
+    "marketId": "734.173810267",
+    "marketName": "26-27 NBA New York Knicks Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921953,
+      "runnerName": "New York Knicks Over 51.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99923106,
+      "runnerName": "New York Knicks Under 51.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810266": {
+    "marketId": "734.173810266",
+    "marketName": "26-27 NBA Chicago Bulls Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921969,
+      "runnerName": "Chicago Bulls Over 29.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922202,
+      "runnerName": "Chicago Bulls Under 29.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810269": {
+    "marketId": "734.173810269",
+    "marketName": "26-27 NBA Utah Jazz Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921134,
+      "runnerName": "Utah Jazz Over 37.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922231,
+      "runnerName": "Utah Jazz Under 37.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810268": {
+    "marketId": "734.173810268",
+    "marketName": "26-27 NBA Los Angeles Lakers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922299,
+      "runnerName": "Los Angeles Lakers Over 45.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99920905,
+      "runnerName": "Los Angeles Lakers Under 45.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810252": {
+    "marketId": "734.173810252",
+    "marketName": "26-27 NBA Orlando Magic Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99921247,
+      "runnerName": "Orlando Magic Over 43.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99920847,
+      "runnerName": "Orlando Magic Under 43.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810251": {
+    "marketId": "734.173810251",
+    "marketName": "26-27 NBA Atlanta Hawks Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922450,
+      "runnerName": "Atlanta Hawks Over 43.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922433,
+      "runnerName": "Atlanta Hawks Under 43.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810254": {
+    "marketId": "734.173810254",
+    "marketName": "26-27 NBA Phoenix Suns Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922566,
+      "runnerName": "Phoenix Suns Over 38.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922262,
+      "runnerName": "Phoenix Suns Under 38.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810253": {
+    "marketId": "734.173810253",
+    "marketName": "26-27 NBA Washington Wizards Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922016,
+      "runnerName": "Washington Wizards Over 34.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -110,
+        "americanOddsInt": -110
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.909090909090909
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 110
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921701,
+      "runnerName": "Washington Wizards Under 34.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -115,
+        "americanOddsInt": -115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.869565217391304
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 115
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810256": {
+    "marketId": "734.173810256",
+    "marketName": "26-27 NBA Philadelphia 76ers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922996,
+      "runnerName": "Philadelphia 76ers Over 49.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922000,
+      "runnerName": "Philadelphia 76ers Under 49.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810255": {
+    "marketId": "734.173810255",
+    "marketName": "26-27 NBA Memphis Grizzlies Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922425,
+      "runnerName": "Memphis Grizzlies Over 29.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921680,
+      "runnerName": "Memphis Grizzlies Under 29.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 100,
+        "americanOddsInt": 100
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 100
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810258": {
+    "marketId": "734.173810258",
+    "marketName": "26-27 NBA Portland Trail Blazers Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922308,
+      "runnerName": "Portland Trail Blazers Over 41.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922250,
+      "runnerName": "Portland Trail Blazers Under 41.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810257": {
+    "marketId": "734.173810257",
+    "marketName": "26-27 NBA Miami Heat Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922928,
+      "runnerName": "Miami Heat Over 46.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99921474,
+      "runnerName": "Miami Heat Under 46.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -120,
+        "americanOddsInt": -120
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.833333333333333
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 120
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.173810259": {
+    "marketId": "734.173810259",
+    "marketName": "26-27 NBA Denver Nuggets Regular Season Wins",
+    "marketType": "NBA_REGULAR_SEASON_WINS_O/U",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 99922181,
+      "runnerName": "Denver Nuggets Over 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -105,
+        "americanOddsInt": -105
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.952380952380952
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 105
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 99922386,
+      "runnerName": "Denver Nuggets Under 48.5 Wins",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -125,
+        "americanOddsInt": -125
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.8
+        },
+        "fractionalOdds": {
+         "numerator": 100,
+         "denominator": 125
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.183289893": {
+    "marketId": "734.183289893",
+    "marketName": "26-27 NBA Boston Celtics To Have More Regular Season Wins Than",
+    "marketType": "NBA_RSW_H2H_MATCHUPS",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 6023845,
+      "runnerName": "Los Angeles Clippers",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -7000,
+        "americanOddsInt": -7000
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.014285714285714
+        },
+        "fractionalOdds": {
+         "numerator": 10,
+         "denominator": 700
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 7379341,
+      "runnerName": "New Orleans Pelicans",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -7000,
+        "americanOddsInt": -7000
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.014285714285714
+        },
+        "fractionalOdds": {
+         "numerator": 10,
+         "denominator": 700
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 237494,
+      "runnerName": "Chicago Bulls",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -5000,
+        "americanOddsInt": -5000
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.02
+        },
+        "fractionalOdds": {
+         "numerator": 10,
+         "denominator": 500
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 237491,
+      "runnerName": "Memphis Grizzlies",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": -4000,
+        "americanOddsInt": -4000
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 1.025
+        },
+        "fractionalOdds": {
+         "numerator": 10,
+         "denominator": 400
+        }
+       }
+      }
+     }
+    ]
+   },
+   "734.178943492": {
+    "marketId": "734.178943492",
+    "marketName": "26-27 NBA Most Regular Season Wins",
+    "marketType": "NBA_MOST_REGULAR_SEASON_WINS",
+    "marketStatus": "OPEN",
+    "runners": [
+     {
+      "selectionId": 3319741,
+      "runnerName": "Oklahoma City Thunder",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 115,
+        "americanOddsInt": 115
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2.15
+        },
+        "fractionalOdds": {
+         "numerator": 115,
+         "denominator": 100
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 237471,
+      "runnerName": "San Antonio Spurs",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 170,
+        "americanOddsInt": 170
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 2.7
+        },
+        "fractionalOdds": {
+         "numerator": 170,
+         "denominator": 100
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 237482,
+      "runnerName": "New York Knicks",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 1500,
+        "americanOddsInt": 1500
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 16
+        },
+        "fractionalOdds": {
+         "numerator": 15,
+         "denominator": 1
+        }
+       }
+      }
+     },
+     {
+      "selectionId": 60427,
+      "runnerName": "Boston Celtics",
+      "handicap": 0,
+      "runnerStatus": "ACTIVE",
+      "winRunnerOdds": {
+       "americanDisplayOdds": {
+        "americanOdds": 1700,
+        "americanOddsInt": 1700
+       },
+       "trueOdds": {
+        "decimalOdds": {
+         "decimalOdds": 18
+        },
+        "fractionalOdds": {
+         "numerator": 17,
+         "denominator": 1
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

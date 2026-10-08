@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
+import type { LeagueAccess } from "@/lib/access/links";
 
 import { currentPickNumber, findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
@@ -22,7 +23,7 @@ import { SelectionBar } from "./SelectionBar";
 import { SelectionPreview } from "./SelectionPreview";
 import { useLeagueDraft } from "./use-league-draft";
 
-export function DraftRoom({ initial }: { initial: LeagueView }) {
+export function DraftRoom({ initial, access }: { initial: LeagueView; access: LeagueAccess }) {
   const { view, error, pending, dispatch, dismissError } = useLeagueDraft(initial);
   const { league, viewerId } = view;
   const { draft } = league;
@@ -71,6 +72,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
       {draft.status === "not_started" ? (
         <DraftLobby
           league={league}
+          access={access}
           viewerId={viewerId}
           canControl={canControl}
           pending={pending}
@@ -79,6 +81,7 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
       ) : (
         <DraftStatusBar
           league={league}
+          invitePath={access.invitePath}
           turn={turn}
           canControl={canControl}
           pending={pending}

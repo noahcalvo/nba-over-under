@@ -7,10 +7,11 @@ import { currentPickNumber, draftTotalPicks, managerUpNext, roundOf } from "@/li
 import { findManager, managerLabel, openSeats } from "@/lib/league/managers";
 import type { TurnSummary } from "@/lib/league/turn";
 import type { League, Manager } from "@/lib/types";
-import { InviteLink } from "./InviteLink";
+import { CopyLink } from "@/components/access/CopyLink";
 
 export function DraftStatusBar({
   league,
+  invitePath,
   turn,
   canControl,
   pending,
@@ -18,6 +19,8 @@ export function DraftStatusBar({
   onResume,
 }: {
   league: League;
+  /** Commissioner only. */
+  invitePath: string | null;
   turn: TurnSummary;
   canControl: boolean;
   pending: boolean;
@@ -65,8 +68,8 @@ export function DraftStatusBar({
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        {canControl && turn.kind !== "complete" && openSeats(managers).length > 0 && (
-          <InviteLink leagueId={league.id} compact />
+        {invitePath && turn.kind !== "complete" && openSeats(managers).length > 0 && (
+          <CopyLink path={invitePath} label="Invite link" compact />
         )}
         {turn.kind === "complete" ? (
           <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>

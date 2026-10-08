@@ -1,20 +1,23 @@
 import { Users } from "lucide-react";
+import { CopyLink } from "@/components/access/CopyLink";
 import { Button } from "@/components/ui/Button";
 import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { draftTotalPicks } from "@/lib/draft";
 import { managerLabel, openSeats } from "@/lib/league/managers";
+import type { LeagueAccess } from "@/lib/access/links";
 import type { League } from "@/lib/types";
-import { InviteLink } from "./InviteLink";
 
 export function DraftLobby({
   league,
+  access,
   viewerId,
   canControl,
   pending,
   onStart,
 }: {
   league: League;
+  access: LeagueAccess;
   viewerId: string | null;
   canControl: boolean;
   pending: boolean;
@@ -50,7 +53,20 @@ export function DraftLobby({
           </li>
         ))}
       </ul>
-      {openSeats(league.managers).length > 0 && <InviteLink leagueId={league.id} />}
+      {access.invitePath && openSeats(league.managers).length > 0 && (
+        <CopyLink
+          path={access.invitePath}
+          label="League invite link"
+          description="Send this to the group. Anyone with it can claim an open seat. Manage it in League settings."
+        />
+      )}
+      {canControl && access.personalPath && (
+        <CopyLink
+          path={access.personalPath}
+          label="Your sign-in link"
+          description="Save this somewhere safe. It's the only way back into the commissioner seat if you switch devices or clear cookies."
+        />
+      )}
       <p className="text-sm text-fog-400">Open seats are drafted by the commissioner until someone claims them.</p>
       {canControl ? (
         <Button size="lg" onClick={onStart} disabled={pending} className="self-start">

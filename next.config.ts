@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "cdn.nba.com", pathname: "/logos/nba/**" }],
   },
+  // Link pages carry a secret token in the URL: never send it to another site in a Referer header.
+  async headers() {
+    return [{ source: "/i/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] }];
+  },
   turbopack: {
     rules: {
       "*.css": {

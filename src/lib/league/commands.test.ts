@@ -5,6 +5,7 @@ import {
   decideClaim,
   decideDraftAction,
   decideInviteChange,
+  decideLineOverrides,
   decideOwnLinkReset,
   decideSeatReset,
   type ClaimInput,
@@ -53,6 +54,7 @@ describe("createLeague", () => {
       commissionerId: "m1",
       version: 1,
       fades: [],
+      seasonLabel: "2026–27",
       lineOverrides: {},
       lines: null,
       draft: { status: "not_started", rounds: 11, seatOrder: ["m1", "m2", "m3", "m4"], picks: [] },
@@ -129,7 +131,7 @@ describe("decideDraftAction", () => {
 
   it("freezes complete lines into the league when the draft starts", () => {
     const league = newLeague();
-    expect(must(act(league, "m1", { type: "start" })).lines).toBe(LINES);
+    expect(must(act(league, "m1", { type: "start" })).lines).toEqual(LINES);
     const missing = { ...LINES, values: { MIN: 49.5, OKC: 62.5 } };
     for (const lines of [null, missing]) {
       expect(decideDraftAction(league, "m1", { type: "start" }, TEAM_IDS, lines)).toEqual({
@@ -142,7 +144,44 @@ describe("decideDraftAction", () => {
   it("keeps the frozen lines on later actions", () => {
     let league = must(act(newLeague(), "m1", { type: "start" }));
     league = must(decideDraftAction(league, "m1", { type: "pause" }, TEAM_IDS, null));
-    expect(league.lines).toBe(LINES);
+    expect(league.lines).toEqual(LINES);
+  });
+
+  it("fills and replaces source lines with the commissioner's overrides at start", () => {
+    const partial = { ...LINES, values: { MIN: 49.5, OKC: 62.5 } };
+    let league = must(decideLineOverrides(newLeague(), "m1", { BOS: 40.5, MIN: 50.5 }));
+    league = must(decideDraftAction(league, "m1", { type: "start" }, TEAM_IDS, partial));
+    expect(league.lines).toEqual({ ...LINES, values: { MIN: 50.5, OKC: 62.5, BOS: 40.5 }, manual: ["BOS", "MIN"] });
+  });
+
+  it("fails with lines_changed when the reviewed lines no longer match", () => {
+    const league = newLeague();
+    const reviewed = { MIN: 49.5, OKC: 62.5, BOS: 41.5 };
+    expect(must(act(league, "m1", { type: "start", lines: reviewed })).lines).toEqual(LINES);
+    expect(act(league, "m1", { type: "start", lines: { ...reviewed, BOS: 42.5 } })).toEqual({
+      ok: false,
+      error: "lines_changed",
+    });
+  });
+
+  it("starts from hand-entered lines alone when the source is down", () => {
+    const league = must(decideLineOverrides(newLeague(), "m1", { MIN: 49.5, OKC: 62.5, BOS: 41.5 }));
+    const now = new Date("2026-10-08T19:42:00.000Z");
+    expect(must(decideDraftAction(league, "m1", { type: "start" }, TEAM_IDS, null, now)).lines).toEqual({
+      values: { MIN: 49.5, OKC: 62.5, BOS: 41.5 },
+      source: "Commissioner",
+      season: "2026–27",
+      asOf: now.toISOString(),
+      manual: ["BOS", "MIN", "OKC"],
+    });
+  });
+
+  it("lets only the commissioner set overrides, and only before the draft", () => {
+    const league = join(newLeague(), "m2", "Ben");
+    expect(decideLineOverrides(league, "m2", {})).toEqual({ ok: false, error: "forbidden" });
+    expect(decideLineOverrides(league, null, {})).toEqual({ ok: false, error: "forbidden" });
+    const started = must(act(league, "m1", { type: "start" }));
+    expect(decideLineOverrides(started, "m1", {})).toEqual({ ok: false, error: "lines_locked" });
   });
 
   it("enforces turns, open-seat picking, side availability and one side per team", () => {

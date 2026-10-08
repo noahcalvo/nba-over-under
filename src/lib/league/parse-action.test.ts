@@ -8,6 +8,14 @@ describe("parseDraftAction", () => {
     expect(parseDraftAction({ type: "resume" })).toEqual({ type: "resume" });
   });
 
+  it("accepts a start with reviewed lines, and a plain start without them", () => {
+    expect(parseDraftAction({ type: "start", lines: { BOS: 50.5 } })).toEqual({ type: "start", lines: { BOS: 50.5 } });
+    expect(parseDraftAction({ type: "start" })).toEqual({ type: "start" });
+    expect(parseDraftAction({ type: "start", lines: "x" })).toBeNull();
+    expect(parseDraftAction({ type: "start", lines: [1] })).toBeNull();
+    expect(parseDraftAction({ type: "start", lines: { BOS: "50.5" } })).toBeNull();
+  });
+
   it("accepts a confirm with a team, side and pick number, dropping extra fields", () => {
     expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "OVER", pickNumber: 3, extra: 1 })).toEqual({
       type: "confirm",

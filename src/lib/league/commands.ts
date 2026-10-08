@@ -1,10 +1,12 @@
-import { LEAGUE_DEFAULTS, SEASON } from "@/config/league";
+import { LINES } from "@/config/lines";
+import { LEAGUE_DEFAULTS } from "@/config/league";
+import { TEAM_INFO } from "@/data/teams";
 import type { LinkKind } from "@/lib/access/links";
 import { applyDraftAction, createDraftState, currentPickNumber, type DraftAction } from "@/lib/draft";
 import { fail, succeed, type Result } from "@/lib/league/errors";
 import { findManager } from "@/lib/league/managers";
 import { canControlDraft, canManageSeats, canPickNow, canResetSeat } from "@/lib/league/permissions";
-import { isCompleteLineSet } from "@/lib/lines";
+import { buildLineReview, freezeLines, sameLineValues } from "@/lib/lines";
 import type { League, LineSet, Manager, TeamId } from "@/lib/types";
 
 // Pure decisions for every league mutation. src/db/actions.ts runs them inside a transaction that holds the league
@@ -47,7 +49,7 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
   return succeed({
     id,
     name: title,
-    seasonLabel: SEASON.label,
+    seasonLabel: LINES.season,
     isDemo: false,
     commissionerId: seatOrder[0],
     version: 1,
@@ -61,14 +63,16 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
 
 /**
  * Start, pause and resume belong to the commissioner; a confirm belongs to the manager on the clock (or the
- * commissioner for an open seat) and must name the current pick. Start freezes `lines` into the league.
+ * commissioner for an open seat) and must name the current pick. Start freezes the source's lines with the
+ * commissioner's overrides on top; when the start names the lines it reviewed, any difference fails with lines_changed.
  */
 export function decideDraftAction(
   league: League,
   actorId: string | null,
   action: DraftAction,
   teamIds: ReadonlySet<TeamId>,
-  lines: LineSet | null,
+  sourceLines: LineSet | null,
+  now: Date = new Date(),
 ): Result<League> {
   if (league.isDemo) return fail("demo_league");
   if (action.type === "confirm") {
@@ -81,8 +85,28 @@ export function decideDraftAction(
   const result = applyDraftAction(league.draft, action, teamIds);
   if (!result.ok) return fail(result.error);
   if (action.type !== "start") return succeed({ ...league, draft: result.state });
-  if (!lines || !isCompleteLineSet(lines, teamIds)) return fail("lines_unavailable");
+  const review = buildLineReview(
+    TEAM_INFO.filter((team) => teamIds.has(team.id)),
+    { lines: sourceLines, error: null },
+    league.lineOverrides,
+    { book: LINES.book, season: LINES.season },
+  );
+  if (action.lines && !sameLineValues(action.lines, review.lines)) return fail("lines_changed");
+  const lines = freezeLines(review, now);
+  if (!lines) return fail("lines_unavailable");
   return succeed({ ...league, draft: result.state, lines });
+}
+
+/** Replaces the commissioner's line overrides. Commissioner only, before the draft starts. Validate values first. */
+export function decideLineOverrides(
+  league: League,
+  actorId: string | null,
+  overrides: Readonly<Record<TeamId, number>>,
+): Result<League> {
+  if (league.isDemo) return fail("demo_league");
+  if (!canControlDraft(league, actorId)) return fail("forbidden");
+  if (league.draft.status !== "not_started") return fail("lines_locked");
+  return succeed({ ...league, lineOverrides: overrides });
 }
 
 export interface ClaimInput {

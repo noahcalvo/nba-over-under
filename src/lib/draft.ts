@@ -64,7 +64,8 @@ export function holdsTeam(state: DraftState, managerId: string, teamId: TeamId):
 }
 
 export type DraftAction =
-  | { type: "start" }
+  /** `lines` are the lines the commissioner reviewed; the start fails with lines_changed if they no longer match. */
+  | { type: "start"; lines?: Readonly<Record<TeamId, number>> }
   | { type: "pause" }
   | { type: "resume" }
   /** pickNumber is the pick the client believes it is making; a stale screen or a double click fails with stale_pick. */

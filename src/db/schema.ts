@@ -30,6 +30,11 @@ export const leagues = pgTable(
     lines: jsonb("lines").$type<Record<string, number>>(),
     linesSource: text("lines_source"),
     linesAsOf: timestamp("lines_as_of", { withTimezone: true }),
+    linesSeason: text("lines_season"),
+    /** Teams whose frozen line the commissioner entered. */
+    linesManual: jsonb("lines_manual").$type<string[]>(),
+    /** Commissioner-entered lines before the draft starts (teamId → line). */
+    lineOverrides: jsonb("line_overrides").$type<Record<string, number>>().notNull().default({}),
     version: integer("version").notNull().default(1),
     createdAt: createdAt(),
   },

@@ -11,6 +11,7 @@ import {
   revokeLeagueInvite,
   rotateLeagueInvite,
   runDraftAction,
+  setLineOverrides,
 } from "@/db/actions";
 import type { Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
@@ -331,5 +332,26 @@ describe("refreshLeagueRecords", () => {
     expect(await refreshLeagueRecords(db, LEAGUE, null, ok)).toEqual({ ok: false, error: "forbidden" });
     expect(await refreshLeagueRecords(db, "demo", ana, ok)).toEqual({ ok: false, error: "demo_league" });
     expect(await refreshLeagueRecords(db, "nope00", ana, ok)).toEqual({ ok: false, error: "not_found" });
+  });
+});
+
+describe("line overrides", () => {
+  it("stores overrides and freezes them with the season and manual teams", async () => {
+    const partial = { ...STATIC_LINES, values: { ...STATIC_LINES.values } };
+    delete (partial.values as Record<string, number>).BOS;
+    expect((await setLineOverrides(db, LEAGUE, ana, { BOS: 44.5 })).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.lineOverrides).toEqual({ BOS: 44.5 });
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, partial);
+    const lines = (await loadLeague(db, LEAGUE))!.lines!;
+    expect(lines).toMatchObject({ source: "static", season: "2025–26", manual: ["BOS"] });
+    expect(lines.values.BOS).toBe(44.5);
+  });
+
+  it("refuses overrides from a non-commissioner and after the draft starts", async () => {
+    expect(await setLineOverrides(db, LEAGUE, null, {})).toEqual({ ok: false, error: "forbidden" });
+    await joinAs(ben, "m2", "Ben");
+    expect(await setLineOverrides(db, LEAGUE, ben, {})).toEqual({ ok: false, error: "forbidden" });
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    expect(await setLineOverrides(db, LEAGUE, ana, {})).toEqual({ ok: false, error: "lines_locked" });
   });
 });

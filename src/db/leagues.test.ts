@@ -29,6 +29,7 @@ describe("loadLeague", () => {
       commissionerId: "m1",
       version: 1,
       fades: [],
+      lineOverrides: {},
       lines: null,
       draft: { status: "not_started", rounds: 11, seatOrder: ["m1", "m2", "m3", "m4"], picks: [] },
     });

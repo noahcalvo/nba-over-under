@@ -11,24 +11,40 @@ import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-fil
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
 import { describeTurn } from "@/lib/league/turn";
-import { indexTeams } from "@/lib/lines";
+import { describeLineSet, indexTeams } from "@/lib/lines";
 import type { LeagueView } from "@/lib/types";
 import { AvailablePicks } from "./AvailablePicks";
 import { DraftBoard } from "./DraftBoard";
 import { DraftLobby } from "./DraftLobby";
 import { DraftStatusBar } from "./DraftStatusBar";
+import { LineReviewPanel } from "./LineReviewPanel";
 import { ManagerPicks } from "./ManagerPicks";
 import { SelectionBar } from "./SelectionBar";
 import { SelectionPreview } from "./SelectionPreview";
 import { useLeagueDraft } from "./use-league-draft";
 
 export function DraftRoom({ initial, access }: { initial: LeagueView; access: LeagueAccess }) {
-  const { view, error, pending, dispatch, dismissError } = useLeagueDraft(initial);
+  const { view, error, pending, dispatch, saveLineOverrides, dismissError } = useLeagueDraft(initial);
   const { league, viewerId } = view;
   const { draft } = league;
   const teamsById = useMemo(() => indexTeams(view.teams), [view.teams]);
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
+  const [linesDirty, setLinesDirty] = useState(false);
+  const review = view.lineReview;
+  // The "checked" tick belongs to one set of lines; any change to them clears it.
+  const linesKey = review ? JSON.stringify(review.lines) : "";
+  const [reviewedKey, setReviewedKey] = useState<string | null>(null);
+  const reviewed = reviewedKey === linesKey;
+  const startBlocker = !review
+    ? null
+    : review.missing.length > 0
+      ? `Enter lines for the ${review.missing.length} team${review.missing.length === 1 ? "" : "s"} still missing one.`
+      : linesDirty
+        ? "Save or discard your line changes first."
+        : !reviewed
+          ? "Check the lines below, then tick the box."
+          : null;
 
   // A selection stops being active, and says why, when someone else drafts that side (seen via polling) or when the
   // manager now on the clock holds the team's other side (the list disables it for them too).
@@ -75,14 +91,30 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
       />
       {error && <Alert onDismiss={dismissError}>{error}</Alert>}
       {draft.status === "not_started" ? (
-        <DraftLobby
-          league={league}
-          access={access}
-          viewerId={viewerId}
-          canControl={canControl}
-          pending={pending}
-          onStart={() => run({ type: "start" })}
-        />
+        <>
+          <DraftLobby
+            league={league}
+            access={access}
+            viewerId={viewerId}
+            canControl={canControl}
+            pending={pending}
+            onStart={() => run({ type: "start", lines: review?.lines })}
+            startBlocker={startBlocker}
+            reviewed={reviewed}
+            onReviewedChange={(checked) => setReviewedKey(checked ? linesKey : null)}
+            teamCount={review?.rows.length ?? view.teams.length}
+          />
+          {review && (
+            <LineReviewPanel
+              key={JSON.stringify(review.overrides)}
+              review={review}
+              canEdit={canControl}
+              pending={pending}
+              onSave={saveLineOverrides}
+              onDirtyChange={setLinesDirty}
+            />
+          )}
+        </>
       ) : (
         <DraftStatusBar
           league={league}
@@ -127,7 +159,11 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
             />
             <p className="flex items-center gap-2 text-sm text-fog-400">
               <Info aria-hidden className="size-4 shrink-0" />
-              {draft.status === "not_started" ? "Lines lock when the draft starts." : "Lines locked when the draft started."}
+              {draft.status === "not_started"
+                ? "Lines lock when the draft starts."
+                : league.lines
+                  ? `Lines locked when the draft started: ${describeLineSet(league.lines)}.`
+                  : "Lines locked when the draft started."}
             </p>
           </Panel>
         </div>

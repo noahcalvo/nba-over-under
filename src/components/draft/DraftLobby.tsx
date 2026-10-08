@@ -15,6 +15,10 @@ export function DraftLobby({
   canControl,
   pending,
   onStart,
+  startBlocker,
+  reviewed,
+  onReviewedChange,
+  teamCount,
 }: {
   league: League;
   access: LeagueAccess;
@@ -22,6 +26,10 @@ export function DraftLobby({
   canControl: boolean;
   pending: boolean;
   onStart: () => void;
+  startBlocker: string | null;
+  reviewed: boolean;
+  onReviewedChange: (reviewed: boolean) => void;
+  teamCount: number;
 }) {
   return (
     <Panel
@@ -69,9 +77,21 @@ export function DraftLobby({
       )}
       <p className="text-sm text-fog-400">Open seats are drafted by the commissioner until someone claims them.</p>
       {canControl ? (
-        <Button size="lg" onClick={onStart} disabled={pending} className="self-start">
-          Start draft
-        </Button>
+        <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-2 text-sm text-fog-50">
+            <input
+              type="checkbox"
+              checked={reviewed}
+              onChange={(event) => onReviewedChange(event.target.checked)}
+              className="size-4 accent-accent"
+            />
+            I&apos;ve checked all {teamCount} lines.
+          </label>
+          <Button size="lg" onClick={onStart} disabled={pending || startBlocker !== null} className="self-start">
+            Start draft
+          </Button>
+          {startBlocker && <p className="text-sm text-fog-400">{startBlocker}</p>}
+        </div>
       ) : (
         <p className="text-sm font-semibold text-fog-300">Waiting for the commissioner to start the draft.</p>
       )}

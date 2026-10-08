@@ -36,9 +36,16 @@ async function assemble(db: Db, row: LeagueRow): Promise<League> {
       })),
     },
     fades: [],
+    lineOverrides: row.lineOverrides,
     lines:
       row.lines && row.linesSource && row.linesAsOf
-        ? { values: row.lines, source: row.linesSource, asOf: row.linesAsOf.toISOString() }
+        ? {
+            values: row.lines,
+            source: row.linesSource,
+            season: row.linesSeason ?? row.seasonLabel,
+            asOf: row.linesAsOf.toISOString(),
+            manual: row.linesManual ?? [],
+          }
         : null,
   };
 }
@@ -60,6 +67,7 @@ export async function insertLeague(tx: Tx, league: League): Promise<boolean> {
       commissionerId: league.commissionerId,
       rounds: league.draft.rounds,
       draftStatus: league.draft.status,
+      lineOverrides: league.lineOverrides,
       version: league.version,
     })
     .onConflictDoNothing()
@@ -98,6 +106,9 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
       lines: after.lines?.values ?? null,
       linesSource: after.lines?.source ?? null,
       linesAsOf: after.lines ? new Date(after.lines.asOf) : null,
+      linesSeason: after.lines?.season ?? null,
+      linesManual: after.lines ? [...after.lines.manual] : null,
+      lineOverrides: after.lineOverrides,
       version,
     })
     .where(eq(leagues.id, after.id));

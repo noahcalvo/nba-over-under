@@ -11,6 +11,9 @@ export type DomainError =
   | "demo_league"
   | "invalid_link"
   | "lines_unavailable"
+  | "lines_changed"
+  | "lines_locked"
+  | "invalid_line"
   | "records_unavailable"
   | DraftError;
 
@@ -35,7 +38,10 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   already_joined: "You already have a seat in this league.",
   demo_league: "The demo league is read-only.",
   invalid_link: "This link no longer works. Ask your commissioner for a new one.",
-  lines_unavailable: "Lines aren't available right now. Try again in a minute.",
+  lines_unavailable: "Every team needs a line before the draft can start. Enter the missing lines first.",
+  lines_changed: "The lines changed since you checked them. Look them over again, then start.",
+  lines_locked: "Lines are locked once the draft starts.",
+  invalid_line: "Lines must be between 0.5 and 81.5, in steps of 0.5.",
   records_unavailable: "Team records couldn't be refreshed. Try again in a minute.",
   not_live: "The draft isn't live.",
   side_taken: "That side was just drafted.",

@@ -35,15 +35,15 @@ export function useLeagueDraft(initial: LeagueView) {
     return () => window.clearInterval(timer);
   }, [shouldPoll, refresh]);
 
-  const dispatch = useCallback(
-    async (action: DraftAction): Promise<boolean> => {
+  const send = useCallback(
+    async (url: string, method: string, body: unknown): Promise<boolean> => {
       setPending(true);
       setError(null);
       try {
-        const response = await fetch(endpoint, {
-          method: "POST",
+        const response = await fetch(url, {
+          method,
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(action),
+          body: JSON.stringify(body),
         });
         const data = await response.json();
         if (!response.ok) {
@@ -60,10 +60,17 @@ export function useLeagueDraft(initial: LeagueView) {
         setPending(false);
       }
     },
-    [endpoint, accept, refresh],
+    [accept, refresh],
+  );
+
+  const dispatch = useCallback((action: DraftAction) => send(endpoint, "POST", action), [send, endpoint]);
+
+  const saveLineOverrides = useCallback(
+    (overrides: Record<string, number>) => send(`/api/leagues/${initial.league.id}/lines`, "PUT", { overrides }),
+    [send, initial.league.id],
   );
 
   const dismissError = useCallback(() => setError(null), []);
 
-  return { view, error, pending, dispatch, dismissError };
+  return { view, error, pending, dispatch, saveLineOverrides, dismissError };
 }

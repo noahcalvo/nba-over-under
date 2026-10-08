@@ -42,3 +42,6 @@ next-env.d.ts
 
 # subagent-driven-development scratch
 .superpowers/
+
+# local PGlite database (npm run dev)
+/.data/

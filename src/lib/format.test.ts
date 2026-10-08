@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, formatOrdinal, formatRecord, formatSigned, NOT_AVAILABLE } from "@/lib/format";
+import { formatDateTimeET, formatNumber, formatOrdinal, formatRecord, formatSigned, NOT_AVAILABLE } from "@/lib/format";
 
 describe("formatSigned", () => {
   it("prefixes positives with +", () => {
@@ -61,5 +61,12 @@ describe("formatRecord", () => {
 describe("NOT_AVAILABLE", () => {
   it("is the copy for zero games played", () => {
     expect(NOT_AVAILABLE).toBe("Not available");
+  });
+});
+
+describe("formatDateTimeET", () => {
+  it("formats in Eastern time", () => {
+    expect(formatDateTimeET("2026-10-08T19:42:00.000Z")).toBe("Oct 8, 3:42 PM ET");
+    expect(formatDateTimeET("2026-01-15T05:05:00.000Z")).toBe("Jan 15, 12:05 AM ET");
   });
 });

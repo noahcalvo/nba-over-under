@@ -3,7 +3,9 @@ import type { LineSet } from "@/lib/types";
 /** The prototype's mock lines. They back the static line source and the demo league. */
 export const STATIC_LINES: LineSet = {
   source: "static",
+  season: "2025–26",
   asOf: "2025-10-01T00:00:00.000Z",
+  manual: [],
   values: {
     ATL: 46.5,
     BOS: 41.5,

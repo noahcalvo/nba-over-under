@@ -1,4 +1,5 @@
 import { and, asc, desc, eq } from "drizzle-orm";
+import { SEASON } from "@/config/league";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { fail, type DomainError, type Result } from "@/lib/league/errors";
 import type { League, Manager } from "@/lib/types";
@@ -36,9 +37,10 @@ async function assemble(db: Db, row: LeagueRow): Promise<League> {
       })),
     },
     fades: [],
+    lineOverrides: {},
     lines:
       row.lines && row.linesSource && row.linesAsOf
-        ? { values: row.lines, source: row.linesSource, asOf: row.linesAsOf.toISOString() }
+        ? { values: row.lines, source: row.linesSource, season: SEASON.label, asOf: row.linesAsOf.toISOString(), manual: [] }
         : null,
   };
 }

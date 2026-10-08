@@ -54,6 +54,7 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
     managers,
     draft: createDraftState(seatOrder, LEAGUE_DEFAULTS.rounds),
     fades: [],
+    lineOverrides: {},
     lines: null,
   });
 }

@@ -41,3 +41,17 @@ export function formatOrdinal(n: number): string {
 export function formatRecord(wins: number, losses: number): string {
   return `${wins}–${losses}`;
 }
+
+const ET_PARTS = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "America/New_York",
+});
+
+/** "Oct 8, 3:42 PM ET". Fixed to Eastern and built from parts so the server and every browser render the same text. */
+export function formatDateTimeET(iso: string): string {
+  const part = Object.fromEntries(ET_PARTS.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${part.month} ${part.day}, ${part.hour}:${part.minute} ${part.dayPeriod} ET`;
+}

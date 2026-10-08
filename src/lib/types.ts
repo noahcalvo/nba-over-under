@@ -29,9 +29,14 @@ export type TeamInfo = Omit<Team, "line">;
 export interface LineSet {
   /** teamId → line. */
   values: Readonly<Record<TeamId, number>>;
+  /** The sportsbook the lines came from, e.g. "FanDuel"; "Commissioner" when every line was entered by hand. */
   source: string;
-  /** ISO 8601 timestamp. */
+  /** The season the lines are for, e.g. "2026–27". */
+  season: string;
+  /** ISO 8601 timestamp: when the source was read. */
   asOf: string;
+  /** Teams whose line the commissioner entered instead of the source's. Sorted; empty for a pure source set. */
+  manual: readonly TeamId[];
 }
 
 export interface Manager {
@@ -81,14 +86,47 @@ export interface League {
   managers: Manager[];
   draft: DraftState;
   fades: Fade[];
+  /** Lines the commissioner entered before the draft. They replace or fill in the source's lines until the draft starts. */
+  lineOverrides: Readonly<Record<TeamId, number>>;
   /** Lines frozen when the draft started. Null until then. */
   lines: LineSet | null;
+}
+
+/** One team in the pre-draft line review. */
+export interface LineReviewRow {
+  team: TeamInfo;
+  /** The source's line, or null when the source has none. */
+  feed: number | null;
+  /** The commissioner's line, or null. */
+  override: number | null;
+  /** What the draft would freeze: the override, else the source's line. Null means missing. */
+  line: number | null;
+}
+
+/** Lines before the draft starts, for the commissioner to check. */
+export interface LineReview {
+  /** The sportsbook, e.g. "FanDuel". */
+  book: string;
+  season: string;
+  /** When the source was last read successfully. Null when it never was. */
+  asOf: string | null;
+  /** Why the latest read failed. Null when it succeeded. */
+  feedError: string | null;
+  /** One row per team, in team order. */
+  rows: LineReviewRow[];
+  /** teamId → effective line, for teams that have one. */
+  lines: Readonly<Record<TeamId, number>>;
+  overrides: Readonly<Record<TeamId, number>>;
+  /** Teams with no line yet. The draft can't start until this is empty. */
+  missing: TeamId[];
 }
 
 /** What the server hands a client: the league plus who is looking at it. */
 export interface LeagueView {
   league: League;
   viewerId: string | null;
-  /** Every team with the lines this view scores against: the league's frozen lines, or current lines before the draft starts. */
+  /** Teams with the lines this view scores against: the league's frozen lines, or before the draft the reviewed lines (teams still missing a line are left out). */
   teams: Team[];
+  /** Before the draft: the lines to review. Null once lines are frozen. */
+  lineReview: LineReview | null;
 }

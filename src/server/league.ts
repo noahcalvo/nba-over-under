@@ -34,6 +34,7 @@ export async function toLeagueView(league: League, viewerId?: string | null): Pr
     league,
     viewerId: viewerId === undefined ? await getViewerId(league.id) : viewerId,
     teams: await teamsFor(league),
+    lineReview: null,
   };
 }
 

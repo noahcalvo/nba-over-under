@@ -13,7 +13,13 @@ import type { Result } from "@/lib/league/errors";
 import type { League, LineSet, Side } from "@/lib/types";
 
 const TEAM_IDS = new Set(["MIN", "OKC", "BOS"]);
-const LINES: LineSet = { source: "test", asOf: "2026-10-01T00:00:00.000Z", values: { MIN: 49.5, OKC: 62.5, BOS: 41.5 } };
+const LINES: LineSet = {
+  source: "test",
+  season: "2026–27",
+  asOf: "2026-10-01T00:00:00.000Z",
+  values: { MIN: 49.5, OKC: 62.5, BOS: 41.5 },
+  manual: [],
+};
 const LEAGUE_INVITE = { kind: "league_invite" as const, managerId: null };
 
 function must<T>(result: Result<T>): T {
@@ -47,6 +53,7 @@ describe("createLeague", () => {
       commissionerId: "m1",
       version: 1,
       fades: [],
+      lineOverrides: {},
       lines: null,
       draft: { status: "not_started", rounds: 11, seatOrder: ["m1", "m2", "m3", "m4"], picks: [] },
     });

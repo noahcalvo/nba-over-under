@@ -38,6 +38,7 @@ export function buildDemoLeague(): League {
     version: 1,
     managers: DEMO_SEATS.map((id, seat) => ({ id, seat, displayName: null })),
     draft: { status: "complete", rounds: LEAGUE_DEFAULTS.rounds, seatOrder: [...DEMO_SEATS], picks },
+    lineOverrides: {},
     fades: [
       { id: "f1", managerId: "m1", targetPickNumber: 2 },
       { id: "f2", managerId: "m2", targetPickNumber: 6 },

@@ -5,9 +5,10 @@ import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TOTAL_SIDES } from "@/data/teams";
-import { findPickForSide } from "@/lib/draft";
+import { findPickForSide, holdsTeam, managerOnTheClock } from "@/lib/draft";
 import { availableSideCount, filterTeams, SIDES, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
+import { findManager, managerLabel } from "@/lib/league/managers";
 import type { DraftState, Manager, Side, Team } from "@/lib/types";
 import { SideButton } from "./SideButton";
 
@@ -31,6 +32,8 @@ export function AvailablePicks({
   selectable: boolean;
 }) {
   const teams = filterTeams(allTeams, draft, filters);
+  // A manager may hold one side per team: block the other side of teams the manager on the clock already has.
+  const onClock = findManager(managers, managerOnTheClock(draft));
   const button = (team: Team, side: Side) => (
     <SideButton
       team={team}
@@ -39,6 +42,11 @@ export function AvailablePicks({
       selected={selection?.teamId === team.id && selection.side === side}
       managers={managers}
       disabled={!selectable}
+      blockedNote={
+        selectable && onClock && holdsTeam(draft, onClock.id, team.id)
+          ? `${managerLabel(onClock)} has the other side`
+          : undefined
+      }
       onSelect={onSelect}
     />
   );

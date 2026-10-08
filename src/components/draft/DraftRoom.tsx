@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
 
-import { findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
+import { currentPickNumber, findPickForSide, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
@@ -50,10 +50,11 @@ export function DraftRoom({ initial }: { initial: LeagueView }) {
   }
 
   async function confirm() {
-    if (!activeSelection) return;
+    const pickNumber = currentPickNumber(draft);
+    if (!activeSelection || pickNumber === null) return;
     const choice = activeSelection;
     setSelection(null);
-    const ok = await dispatch({ type: "confirm", teamId: choice.teamId, side: choice.side });
+    const ok = await dispatch({ type: "confirm", teamId: choice.teamId, side: choice.side, pickNumber });
     if (!ok) setSelection(choice);
   }
 

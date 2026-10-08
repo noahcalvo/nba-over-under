@@ -58,10 +58,15 @@ check "Ben claims seat 2" 200 '"managerId":"m2"'
 call ben POST /api/links/claim "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m3\",\"displayName\":\"Ben\"}"
 check "a second seat for the same browser is refused" 409 '"already_joined"'
 
+call ana PUT "/api/leagues/$LEAGUE/lines" '{"overrides":{"BOS":44.5}}'
+check "commissioner overrides a line" 200 '"BOS":44.5'
+call ben PUT "/api/leagues/$LEAGUE/lines" '{"overrides":{"BOS":40.5}}'
+check "only the commissioner overrides lines" 403 '"forbidden"'
+
 call ben POST "/api/leagues/$LEAGUE/draft" '{"type":"start"}'
 check "only the commissioner starts" 403 '"forbidden"'
 call ana POST "/api/leagues/$LEAGUE/draft" '{"type":"start"}'
-check "commissioner starts; lines freeze" 200 '"source":"static"'
+check "commissioner starts; lines freeze" 200 '"season":"'
 
 confirm ana MIN OVER 1
 check "pick 1" 200

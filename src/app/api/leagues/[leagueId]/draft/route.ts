@@ -3,7 +3,7 @@ import { parseDraftAction } from "@/lib/league/parse-action";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
 import { findLeague, toLeagueView } from "@/server/league";
-import { currentLinesOrNull } from "@/server/lines";
+import { readLines } from "@/server/lines";
 import { getSession } from "@/server/session";
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/draft">) {
@@ -18,10 +18,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/leagues/[le
   const { leagueId } = await ctx.params;
   const action = parseDraftAction(await readJsonBody(request));
   if (!action) return errorResponse("invalid_request");
-  // Fetch lines before taking the league lock: no network calls while holding it.
-  const lines = action.type === "start" ? await currentLinesOrNull() : null;
+  // Read the source before taking the league lock: no network calls while holding it.
+  const sourceLines = action.type === "start" ? (await readLines()).lines : null;
   const session = await getSession();
-  const result = await runDraftAction(await getDb(), leagueId, session?.id ?? null, action, lines);
+  const result = await runDraftAction(await getDb(), leagueId, session?.id ?? null, action, sourceLines);
   if (!result.ok) return errorResponse(result.error);
   return Response.json(await toLeagueView(result.value.league, result.value.actorId));
 }

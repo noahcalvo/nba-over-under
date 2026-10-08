@@ -163,13 +163,20 @@ them from `npm run db:migrate`, which runs in `vercel-build` before `next build`
     for a new one." No hint about which.
   - A browser that already holds a seat in the league goes straight to the league when it opens the league invite, or
     a seat invite or personal link for the seat it already holds.
-- **Claim** (`POST /api/links/claim { token, managerId?, displayName? }`), one transaction under the league lock:
+- **Claim** (`POST /api/links/claim { token, managerId?, displayName? }`), one `mutateLeague` transaction:
+  - Before the transaction: verify the signature (no database read), then read the link row only to learn which league
+    to lock. Neither this read nor anything the link page showed is trusted for the write.
+  - After the league lock, re-read the link row and recheck it against the database clock (`now()`): it exists,
+    belongs to the locked league, is not revoked, is not expired, and (seat invite) is unused. Any failure returns
+    `invalid_link`. A claim that passed the earlier checks but lost the race to a revoke, rotation, seat reset or
+    another claim of the same seat invite is therefore rejected.
+  - A seat invite is consumed with `UPDATE … SET used_at = now() WHERE id = $1 AND used_at IS NULL AND revoked_at IS
+    NULL AND (expires_at IS NULL OR expires_at > now())`, and the claim continues only if exactly one row changed.
   - League invite: the seat must be open (`seat_taken` otherwise) and the browser must not hold another seat in the
     league (`already_joined`). Set the name, issue the seat's personal link, bind the session, bump `version`.
-  - Seat invite: mark used with `UPDATE … WHERE used_at IS NULL AND revoked_at IS NULL` (single use under races). The
-    seat is claimed, not open, so there is no open-seat check: keep its picks, set the name the claimer submits
-    (pre-filled with the existing one), issue a new personal link, bind the session, bump `version`. Fails with
-    `already_joined` if this browser holds a different seat in the league.
+  - Seat invite: the seat is claimed, not open, so there is no open-seat check: keep its picks, set the name the
+    claimer submits (pre-filled with the existing one), issue a new personal link, bind the session, bump `version`.
+    Fails with `already_joined` if this browser holds a different seat in the league.
   - Personal link: bind the session to the seat, replacing this browser's existing seat in that league if any. No
     version bump (the league didn't change).
   - Responds with the league id. The client goes to the draft room.
@@ -215,9 +222,11 @@ Every league write goes through `mutateLeague(leagueId, sessionId, decide)` in t
 
 1. `BEGIN`, then `SELECT … FROM leagues WHERE id = $1 FOR UPDATE`. Writers to one league run one at a time. Reads,
    including the 2-second draft poll, are not blocked.
-2. Resolve the actor **inside the transaction**: read this session's seat for the league from `session_seats`, joined
-   to an unexpired `sessions` row. The result (a manager id or `null`) is the only actor `decide` sees. An actor id
-   resolved before the lock (for example by `getViewer()` while rendering) is never used for a write.
+2. Recheck every credential **inside the transaction**, against the database clock:
+   - The actor: this session's seat for the league from `session_seats`, joined to an unexpired `sessions` row. The
+     result (a manager id or `null`) is the only actor `decide` sees. An actor id resolved before the lock (for
+     example by `getViewer()` while rendering) is never used for a write.
+   - For a claim, the link: re-read and recheck revocation, expiry and single use (see Claim).
 3. Load managers and picks into a `League`.
 4. Call `decide(league, actorId)`, a pure function from `src/lib/league/commands.ts` that returns the next `League`
    (plus any link or session effects) or a typed error. Every permission check runs here, against the locked state:
@@ -227,7 +236,9 @@ Every league write goes through `mutateLeague(leagueId, sessionId, decide)` in t
    the `League` changed (a personal-link sign-in changes only `session_seats`, so it doesn't). `COMMIT`. Any error
    rolls back.
 
-Draft actions, claims, seat resets and personal-link resets all take this lock, so none of them can interleave. A seat
+Draft actions, claims, seat resets and personal-link resets all take this lock, so none of them can interleave. Every
+write to `access_links` and `session_seats` happens inside `mutateLeague`, so a check made after the lock sees every
+revocation, rotation, reset and claim that committed before it. A seat
 reset or "sign out my other devices" deletes `session_seats` rows under the lock, so a request from a just-revoked
 browser that was already in flight finds no seat in step 2 and fails with `forbidden`.
 
@@ -327,9 +338,12 @@ revoked, get `forbidden`. Existing errors keep their statuses. `already_joined` 
 - **Repositories against in-memory PGlite with migrations applied**: create league transaction, `mutateLeague` persists
   the diff and bumps `version`, the unique-constraint backstops map to `side_taken` / `team_already_held`, a seat
   invite can be claimed once, seat reset removes that seat's sessions, a mutation from a session whose seat was reset
-  gets `forbidden` even though its viewer was resolved before the reset, session expiry and renewal, cascades.
+  gets `forbidden` even though its viewer was resolved before the reset, a claim whose link was valid at the
+  pre-transaction read but was revoked, rotated, expired or used before the lock gets `invalid_link` (one case each),
+  session expiry and renewal, cascades.
 - **Real concurrency**: PGlite has one connection, so it cannot prove the row lock. `npm run test:pg` runs against
-  `TEST_DATABASE_URL` (real Postgres) and fires parallel confirms for the same pick: exactly one succeeds. Skipped when
+  `TEST_DATABASE_URL` (real Postgres) and fires parallel confirms for the same pick, and parallel claims of the same
+  seat invite: exactly one of each succeeds. Skipped when
   the variable is unset.
 - **End to end**: a two-cookie-jar API smoke run (create, copy invite, claim, start, pick, `stale_pick`, seat reset
   signs the old browser out, revoked link shows the generic message), and browser checks of the link page, lobby and

@@ -16,7 +16,7 @@ export function navItems(leagueId: string): NavItem[] {
   return [
     { href: base, label: "League overview", shortLabel: "Overview", icon: House, ready: true, exact: true },
     { href: `${base}/rosters`, label: "Rosters", shortLabel: "Rosters", icon: UserRound, ready: false, exact: false },
-    { href: `${base}/settings`, label: "League settings", shortLabel: "Settings", icon: Settings, ready: false, exact: false },
+    { href: `${base}/settings`, label: "League settings", shortLabel: "Settings", icon: Settings, ready: true, exact: false },
     { href: `${base}/draft`, label: "Draft room", shortLabel: "Draft", icon: ClipboardList, ready: true, exact: false },
   ];
 }

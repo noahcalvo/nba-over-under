@@ -1,25 +1,27 @@
+import { runDraftAction } from "@/db/actions";
 import { parseDraftAction } from "@/lib/league/parse-action";
-import type { LeagueView } from "@/lib/types";
-import { errorResponse, readJsonBody } from "@/server/http";
-import { leagueStore } from "@/server/store";
-import { getViewerId, toLeagueView } from "@/server/viewer";
+import { getDb } from "@/server/db";
+import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
+import { findLeague, toLeagueView } from "@/server/league";
+import { currentLinesOrNull } from "@/server/lines";
+import { getSession } from "@/server/session";
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/draft">) {
   const { leagueId } = await ctx.params;
-  const league = leagueStore.get(leagueId);
+  const league = await findLeague(leagueId);
   if (!league) return errorResponse("not_found");
   return Response.json(await toLeagueView(league), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/draft">) {
+  if (!isSameOrigin(request)) return errorResponse("forbidden");
   const { leagueId } = await ctx.params;
   const action = parseDraftAction(await readJsonBody(request));
   if (!action) return errorResponse("invalid_request");
-  const league = leagueStore.get(leagueId);
-  if (!league) return errorResponse("not_found");
-  const viewerId = await getViewerId(league);
-  const result = leagueStore.act(leagueId, viewerId, action);
+  // Fetch lines before taking the league lock: no network calls while holding it.
+  const lines = action.type === "start" ? await currentLinesOrNull() : null;
+  const session = await getSession();
+  const result = await runDraftAction(await getDb(), leagueId, session?.id ?? null, action, lines);
   if (!result.ok) return errorResponse(result.error);
-  const view: LeagueView = { league: result.value, viewerId };
-  return Response.json(view);
+  return Response.json(await toLeagueView(result.value.league, result.value.actorId));
 }

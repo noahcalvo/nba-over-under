@@ -12,7 +12,7 @@ export interface Team {
   conference: Conference;
   /** Primary color (hex) for the abbreviation-badge fallback. */
   color: string;
-  /** Season win-total line. Always ends in .5. */
+  /** Season win-total line, from the LineSet the league scores against. */
   line: number;
   /** Previous regular-season wins. */
   prevWins: number;
@@ -20,6 +20,18 @@ export interface Team {
   wins: number;
   /** Current-season losses so far. */
   losses: number;
+}
+
+/** Team metadata without a line. Lines come from a LineSet. */
+export type TeamInfo = Omit<Team, "line">;
+
+/** Season win-total lines for every team, from one source at one moment. */
+export interface LineSet {
+  /** teamId → line. */
+  values: Readonly<Record<TeamId, number>>;
+  source: string;
+  /** ISO 8601 timestamp. */
+  asOf: string;
 }
 
 export interface Manager {
@@ -69,10 +81,14 @@ export interface League {
   managers: Manager[];
   draft: DraftState;
   fades: Fade[];
+  /** Lines frozen when the draft started. Null until then. */
+  lines: LineSet | null;
 }
 
 /** What the server hands a client: the league plus who is looking at it. */
 export interface LeagueView {
   league: League;
   viewerId: string | null;
+  /** Every team with the lines this view scores against: the league's frozen lines, or current lines before the draft starts. */
+  teams: Team[];
 }

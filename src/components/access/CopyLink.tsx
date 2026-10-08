@@ -1,16 +1,28 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/Button";
 
 const noopSubscribe = () => () => {};
 
-export function InviteLink({ leagueId, compact = false }: { leagueId: string; compact?: boolean }) {
-  // window.location is client-only; the server render uses a relative link.
+/** A private link with a copy button. `path` is app-relative ("/i/…"); the browser adds its own origin. */
+export function CopyLink({
+  path,
+  label,
+  description,
+  compact = false,
+}: {
+  path: string;
+  label: string;
+  description?: string;
+  compact?: boolean;
+}) {
+  // window.location is client-only; the server render shows the path alone.
   const origin = useSyncExternalStore(noopSubscribe, () => window.location.origin, () => "");
   const [copied, setCopied] = useState(false);
-  const url = `${origin}/l/${leagueId}/join`;
+  const inputId = useId();
+  const url = `${origin}${path}`;
 
   async function copy() {
     try {
@@ -28,19 +40,19 @@ export function InviteLink({ leagueId, compact = false }: { leagueId: string; co
     return (
       <Button variant="secondary" size="sm" onClick={copy}>
         {icon}
-        {copied ? "Link copied" : "Copy invite link"}
+        {copied ? "Link copied" : `Copy ${label.toLowerCase()}`}
       </Button>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={`invite-${leagueId}`} className="text-sm font-semibold">
-        Invite link
+    <div className="flex min-w-0 flex-col gap-2">
+      <label htmlFor={inputId} className="text-sm font-semibold">
+        {label}
       </label>
       <div className="flex min-w-0 gap-2">
         <input
-          id={`invite-${leagueId}`}
+          id={inputId}
           readOnly
           value={url}
           onFocus={(event) => event.currentTarget.select()}
@@ -51,6 +63,7 @@ export function InviteLink({ leagueId, compact = false }: { leagueId: string; co
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>
+      {description && <p className="text-sm text-fog-400">{description}</p>}
     </div>
   );
 }

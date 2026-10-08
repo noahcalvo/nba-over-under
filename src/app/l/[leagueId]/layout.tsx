@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { AppShell } from "@/components/shell/AppShell";
-import { getLeagueOrNotFound, listSeatLeagues } from "@/server/league";
-import { readSeats } from "@/server/viewer";
+import { getLeagueOrNotFound, listViewerLeagues } from "@/server/league";
 
 export default function LeagueLayout({ params, children }: LayoutProps<"/l/[leagueId]">) {
   return (
@@ -19,10 +18,10 @@ async function LeagueShell({
   children: ReactNode;
 }) {
   const { leagueId } = await params;
-  const league = getLeagueOrNotFound(leagueId);
-  const otherLeagues = listSeatLeagues(await readSeats())
-    .filter((seat) => seat.league.id !== league.id)
-    .map(({ league: other }) => ({ id: other.id, name: other.name, seasonLabel: other.seasonLabel }));
+  const league = await getLeagueOrNotFound(leagueId);
+  const otherLeagues = (await listViewerLeagues())
+    .filter((other) => other.id !== league.id)
+    .map((other) => ({ id: other.id, name: other.name, seasonLabel: other.seasonLabel }));
   return (
     <AppShell league={{ id: league.id, name: league.name, seasonLabel: league.seasonLabel }} otherLeagues={otherLeagues}>
       {children}

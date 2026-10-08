@@ -1,12 +1,22 @@
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { TEAMS_BY_ID } from "@/data/teams";
 import { picksForManager } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
+import type { TeamLookup } from "@/lib/standings";
 import type { League } from "@/lib/types";
 
-export function ManagerPicks({ league, managerId, isViewer }: { league: League; managerId: string; isViewer: boolean }) {
+export function ManagerPicks({
+  league,
+  teams,
+  managerId,
+  isViewer,
+}: {
+  league: League;
+  teams: TeamLookup;
+  managerId: string;
+  isViewer: boolean;
+}) {
   const manager = findManager(league.managers, managerId)!;
   const picks = picksForManager(league.draft, managerId);
   return (
@@ -24,7 +34,7 @@ export function ManagerPicks({ league, managerId, isViewer }: { league: League; 
       ) : (
         <ol className="divide-y divide-ink-700 rounded-lg border border-ink-700">
           {picks.map((pick) => {
-            const team = TEAMS_BY_ID[pick.teamId];
+            const team = teams[pick.teamId];
             return (
               <li key={pick.pickNumber} className="flex items-center gap-3 px-3 py-2 text-sm">
                 <span className="w-6 tabular-nums text-fog-400">{pick.pickNumber}</span>

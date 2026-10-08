@@ -5,9 +5,8 @@ import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { Logo } from "@/components/shell/Logo";
 import { Panel } from "@/components/ui/Panel";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
-import { findManager, managerLabel } from "@/lib/league/managers";
-import { listSeatLeagues } from "@/server/league";
-import { readSeats } from "@/server/viewer";
+import { managerLabel } from "@/lib/league/managers";
+import { listViewerLeagues } from "@/server/league";
 
 export default function Home() {
   return (
@@ -39,28 +38,25 @@ export default function Home() {
 }
 
 async function YourLeagues() {
-  const leagues = listSeatLeagues(await readSeats());
+  const leagues = await listViewerLeagues();
   if (leagues.length === 0) return null;
   return (
     <Panel title="Your leagues">
       <ul className="divide-y divide-ink-700">
-        {leagues.map(({ league, managerId }) => {
-          const manager = findManager(league.managers, managerId);
-          return (
-            <li key={league.id}>
-              <Link href={`/l/${league.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-800 sm:px-5">
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold">{league.name}</span>
-                  <span className="block text-sm text-fog-400">
-                    {manager ? managerLabel(manager) : "Spectator"}
-                    {league.commissionerId === managerId ? " · Commissioner" : ""}
-                  </span>
+        {leagues.map((league) => (
+          <li key={league.id}>
+            <Link href={`/l/${league.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-ink-800 sm:px-5">
+              <span className="min-w-0">
+                <span className="block truncate font-semibold">{league.name}</span>
+                <span className="block text-sm text-fog-400">
+                  {managerLabel(league.manager)}
+                  {league.commissionerId === league.manager.id ? " · Commissioner" : ""}
                 </span>
-                <ArrowRight aria-hidden className="size-4 shrink-0 text-fog-400" />
-              </Link>
-            </li>
-          );
-        })}
+              </span>
+              <ArrowRight aria-hidden className="size-4 shrink-0 text-fog-400" />
+            </Link>
+          </li>
+        ))}
       </ul>
     </Panel>
   );

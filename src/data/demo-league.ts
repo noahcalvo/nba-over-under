@@ -1,4 +1,5 @@
 import { LEAGUE_DEFAULTS, SEASON } from "@/config/league";
+import { STATIC_LINES } from "@/data/static-lines";
 import { seatForPick } from "@/lib/draft";
 import type { League, Side, TeamId } from "@/lib/types";
 
@@ -43,5 +44,6 @@ export function buildDemoLeague(): League {
       { id: "f3", managerId: "m3", targetPickNumber: 13 },
       { id: "f4", managerId: "m4", targetPickNumber: 9 },
     ],
+    lines: STATIC_LINES,
   };
 }

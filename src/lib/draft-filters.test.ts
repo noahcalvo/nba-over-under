@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { TEAMS } from "@/data/teams";
+import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
 import { createDraftState } from "@/lib/draft";
 import { availableSideCount, DEFAULT_FILTERS, filterTeams } from "@/lib/draft-filters";
+import { withLines } from "@/lib/lines";
 import type { DraftState, Side } from "@/lib/types";
+
+const TEAMS = withLines(TEAM_INFO, STATIC_LINES);
 
 const EMPTY = createDraftState(["m1", "m2", "m3", "m4"], 11);
 

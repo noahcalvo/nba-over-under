@@ -54,28 +54,36 @@ export function findPickForSide(state: DraftState, teamId: TeamId, side: Side): 
   return state.picks.find((pick) => pick.teamId === teamId && pick.side === side);
 }
 
-/** The side of a team a manager already drafted. Each manager gets at most one pick per team. */
-export function findPickForTeam(state: DraftState, managerId: string, teamId: TeamId): DraftPick | undefined {
-  return state.picks.find((pick) => pick.managerId === managerId && pick.teamId === teamId);
-}
-
 export function picksForManager(state: DraftState, managerId: string): DraftPick[] {
   return state.picks.filter((pick) => pick.managerId === managerId);
+}
+
+/** True when the manager already holds a side of this team. A manager may hold at most one side per team. */
+export function holdsTeam(state: DraftState, managerId: string, teamId: TeamId): boolean {
+  return state.picks.some((pick) => pick.managerId === managerId && pick.teamId === teamId);
 }
 
 export type DraftAction =
   | { type: "start" }
   | { type: "pause" }
   | { type: "resume" }
-  | { type: "confirm"; teamId: TeamId; side: Side };
+  /** pickNumber is the pick the client believes it is making; a stale screen or a double click fails with stale_pick. */
+  | { type: "confirm"; teamId: TeamId; side: Side; pickNumber: number };
 
-export type DraftError = "invalid_transition" | "not_live" | "side_taken" | "team_owned" | "unknown_team";
+export type DraftError =
+  | "invalid_transition"
+  | "not_live"
+  | "side_taken"
+  | "unknown_team"
+  | "stale_pick"
+  | "team_already_held";
 
 export type DraftResult = { ok: true; state: DraftState } | { ok: false; error: DraftError };
 
 /**
  * Applies one draft action. Who is allowed to act is decided by the caller (see league/permissions);
- * this only enforces draft rules: status transitions, side availability, one pick per team per manager and snake order.
+ * this only enforces draft rules: status transitions, the expected pick number, side availability, one side per team
+ * per manager, and snake order.
  */
 export function applyDraftAction(state: DraftState, action: DraftAction, teamIds: ReadonlySet<TeamId>): DraftResult {
   switch (action.type) {
@@ -87,12 +95,13 @@ export function applyDraftAction(state: DraftState, action: DraftAction, teamIds
       return state.status === "paused" ? ok({ ...state, status: "live" }) : fail("invalid_transition");
     case "confirm": {
       if (state.status !== "live") return fail("not_live");
+      const pickNumber = state.picks.length + 1;
+      if (action.pickNumber !== pickNumber) return fail("stale_pick");
       if (!teamIds.has(action.teamId)) return fail("unknown_team");
       if (findPickForSide(state, action.teamId, action.side)) return fail("side_taken");
-      const pickNumber = state.picks.length + 1;
       const managerId = managerForPick(state, pickNumber);
       if (managerId === null) return fail("not_live");
-      if (findPickForTeam(state, managerId, action.teamId)) return fail("team_owned");
+      if (holdsTeam(state, managerId, action.teamId)) return fail("team_already_held");
       const picks = [...state.picks, { pickNumber, managerId, teamId: action.teamId, side: action.side }];
       return ok({ ...state, picks, status: picks.length === draftTotalPicks(state) ? "complete" : "live" });
     }

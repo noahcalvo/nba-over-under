@@ -21,6 +21,7 @@ export function SideButton({
   selected,
   managers,
   disabled,
+  blockedNote,
   describedBy,
   onSelect,
 }: {
@@ -30,7 +31,9 @@ export function SideButton({
   selected: boolean;
   managers: Manager[];
   disabled: boolean;
-  /** Id of the visible text explaining why this side can't be chosen. */
+  /** Why the manager on the clock can't take this side (they hold the team's other side). */
+  blockedNote?: string;
+  /** Id of the visible text that gives the reason, so keyboard and screen-reader users get it too. */
   describedBy?: string;
   onSelect: (ref: SideRef) => void;
 }) {
@@ -52,8 +55,8 @@ export function SideButton({
       type="button"
       aria-pressed={selected}
       aria-label={`${side} ${formatNumber(team.line)}, ${team.city} ${team.name}`}
-      disabled={disabled}
-      aria-describedby={describedBy}
+      aria-describedby={blockedNote ? describedBy : undefined}
+      disabled={disabled || blockedNote !== undefined}
       onClick={() => onSelect({ teamId: team.id, side })}
       className={`${BASE} font-display font-bold tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         selected ? STYLES[side].selected : STYLES[side].idle

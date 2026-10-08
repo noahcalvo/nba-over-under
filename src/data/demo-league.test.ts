@@ -1,22 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { LEAGUE_DEFAULTS } from "@/config/league";
 import { buildDemoLeague, DEMO_LEAGUE_ID } from "@/data/demo-league";
-import { TEAM_IDS, TEAMS, TEAMS_BY_ID, TOTAL_SIDES } from "@/data/teams";
+import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_IDS, TEAM_INFO, TOTAL_SIDES } from "@/data/teams";
 import { seatForPick, totalPicks } from "@/lib/draft";
+import { indexTeams, isCompleteLineSet, withLines } from "@/lib/lines";
 import { computeStandings } from "@/lib/standings";
 
-describe("TEAMS", () => {
+const TEAMS_BY_ID = indexTeams(withLines(TEAM_INFO, STATIC_LINES));
+
+describe("TEAM_INFO", () => {
   it("has 30 unique teams, 15 per conference, and 60 sides", () => {
-    expect(TEAMS).toHaveLength(30);
+    expect(TEAM_INFO).toHaveLength(30);
     expect(TEAM_IDS.size).toBe(30);
-    expect(new Set(TEAMS.map((team) => team.nbaId)).size).toBe(30);
-    expect(TEAMS.filter((team) => team.conference === "East")).toHaveLength(15);
+    expect(new Set(TEAM_INFO.map((team) => team.nbaId)).size).toBe(30);
+    expect(TEAM_INFO.filter((team) => team.conference === "East")).toHaveLength(15);
     expect(TOTAL_SIDES).toBe(60);
   });
 
-  it("uses half-point lines and valid mid-season records", () => {
-    for (const team of TEAMS) {
-      expect(team.line % 1).toBe(0.5);
+  it("uses valid mid-season records and colors", () => {
+    for (const team of TEAM_INFO) {
       expect(team.wins + team.losses).toBeGreaterThan(0);
       expect(team.wins + team.losses).toBeLessThan(82);
       expect(team.color).toMatch(/^#[0-9A-F]{6}$/i);
@@ -24,12 +27,21 @@ describe("TEAMS", () => {
   });
 });
 
+describe("STATIC_LINES", () => {
+  it("has a half-point line for every team and nothing else", () => {
+    expect(isCompleteLineSet(STATIC_LINES, TEAM_IDS)).toBe(true);
+    expect(Object.keys(STATIC_LINES.values).sort()).toEqual([...TEAM_IDS].sort());
+    for (const line of Object.values(STATIC_LINES.values)) expect(line % 1).toBe(0.5);
+  });
+});
+
 describe("buildDemoLeague", () => {
   const league = buildDemoLeague();
 
-  it("is a completed 4-manager, 11-round draft", () => {
+  it("is a completed 4-manager, 11-round draft on the static lines", () => {
     expect(league.id).toBe(DEMO_LEAGUE_ID);
     expect(league.isDemo).toBe(true);
+    expect(league.lines).toBe(STATIC_LINES);
     expect(league.managers).toHaveLength(LEAGUE_DEFAULTS.managerCount);
     expect(league.draft.rounds).toBe(LEAGUE_DEFAULTS.rounds);
     expect(league.draft.status).toBe("complete");
@@ -48,8 +60,8 @@ describe("buildDemoLeague", () => {
   });
 
   it("never gives a manager both sides of a team", () => {
-    const owned = new Set(league.draft.picks.map((pick) => `${pick.managerId}:${pick.teamId}`));
-    expect(owned.size).toBe(league.draft.picks.length);
+    const held = new Set(league.draft.picks.map((pick) => `${pick.managerId}:${pick.teamId}`));
+    expect(held.size).toBe(league.draft.picks.length);
   });
 
   it("opens with the same eight picks as the draft room mockup", () => {

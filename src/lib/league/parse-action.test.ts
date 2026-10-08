@@ -8,19 +8,26 @@ describe("parseDraftAction", () => {
     expect(parseDraftAction({ type: "resume" })).toEqual({ type: "resume" });
   });
 
-  it("accepts a confirm with a team and side, dropping extra fields", () => {
-    expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "OVER", extra: 1 })).toEqual({
+  it("accepts a confirm with a team, side and pick number, dropping extra fields", () => {
+    expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "OVER", pickNumber: 3, extra: 1 })).toEqual({
       type: "confirm",
       teamId: "MIN",
       side: "OVER",
+      pickNumber: 3,
     });
   });
 
   it("rejects anything else", () => {
     expect(parseDraftAction(null)).toBeNull();
     expect(parseDraftAction("start")).toBeNull();
-    expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "SIDEWAYS" })).toBeNull();
-    expect(parseDraftAction({ type: "confirm", side: "OVER" })).toBeNull();
+    expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "SIDEWAYS", pickNumber: 1 })).toBeNull();
+    expect(parseDraftAction({ type: "confirm", side: "OVER", pickNumber: 1 })).toBeNull();
     expect(parseDraftAction({ type: "delete" })).toBeNull();
+  });
+
+  it("requires a positive whole pick number on a confirm", () => {
+    for (const pickNumber of [undefined, 0, -1, 1.5, "1", Number.NaN]) {
+      expect(parseDraftAction({ type: "confirm", teamId: "MIN", side: "OVER", pickNumber })).toBeNull();
+    }
   });
 });

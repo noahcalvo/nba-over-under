@@ -1,13 +1,16 @@
-import { withSeat } from "@/lib/league/seats-cookie";
-import { errorResponse, readJsonBody } from "@/server/http";
-import { leagueStore } from "@/server/store";
-import { readSeats, writeSeats } from "@/server/viewer";
+import { createLeagueFor } from "@/db/actions";
+import { getDb } from "@/server/db";
+import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
+import { ensureSession } from "@/server/session";
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) return errorResponse("forbidden");
   const body = await readJsonBody(request);
-  const result = leagueStore.create({ leagueName: body.leagueName, displayName: body.displayName });
+  const sessionId = await ensureSession();
+  const result = await createLeagueFor(await getDb(), sessionId, {
+    leagueName: body.leagueName,
+    displayName: body.displayName,
+  });
   if (!result.ok) return errorResponse(result.error);
-  const { league, managerId } = result.value;
-  await writeSeats(withSeat(await readSeats(), league.id, managerId));
-  return Response.json({ leagueId: league.id, managerId }, { status: 201 });
+  return Response.json({ leagueId: result.value.leagueId }, { status: 201 });
 }

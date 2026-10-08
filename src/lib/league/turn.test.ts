@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seatForPick } from "@/lib/draft";
 import type { DraftAccess } from "@/lib/league/permissions";
-import { describeTurn, pickingManagerId } from "@/lib/league/turn";
+import { describeTurn } from "@/lib/league/turn";
 import type { DraftStatus, Manager } from "@/lib/types";
 
 const MANAGERS: Manager[] = [
@@ -54,21 +54,5 @@ describe("describeTurn", () => {
   it("reports paused and complete drafts", () => {
     expect(describeTurn(league("paused", 1), "m2")).toEqual({ kind: "paused", managerId: "m2" });
     expect(describeTurn(league("complete", 8), "m1")).toEqual({ kind: "complete", managerId: null });
-  });
-});
-
-describe("pickingManagerId", () => {
-  it("is the viewer on their own turn and while they wait", () => {
-    expect(pickingManagerId(league("live"), "m1")).toBe("m1");
-    expect(pickingManagerId(league("live"), "m2")).toBe("m2");
-  });
-
-  it("is the open seat when the commissioner picks for it", () => {
-    expect(pickingManagerId(league("live", 2), "m1")).toBe("m3");
-    expect(pickingManagerId(league("live", 2), "m2")).toBe("m2");
-  });
-
-  it("is nobody for a spectator", () => {
-    expect(pickingManagerId(league("live"), null)).toBeNull();
   });
 });

@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
+// Body text uses 400–600; every bold (700) is set in the condensed display face, so Barlow 700 isn't loaded.
 const barlow = Barlow({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
 
 const barlowCondensed = Barlow_Condensed({

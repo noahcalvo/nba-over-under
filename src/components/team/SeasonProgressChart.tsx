@@ -136,7 +136,7 @@ export function SeasonProgressChart({
               y={bottom + 18}
               textAnchor="middle"
               fontSize={12}
-              fontWeight={zoomed && game === range.current ? 700 : 400}
+              fontWeight={zoomed && game === range.current ? 600 : 400}
               className={zoomed && game === range.current ? "fill-progress" : "fill-fog-300"}
             >
               {game}

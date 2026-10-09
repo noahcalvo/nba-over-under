@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Panel } from "@/components/ui/Panel";
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TeamLink } from "@/components/ui/TeamLink";
 import { fadeStatus } from "@/lib/fade-status";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
@@ -30,9 +31,13 @@ export function FadesPanel({ row, managers }: { row: StandingRow; managers: Mana
                   </p>
                 </div>
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <TeamLogo team={target.team} size={32} />
+                  <TeamLink teamId={target.team.id} decorative>
+                    <TeamLogo team={target.team} size={32} />
+                  </TeamLink>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{target.team.name}</p>
+                    <p className="truncate text-sm font-medium">
+                      <TeamLink teamId={target.team.id}>{target.team.name}</TeamLink>
+                    </p>
                     <p className="flex items-center gap-1.5 text-xs">
                       <SidePill side={target.pick.side} size="sm" />
                       <span className="tabular-nums">{formatNumber(target.team.line)}</span>

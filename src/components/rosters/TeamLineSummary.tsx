@@ -1,4 +1,5 @@
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TeamLink } from "@/components/ui/TeamLink";
 import { formatNumber } from "@/lib/format";
 import type { ScoredCall } from "@/lib/standings";
 
@@ -7,9 +8,13 @@ export function TeamLineSummary({ call, showProjected }: { call: ScoredCall; sho
   const { team, evaluation } = call;
   return (
     <>
-      <TeamLogo team={team} size={36} />
+      <TeamLink teamId={team.id} decorative>
+        <TeamLogo team={team} size={36} />
+      </TeamLink>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-fog-50">{team.name}</p>
+        <p className="truncate text-sm font-medium text-fog-50">
+          <TeamLink teamId={team.id}>{team.name}</TeamLink>
+        </p>
         <p className="flex min-w-0 items-center gap-1.5 text-sm text-fog-400">
           <span className="font-semibold tabular-nums text-fog-50">
             <span className="sr-only">Line </span>

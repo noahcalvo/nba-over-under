@@ -4,6 +4,7 @@ import { Panel } from "@/components/ui/Panel";
 import { SidePill } from "@/components/ui/SidePill";
 import { SignedValue } from "@/components/ui/SignedValue";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TeamLink } from "@/components/ui/TeamLink";
 import { formatNumber } from "@/lib/format";
 import type { ScoredCall } from "@/lib/standings";
 
@@ -27,10 +28,14 @@ export function ClosestCalls({ calls }: { calls: ScoredCall[] }) {
             className="flex min-w-0 flex-col gap-4 rounded-lg border border-ink-700 bg-ink-900/70 p-4"
           >
             <div className="flex items-center gap-3">
-              <TeamLogo team={team} size={44} />
+              <TeamLink teamId={team.id} decorative>
+                <TeamLogo team={team} size={44} />
+              </TeamLink>
               <div className="min-w-0">
                 <h3 className="truncate font-semibold">
-                  {team.city} {team.name}
+                  <TeamLink teamId={team.id}>
+                    {team.city} {team.name}
+                  </TeamLink>
                 </h3>
                 <p className="mt-1 flex items-center gap-2">
                   <SidePill side={pick.side} size="sm" />

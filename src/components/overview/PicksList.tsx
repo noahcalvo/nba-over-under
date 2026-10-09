@@ -3,6 +3,7 @@ import { PaceBar } from "@/components/ui/PaceBar";
 import { SidePill } from "@/components/ui/SidePill";
 import { SignedValue } from "@/components/ui/SignedValue";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TeamLink } from "@/components/ui/TeamLink";
 import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
 import type { Basis, CallEvaluation } from "@/lib/scoring";
 import type { ScoredCall } from "@/lib/standings";
@@ -63,9 +64,13 @@ export function PicksTable({ calls, basis }: { calls: ScoredCall[]; basis: Basis
             <tr key={pick.pickNumber} className="border-b border-ink-700/70 last:border-0">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <TeamLogo team={team} size={32} />
+                  <TeamLink teamId={team.id} decorative>
+                    <TeamLogo team={team} size={32} />
+                  </TeamLink>
                   <span className="font-medium">
-                    {team.city} {team.name}
+                    <TeamLink teamId={team.id}>
+                      {team.city} {team.name}
+                    </TeamLink>
                   </span>
                 </div>
               </td>
@@ -116,10 +121,14 @@ export function PickCards({ calls, basis }: { calls: ScoredCall[]; basis: Basis 
         return (
           <li key={pick.pickNumber} className="px-4 py-4">
             <div className="flex items-center gap-3">
-              <TeamLogo team={team} size={36} />
+              <TeamLink teamId={team.id} decorative>
+                <TeamLogo team={team} size={36} />
+              </TeamLink>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">
-                  {team.city} {team.name}
+                  <TeamLink teamId={team.id}>
+                    {team.city} {team.name}
+                  </TeamLink>
                 </p>
                 <p className="text-xs text-fog-400">
                   Pick {pick.pickNumber} · {formatRecord(team.wins, team.losses)}

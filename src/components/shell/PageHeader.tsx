@@ -27,3 +27,17 @@ export function PageHeader({
     </header>
   );
 }
+
+/** A page header whose text isn't known yet: same height, placeholder bars. */
+export function PageHeaderSkeleton({ title }: { title?: string }) {
+  return (
+    <header aria-hidden className="flex flex-col">
+      {title ? (
+        <h1 className="font-display text-3xl font-bold leading-tight text-fog-50 sm:text-5xl">{title}</h1>
+      ) : (
+        <div className="h-9 w-64 max-w-full animate-pulse rounded-lg bg-ink-800 sm:h-[3.75rem] sm:w-96" />
+      )}
+      <div className="mt-2 h-6 w-56 max-w-full animate-pulse rounded bg-ink-800 sm:h-8" />
+    </header>
+  );
+}

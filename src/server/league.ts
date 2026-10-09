@@ -1,6 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import type { LeagueChrome } from "@/components/shell/CurrentLeague";
 import { buildDemoLeague, DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_INFO } from "@/data/teams";
 import { listSessionLeagues, loadLeague, type SeatedLeague } from "@/db/leagues";
@@ -59,6 +60,19 @@ export async function toLeagueView(league: League, viewerId?: string | null): Pr
     teams: league.lines ? withLines(teamInfo, league.lines) : withAvailableLines(teamInfo, lineReview!.lines),
     lineReview,
     records,
+  };
+}
+
+/** What the league layout shows: the league and the viewer's other leagues. Null for an unknown league. */
+export async function leagueChrome(leagueId: string): Promise<LeagueChrome | null> {
+  const league = await findLeague(leagueId);
+  if (!league) return null;
+  const otherLeagues = (await listViewerLeagues())
+    .filter((other) => other.id !== league.id)
+    .map((other) => ({ id: other.id, name: other.name, seasonLabel: other.seasonLabel }));
+  return {
+    league: { id: league.id, name: league.name, seasonLabel: league.seasonLabel, isDemo: league.isDemo },
+    otherLeagues,
   };
 }
 

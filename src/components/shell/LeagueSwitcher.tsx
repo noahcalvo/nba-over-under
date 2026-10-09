@@ -68,3 +68,21 @@ export function LeagueSwitcher({
     </div>
   );
 }
+
+/** Before the league is known (the prerendered shell): the same box with placeholder text. */
+export function LeagueSwitcherSkeleton({ compact = false }: { compact?: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className={`flex w-full min-w-0 items-center gap-2 rounded-lg border border-ink-700 bg-ink-850 ${
+        compact ? "px-3 py-1.5" : "px-4 py-3"
+      }`}
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
+        <span className={`block w-28 animate-pulse rounded bg-ink-700 ${compact ? "h-4" : "h-5"}`} />
+        {!compact && <span className="block h-4 w-16 animate-pulse rounded bg-ink-700" />}
+      </span>
+      <ChevronDown aria-hidden className="size-4 shrink-0 text-fog-300" />
+    </div>
+  );
+}

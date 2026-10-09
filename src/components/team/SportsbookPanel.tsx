@@ -34,7 +34,7 @@ export function SportsbookPanel({
   );
 }
 
-function SportsbookSkeleton({ className }: { className: string }) {
+export function SportsbookSkeleton({ className }: { className: string }) {
   return (
     <section aria-busy="true" aria-labelledby="sportsbook-heading" className={`${SECTION_CLASS} ${className}`}>
       <h2 id="sportsbook-heading" className="font-display text-3xl font-bold text-accent">

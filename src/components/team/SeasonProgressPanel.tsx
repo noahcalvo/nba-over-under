@@ -44,7 +44,7 @@ export function SeasonProgressPanel({
   );
 }
 
-function ProgressSkeleton({ className }: { className: string }) {
+export function ProgressSkeleton({ className }: { className: string }) {
   return (
     <section aria-busy="true" aria-labelledby="progress-heading" className={`${SECTION_CLASS} ${className}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">

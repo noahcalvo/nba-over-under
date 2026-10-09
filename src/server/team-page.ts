@@ -1,7 +1,7 @@
 import "server-only";
 import { LINES } from "@/config/lines";
 import { TEAM_IDS } from "@/data/teams";
-import { latestMarketLine, type TeamPageData } from "@/lib/team-detail";
+import { latestMarketLine, teamOptions, type TeamPageData } from "@/lib/team-detail";
 import type { League } from "@/lib/types";
 import { readGameLog } from "@/server/game-log";
 import { teamInfoFor } from "@/server/league";
@@ -22,9 +22,7 @@ export async function loadTeamPage(league: League, rawTeamId: string): Promise<T
     league,
     info,
     lockedLine: league.lines?.values[teamId] ?? null,
-    teamOptions: teamInfo
-      .map((team) => ({ id: team.id, label: `${team.city} ${team.name}` }))
-      .sort((a, b) => a.label.localeCompare(b.label)),
+    teamOptions: teamOptions(teamInfo),
     gameLog,
     market,
   };

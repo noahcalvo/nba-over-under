@@ -23,7 +23,10 @@ async function LeagueShell({
     .filter((other) => other.id !== league.id)
     .map((other) => ({ id: other.id, name: other.name, seasonLabel: other.seasonLabel }));
   return (
-    <AppShell league={{ id: league.id, name: league.name, seasonLabel: league.seasonLabel }} otherLeagues={otherLeagues}>
+    <AppShell
+      league={{ id: league.id, name: league.name, seasonLabel: league.seasonLabel, isDemo: league.isDemo }}
+      otherLeagues={otherLeagues}
+    >
       {children}
     </AppShell>
   );

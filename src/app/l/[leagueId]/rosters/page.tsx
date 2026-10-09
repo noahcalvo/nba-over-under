@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import { RostersBoard } from "@/components/rosters/RostersBoard";
-import { PageFallback } from "@/components/ui/PageFallback";
+import { RostersFallback } from "@/components/rosters/RostersFallback";
 import { getLeagueOrNotFound, toLeagueView } from "@/server/league";
+
+/** A revisit within this many seconds reuses the last render instead of waiting for the server (see CLAUDE.md). */
+export const unstable_dynamicStaleTime = 60;
 
 export default function RostersPage({ params }: PageProps<"/l/[leagueId]/rosters">) {
   return (
-    <Suspense fallback={<PageFallback label="Loading rosters…" />}>
+    <Suspense fallback={<RostersFallback />}>
       <Rosters params={params} />
     </Suspense>
   );

@@ -15,8 +15,8 @@ export function TeamHeader({
   showProjected,
   onShowProjectedChange,
 }: {
-  league: League;
-  info: TeamInfo;
+  league: Pick<League, "id" | "name" | "seasonLabel" | "isDemo">;
+  info: Pick<TeamInfo, "id" | "nbaId" | "color" | "city" | "name">;
   teamOptions: TeamOption[];
   showProjected: boolean;
   onShowProjectedChange: (value: boolean) => void;

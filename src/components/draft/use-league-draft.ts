@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DRAFT_POLL_INTERVAL_MS } from "@/config/league";
 import type { DraftCommand } from "@/lib/fades";
@@ -7,6 +8,7 @@ import type { LeagueView } from "@/lib/types";
 
 /** Holds the live league view: polls for other managers' picks and fades (until the draft is complete) and sends this viewer's actions. */
 export function useLeagueDraft(initial: LeagueView) {
+  const router = useRouter();
   const [view, setView] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -52,6 +54,9 @@ export function useLeagueDraft(initial: LeagueView) {
           return false;
         }
         accept(data as LeagueView);
+        // Other league pages reuse their last render for a minute (unstable_dynamicStaleTime); drop those so they
+        // show this change.
+        router.refresh();
         return true;
       } catch {
         setError("Couldn't reach the server. Try again.");
@@ -60,7 +65,7 @@ export function useLeagueDraft(initial: LeagueView) {
         setPending(false);
       }
     },
-    [accept, refresh],
+    [accept, refresh, router],
   );
 
   const dispatch = useCallback((action: DraftCommand) => send(endpoint, "POST", action), [send, endpoint]);

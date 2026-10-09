@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import { LeagueOverview } from "@/components/overview/LeagueOverview";
-import { PageFallback } from "@/components/ui/PageFallback";
+import { OverviewFallback } from "@/components/overview/OverviewFallback";
 import { getLeagueOrNotFound, toLeagueView } from "@/server/league";
+
+/** A revisit within this many seconds reuses the last render instead of waiting for the server (see CLAUDE.md). */
+export const unstable_dynamicStaleTime = 60;
 
 export default function OverviewPage({ params }: PageProps<"/l/[leagueId]">) {
   return (
-    <Suspense fallback={<PageFallback label="Loading league…" />}>
+    <Suspense fallback={<OverviewFallback />}>
       <Overview params={params} />
     </Suspense>
   );

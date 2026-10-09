@@ -7,6 +7,7 @@ import {
   lineMovement,
   pickPoints,
   pickStatus,
+  teamOptions,
   teamOwnership,
 } from "@/lib/team-detail";
 import type { DraftState, Fade, League, Manager, Team } from "@/lib/types";
@@ -244,5 +245,20 @@ describe("lineMovement", () => {
     expect(lineMovement(49.5, 51.5)).toBe(-2);
     expect(lineMovement(null, 51.5)).toBeNull();
     expect(lineMovement(49.5, null)).toBeNull();
+  });
+});
+
+describe("teamOptions", () => {
+  it("labels teams by full name and sorts them by it", () => {
+    const options = teamOptions([
+      { id: "LAL", city: "Los Angeles", name: "Lakers" },
+      { id: "ATL", city: "Atlanta", name: "Hawks" },
+      { id: "LAC", city: "LA", name: "Clippers" },
+    ]);
+    expect(options).toEqual([
+      { id: "ATL", label: "Atlanta Hawks" },
+      { id: "LAC", label: "LA Clippers" },
+      { id: "LAL", label: "Los Angeles Lakers" },
+    ]);
   });
 });

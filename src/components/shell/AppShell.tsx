@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { CurrentLeagueProvider, type CurrentLeague } from "./CurrentLeague";
 import { LeagueSwitcher, type LeagueSummary } from "./LeagueSwitcher";
 import { Logo } from "./Logo";
 import { SidebarNav } from "./SidebarNav";
@@ -9,7 +10,7 @@ export function AppShell({
   otherLeagues,
   children,
 }: {
-  league: LeagueSummary;
+  league: CurrentLeague;
   otherLeagues: LeagueSummary[];
   children: ReactNode;
 }) {
@@ -26,7 +27,9 @@ export function AppShell({
           <LeagueSwitcher league={league} otherLeagues={otherLeagues} compact />
         </div>
       </header>
-      <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">{children}</main>
+      <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
+        <CurrentLeagueProvider league={league}>{children}</CurrentLeagueProvider>
+      </main>
       <BottomNav leagueId={league.id} />
     </div>
   );

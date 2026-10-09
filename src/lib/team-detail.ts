@@ -14,6 +14,13 @@ export interface TeamOption {
   label: string;
 }
 
+/** Every team, labelled with its full name and sorted by it, for the team selector. */
+export function teamOptions(teams: readonly Pick<TeamInfo, "id" | "city" | "name">[]): TeamOption[] {
+  return teams
+    .map((team) => ({ id: team.id, label: `${team.city} ${team.name}` }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
 /** The latest sportsbook line for one team. Display only: league scoring uses the frozen line. */
 export interface MarketLine {
   book: string;

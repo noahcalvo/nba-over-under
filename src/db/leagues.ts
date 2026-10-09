@@ -8,14 +8,27 @@ import { seatInLeague } from "./sessions";
 
 type LeagueRow = typeof leagues.$inferSelect;
 
-async function assemble(db: Db, row: LeagueRow): Promise<League> {
-  const managerRows = await db.select().from(managers).where(eq(managers.leagueId, row.id)).orderBy(asc(managers.seat));
-  const pickRows = await db.select().from(picks).where(eq(picks.leagueId, row.id)).orderBy(asc(picks.pickNumber));
-  const fadeRows = await db
-    .select()
-    .from(fades)
-    .where(eq(fades.leagueId, row.id))
-    .orderBy(asc(fades.createdAt), asc(fades.managerId));
+type LeagueParts = [
+  managerRows: (typeof managers.$inferSelect)[],
+  pickRows: (typeof picks.$inferSelect)[],
+  fadeRows: (typeof fades.$inferSelect)[],
+];
+
+/** A league's managers, picks and fades. On a pool the three queries run at once; a transaction runs them in turn. */
+function loadParts(db: Db, leagueId: string): Promise<LeagueParts> {
+  return Promise.all([
+    db.select().from(managers).where(eq(managers.leagueId, leagueId)).orderBy(asc(managers.seat)),
+    db.select().from(picks).where(eq(picks.leagueId, leagueId)).orderBy(asc(picks.pickNumber)),
+    db
+      .select()
+      .from(fades)
+      .where(eq(fades.leagueId, leagueId))
+      .orderBy(asc(fades.createdAt), asc(fades.managerId)),
+  ]);
+}
+
+async function assemble(db: Db, row: LeagueRow, parts?: LeagueParts): Promise<League> {
+  const [managerRows, pickRows, fadeRows] = parts ?? (await loadParts(db, row.id));
   const roster: Manager[] = managerRows.map((manager) => ({
     id: manager.id,
     seat: manager.seat,
@@ -61,8 +74,12 @@ async function assemble(db: Db, row: LeagueRow): Promise<League> {
 
 /** A stored league, or null. The demo league is never stored; see src/server/league.ts. */
 export async function loadLeague(db: Db, leagueId: string): Promise<League | null> {
-  const [row] = await db.select().from(leagues).where(eq(leagues.id, leagueId));
-  return row ? assemble(db, row) : null;
+  // One round trip: the league row and its parts are read together (an unknown id just finds no parts).
+  const [[row], parts] = await Promise.all([
+    db.select().from(leagues).where(eq(leagues.id, leagueId)),
+    loadParts(db, leagueId),
+  ]);
+  return row ? assemble(db, row, parts) : null;
 }
 
 /** Inserts a new league and its managers. False when the id is already taken. */

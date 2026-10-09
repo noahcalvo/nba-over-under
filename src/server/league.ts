@@ -1,5 +1,6 @@
 import "server-only";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { buildDemoLeague, DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_INFO } from "@/data/teams";
 import { listSessionLeagues, loadLeague, type SeatedLeague } from "@/db/leagues";
@@ -16,10 +17,11 @@ import { getSession, getViewerId } from "@/server/session";
 /** The demo league lives in code, never in the database. */
 const DEMO_LEAGUE = buildDemoLeague();
 
-export async function findLeague(leagueId: string): Promise<League | null> {
+/** Read once per request: the layout and the page both ask for the league on a full page load. */
+export const findLeague = cache(async (leagueId: string): Promise<League | null> => {
   if (leagueId === DEMO_LEAGUE_ID) return DEMO_LEAGUE;
   return loadLeague(await getDb(), leagueId);
-}
+});
 
 export async function getLeagueOrNotFound(leagueId: string): Promise<League> {
   const league = await findLeague(leagueId);

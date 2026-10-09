@@ -6,6 +6,12 @@ NBA season win-total draft league prototype. Specs: `docs/superpowers/specs/2026
 `docs/superpowers/specs/2026-10-08-durable-storage-sessions-design.md`. Plans in `docs/superpowers/plans/`.
 Mockups: `wiremocks/`.
 
+## Production
+- Deployed on Vercel from `main`: https://nba-over-under-iota.vercel.app (a deploy takes ~1–2 minutes after a push).
+  Real league for checks: https://nba-over-under-iota.vercel.app/l/bgtpyh (e.g. `/l/bgtpyh/teams/ATL`). Read-only
+  checks only: never draft, refresh records or claim links there unless the user asks.
+- Production prefetches (App Shells); `next dev` never does. Measure navigation speed on production, not locally.
+
 ## Commands
 - `npm run dev` — dev server on :3000 (`.claude/launch.json` → "dev"); `RECORD_SOURCE=static LINE_SOURCE=static npm run dev` works offline
 - `npm test` — Vitest unit tests (`npm run test:watch` to watch); database tests run on in-memory PGlite

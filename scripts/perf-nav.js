@@ -1,23 +1,29 @@
 // Client-navigation timer. Paste into the page (browser pane `javascript_tool`) after it has loaded.
 // Then navigate with REAL clicks (the `computer` tool) or `window.__perfNav.push(path)`; read `window.__perfNav.log`.
 // Synthetic `element.click()` on a <Link> can turn into a full page load here, so don't use it.
-// Per navigation it logs when the URL changed, when the new page's <h1> was visible ("header") and when nothing in
-// <main> was still loading ("ready": no visible [aria-busy=true] or [role=status]). Hidden routes kept by the router
-// (React Activity) are ignored by checking visibility.
+// Per navigation it logs when the URL changed, when the new page's <h1> was visible ("header"), when the page-level
+// loading state was gone ("content": no visible [aria-busy=true] within two levels of <main>) and when nothing in <main>
+// was still loading ("ready": no visible [aria-busy=true] or [role=status], so streamed panels count too). Hidden routes
+// kept by the router (React Activity) are ignored by checking visibility.
+// The browser pane must paint: while it's hidden, streamed content and Link prefetches wait for a frame. Take a
+// screenshot after each page load (and between steps) to keep frames coming.
 (() => {
   const visible = (el) => el.checkVisibility?.() ?? el.offsetParent !== null;
   const heading = () => [...document.querySelectorAll("main h1")].find(visible)?.textContent?.trim() ?? null;
   const loading = () => [...document.querySelectorAll("main [aria-busy=true], main [role=status]")].some(visible);
+  const pageLoading = () =>
+    [...document.querySelectorAll("main > [aria-busy=true], main > * > [aria-busy=true]")].some(visible);
   const state = { log: [], current: null };
   const start = (label) => {
     finish("interrupted");
     const from = heading();
-    state.current = { label, t0: performance.now(), from, url: null, header: null, ready: null };
+    state.current = { label, t0: performance.now(), from, url: null, header: null, content: null, ready: null };
   };
   function finish(reason) {
     const c = state.current;
     if (!c) return;
-    state.log.push({ label: c.label, url: c.url, header: c.header, ready: c.ready, ...(reason ? { reason } : {}) });
+    const { label, url, header, content, ready } = c;
+    state.log.push({ label, url, header, content, ready, ...(reason ? { reason } : {}) });
     state.current = null;
   }
   const check = () => {
@@ -27,7 +33,8 @@
     if (c.url === null && location.pathname !== c.startPath) c.url = now;
     const h = heading();
     if (c.header === null && c.url !== null && h && (h !== c.from || c.sameHeading)) c.header = now;
-    if (c.header !== null && !loading()) {
+    if (c.header !== null && c.content === null && !pageLoading()) c.content = now;
+    if (c.content !== null && !loading()) {
       c.ready = now;
       finish();
     }
@@ -60,7 +67,11 @@
       state.current.sameHeading = sameHeading;
       window.next.router.push(path);
     },
-    table: () => state.log.map((e) => `${e.label}  url ${e.url}ms  header ${e.header}ms  ready ${e.ready}ms${e.reason ? ` (${e.reason})` : ""}`),
+    table: () =>
+      state.log.map(
+        (e) =>
+          `${e.label}  url ${e.url}  header ${e.header}  content ${e.content}  ready ${e.ready} ms${e.reason ? ` (${e.reason})` : ""}`,
+      ),
   };
   return "perf-nav ready";
 })();

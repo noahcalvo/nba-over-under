@@ -16,12 +16,27 @@ Newest entries first. Every number is from production unless it says otherwise.
 - **React Activity** keeps previous routes mounted but hidden. Measure with visible elements only
   (`scripts/perf-nav.js`).
 - `next dev` never prefetches: loading states users see in production do not appear locally unless you add a delay.
+- **A hidden browser pane doesn't paint**, and React's streamed reveals and `<Link>` prefetches wait for a frame. Take
+  a screenshot after each load (and between steps) or the numbers measure the pane, not the app.
+- Prefetching is cheap: a page load fetches ~12 small RSC prefetches (route trees and App Shells, ~5 KB transferred
+  once static assets are cached). Team logos load lazily (6 on the overview's first screen).
 
 ## Iterations
 
-### 3. (in progress) Static chrome in the HTML shell
-Direct visits served a blank dark page from the CDN (~40 ms TTFB) until the league loaded, because the league layout
-wrapped everything, sidebar included, in one Suspense boundary.
+### 3. League frame and static content in the HTML shell — `9ca9fb9`
+Direct visits got a blank dark page from the CDN (~40 ms TTFB) until the league loaded, because the league layout
+wrapped everything, sidebar included, in one Suspense boundary. Now the layout passes the league read as a promise:
+the sidebar, top bar and bottom tabs are in the prerendered HTML (nav items render as placeholders, then become
+links), and every page renders immediately with its own loading state (header placeholders until the layout knows the
+league). Settings' scoring rules are in the static HTML.
+
+| Direct visit (`/l/bgtpyh/settings`) | Before | After |
+| --- | --- | --- |
+| First bytes from the CDN (~35–45 ms) | blank page | sidebar, title, scoring rules (byte 9.4 K of 73 K) |
+| League name, links | end of stream | streamed (byte 42 K) |
+
+Client navigations unchanged (header 4–18 ms; revisits reused). Team pages: content 89–319 ms, streamed panels
+(ESPN, FanDuel) 308–401 ms. The two modes (~90 vs ~310 ms) are the dev machine's network, not the server.
 
 ### 2. Headers at once, instant revisits — `54705e2`
 - Loading states for Overview, Rosters and team pages are client components that read the league from the layout
@@ -43,7 +58,6 @@ Saves a few ms per page (the database is close), so no visible change.
 
 ## Ideas not yet done (most promising first)
 
-- Static chrome (sidebar, page titles, settings rules) in the CDN HTML shell for direct visits. (iteration 3)
 - Draft room loading state: same header-from-layout pattern.
 - First-visit data without a round trip: `"use cache: private"` page data plus `<Link prefetch>` on the sidebar
   (per-link prefetch includes cached content). Trade-off: up to five minutes of client staleness; needs care during a

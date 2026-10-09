@@ -11,6 +11,8 @@ Mockups: `wiremocks/`.
   Real league for checks: https://nba-over-under-iota.vercel.app/l/bgtpyh (e.g. `/l/bgtpyh/teams/ATL`). Read-only
   checks only: never draft, refresh records or claim links there unless the user asks.
 - Production prefetches (App Shells); `next dev` never does. Measure navigation speed on production, not locally.
+- Load-time work: `docs/perf/log.md` (findings, iterations, ideas) and the `perf-iteration` skill (`scripts/perf.mjs`,
+  `scripts/perf-nav.js`). Run it repeatedly with `/loop /perf-iteration`.
 
 ## Commands
 - `npm run dev` — dev server on :3000 (`.claude/launch.json` → "dev"); `RECORD_SOURCE=static LINE_SOURCE=static npm run dev` works offline

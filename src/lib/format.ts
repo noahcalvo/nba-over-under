@@ -68,3 +68,15 @@ export function formatUpdatedAt(iso: string, timeZone?: string): string {
     .format(new Date(iso))
     .replace(/\u202f/g, " ");
 }
+
+const GAME_DATE = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: "America/New_York",
+});
+
+/** "Wed, Oct 22": a game's date in US Eastern, the same on the server and every browser. */
+export function formatGameDate(iso: string): string {
+  return GAME_DATE.format(new Date(iso));
+}

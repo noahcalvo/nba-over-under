@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDateTimeET,
+  formatGameDate,
   formatNumber,
   formatOrdinal,
   formatRecord,
@@ -83,5 +84,13 @@ describe("formatUpdatedAt", () => {
   it("shows month, day and time", () => {
     expect(formatUpdatedAt("2026-10-15T10:02:00.000Z", "UTC")).toBe("Oct 15, 10:02 AM");
     expect(formatUpdatedAt("2026-10-15T10:02:00.000Z", "America/New_York")).toBe("Oct 15, 6:02 AM");
+  });
+});
+
+describe("formatGameDate", () => {
+  it("shows the weekday and date in US Eastern", () => {
+    expect(formatGameDate("2025-10-22T23:00Z")).toBe("Wed, Oct 22");
+    // 01:30 UTC on the 17th is still the 16th in New York.
+    expect(formatGameDate("2025-12-17T01:30Z")).toBe("Tue, Dec 16");
   });
 });

@@ -19,6 +19,7 @@ touch league scores.
 | Game-by-game history today? | No. `team_records` stores only wins and losses per season and team (ESPN standings). |
 | Source for history | **ESPN** `site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{espnAbbr}/schedule?season={endYear}&seasontype=2`: keyless, all regular-season games with date, opponent, home/away, `winner` and `status.type.completed`. `season=2026` returns 82 completed ORL games; `season=2027` already lists 80 upcoming games, none completed. Unofficial, can change shape. |
 | FanDuel: preseason only or in-season? | `lineSource` reads whichever `26-27 NBA … Regular Season Wins` markets are **open right now** (cached 5 min, 30 s retry, last good read kept on failure). It is a current read, not a snapshot. Once FanDuel closes a team's market, that team has no latest line. |
+| ESPN schedule quirks | The **NBA Cup Championship** is listed as a regular-season event (competition type `CC`) but does not count in the standings (NY 2025–26: 54 wins in the log, 53 in the standings). A **postponed** game is listed twice: once as `STATUS_POSTPONED`, again on its make-up date (GS 2025–26: 83 events). Dropping both gives 82 games whose wins match the standings for ORL (45), NYK (53) and GSW (37). |
 | Push | An existing rule: margin 0 is a miss (`margin > 0`), so an integer line needs `line + 1` wins for the Over. `floor(line) + 1 − wins` matches it. |
 | Demo league | Season 2025–26, mock records and `STATIC_LINES`. Real ESPN history would not match the mock records. |
 
@@ -43,9 +44,10 @@ interface Game {
   number: number;
   /** ISO 8601 tip-off time; null when the source has none. */
   date: string | null;
-  /** Our team id; null when the opponent is not one of the 30 (or not yet decided). */
+  /** Our team id; null when the opponent is not one of the 30, or unknown (mock data). */
   opponentId: TeamId | null;
-  home: boolean;
+  /** Null when unknown (mock data). */
+  home: boolean | null;
   /** Null until the game is completed. */
   result: "W" | "L" | null;
 }
@@ -53,7 +55,8 @@ interface GameLog { season: number; teamId: TeamId; games: Game[] }
 ```
 
 - `espn.ts`: `espnScheduleUrl(espnAbbr, season)` and `parseEspnSchedule(payload, season, teamId, resolveTeam)`. Keeps
-  only events whose `seasonType.type` is 2 (regular season): preseason and playoff events are dropped. Sorts by date,
+  only events whose `seasonType.type` is 2 (regular season): preseason and playoff events are dropped. Also drops the
+  NBA Cup Championship (competition type `CC`) and postponed or canceled events (listed again when made up). Sorts by date,
   numbers 1…n, refuses more than 82 games and a payload for another season (FeedError, like the standings parser). A
   completed game needs exactly one competitor flagged `winner`; otherwise the parse fails. Tested against a trimmed
   saved fixture that mixes in preseason and playoff events.
@@ -93,9 +96,10 @@ interface GameLog { season: number; teamId: TeamId; games: Game[] }
 - `gameLogSource`: ESPN via `fetchFeedJson`, cached per (season, team) like `cachedLineSource` (success reused 10 min,
   failure retried after 30 s). Fetched only when a team page is opened: one ESPN call per team, no cron, no table.
   Timings live in `src/config/records.ts` (`RECORDS.gameLogCacheSeconds`, `RECORDS.gameLogRetrySeconds`).
-- `RECORD_SOURCE=static` and the demo league use the **mock game log**: `src/data/game-logs.ts`, generated once by a
-  seeded script and committed. Each team's completed games add up to its mock record in `src/data/teams.ts`; upcoming
-  positions have no date or opponent. It is part of the single mock dataset, never shown for a stored league unless
+- `RECORD_SOURCE=static` and the demo league use the **mock game log**: `mockGameLog` in `src/data/game-logs.ts`,
+  a fixed order of each team's mock wins and losses (a seeded shuffle per team, the same on every run). Each team's
+  completed games add up to its mock record in `src/data/teams.ts`; it lists no upcoming games and no dates, opponents
+  or home/away. It is part of the single mock dataset, never shown for a stored league unless
   `RECORD_SOURCE=static`.
 - `readGameLog(league, teamId)` never rejects: `{ log: GameLog | null, error: string | null }`.
 

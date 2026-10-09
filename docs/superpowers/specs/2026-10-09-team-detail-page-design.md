@@ -1,7 +1,8 @@
 # Team detail page — design
 
-Date: 2026-10-09. Status: approved in chat. Brief: `docs/superpowers/specs/2026-10-09-team-detail-page-brief.md`. Visual reference:
-`docs/superpowers/specs/2026-10-09-team-detail-page-reference.png` (its team, managers and numbers are illustrative).
+Date: 2026-10-09. Status: approved in chat. Brief: `docs/superpowers/specs/2026-10-09-team-detail-page-brief.md`. Visual design source of truth:
+`docs/superpowers/specs/2026-10-09-team-detail-page-reference.png` (see "Visual design source of truth" under Page;
+its team, managers and numbers are illustrative).
 Out of scope: redesigning other pages, new league rules, a second sportsbook, storing game history in the database.
 
 ## Goal
@@ -115,6 +116,25 @@ older read's time; the frozen line is never shown as the latest line.
 
 ## Page
 
+### Visual design source of truth
+
+`docs/superpowers/specs/2026-10-09-team-detail-page-reference.png` is the **single source of truth for the page's
+visual design**: layout, proportions, spacing, typography scale and weight, colours, borders, the chart's look
+(lines, dots, dashes, "Now" marker, shaded "Upcoming" region, legend), the stat strip, the sportsbook panel and the
+fieldset-style ownership cards. Every component below must be built and reviewed against that image. Where this spec's
+text and the image disagree on a visual point, the image wins, except for these deliberate differences:
+
+- Breadcrumb reads `{league name} / {team}` (not `Rosters / {team}`); no sidebar item is highlighted.
+- No "ILLUSTRATIVE DATA" tag and no "Illustrative market snapshot" note; all values are real league data.
+- With Show projected off, the projected stat, projected points, projected line and their legend entries are gone and
+  the layout closes up (no empty placeholders).
+- States the image doesn't show (unavailable history, no market, undrafted side, several fades, before the draft,
+  completed season) follow this spec, styled to match the image.
+- Colours come from the app's tokens (`over`, `under`, `positive`, `negative`, `accent`, `ink-*`, `fog-*`), picked
+  to match the image; no raw hex except team colours.
+
+The image's team, managers, numbers and market values are illustrative and are never hardcoded.
+
 ### Header
 
 Logo and `{city} {name}`, then `{league name} • {season}`. Right side: `Show projected` switch (on by default,
@@ -201,3 +221,5 @@ Below `xl`: one column in that order; the strip wraps to two columns below `sm`.
 - Mock data: every team's mock game log adds up to its mock record.
 - `npm test && npm run lint && npm run typecheck && npm run build`; check the page at 375 px and 1440 px on the demo
   league and on a stored league (`RECORD_SOURCE=static LINE_SOURCE=static`).
+- Visual check: screenshot the page at 1440 px and compare it side by side with the reference image; every UI task's
+  review includes that comparison.

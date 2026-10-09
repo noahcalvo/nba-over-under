@@ -1,10 +1,9 @@
 import { SidePill } from "@/components/ui/SidePill";
 import { SignedValue } from "@/components/ui/SignedValue";
-import { TeamLogo } from "@/components/ui/TeamLogo";
-import { formatNumber } from "@/lib/format";
 import { projectedPoints, type RosterGroup as Group } from "@/lib/rosters";
 import type { ScoredCall } from "@/lib/standings";
 import type { Side } from "@/lib/types";
+import { TeamLineSummary } from "./TeamLineSummary";
 
 const GROUPS: Record<Side, { label: string; box: string; heading: string }> = {
   OVER: {
@@ -62,27 +61,10 @@ function PickList({
   return (
     <ul className="divide-y divide-ink-700/60">
       {calls.map((call) => {
-        const { pick, team, evaluation } = call;
+        const { pick } = call;
         return (
           <li key={pick.pickNumber} className="flex items-center gap-3 py-2">
-            <TeamLogo team={team} size={36} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-fog-50">{team.name}</p>
-              <p className="flex min-w-0 items-center gap-1.5 text-sm text-fog-400">
-                <span className="font-semibold tabular-nums text-fog-50">
-                  <span className="sr-only">Line </span>
-                  {formatNumber(team.line)}
-                </span>
-                {showProjected && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span className="truncate tabular-nums">
-                      Pace {evaluation.wins === null ? "—" : formatNumber(evaluation.wins, 2)}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
+            <TeamLineSummary call={call} showProjected={showProjected} />
             {showSide && <SidePill side={pick.side} size="sm" />}
             {showProjected && (
               <span className="shrink-0 font-display text-xl font-bold">

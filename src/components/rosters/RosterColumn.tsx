@@ -23,8 +23,8 @@ export function RosterColumn({
       aria-label={`${label}'s roster`}
       className="flex min-w-0 flex-col rounded-xl border border-ink-700 bg-ink-850"
     >
-      <header className="flex items-center gap-3 px-4 py-3">
-        <ManagerAvatar manager={manager} size="lg" />
+      <header className="flex items-center gap-2.5 px-3 py-3">
+        <ManagerAvatar manager={manager} size="md" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-lg font-semibold text-fog-50">{label}</h2>
           <p className="text-sm text-fog-300">

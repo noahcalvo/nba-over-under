@@ -23,6 +23,32 @@ Newest entries first. Every number is from production unless it says otherwise.
 
 ## Iterations
 
+### 5. Bundle, payload and server check (no code change)
+- JavaScript: a first load fetches ~513 KB decoded (React DOM 225 KB, the Next router 160 KB, the rest small). The
+  112 KB chunk in `.next/static/chunks` is the `nomodule` polyfill set, never loaded by modern browsers. Page chunks are
+  small; nothing worth splitting.
+- RSC payloads: the overview's page data is ~8.5 KB (league with picks, 30 teams with lines and records); the rest is
+  framework tree. Trimming would save ~2–3 KB compressed.
+- Cost of iterations 3–4: documents grew 10–20 KB decoded (settings RSC 24 → 37 KB) because the static shell now
+  carries the chrome, skeletons and scoring rules. Compressed, a few KB; it buys a non-blank first paint.
+- `scripts/perf.mjs` after the changes (a quiet network window; the baseline run was noisy, so don't compare medians):
+
+| Page | doc TTFB | doc end | RSC end | doc KB | RSC KB |
+| --- | --- | --- | --- | --- | --- |
+| overview | 43 | 111 | 98 | 76 | 24 |
+| rosters | 50 | 123 | 88 | 107 | 25 |
+| settings | 51 | 108 | 84 | 71 | 37 |
+| team ATL | 44 | 110 | 88 | 77 | 31 |
+
+- Removed the temporary `/api/debug/latency` endpoint (its numbers are under Findings). To re-check database latency,
+  add a route that times `select 1` and `loadLeague` and reports only timings and `VERCEL_REGION`, never connection
+  details.
+
+### 4. Draft room header; one fewer font file — `bd07f9d`
+- Draft room loading state reads the league from the layout (header at 58 ms, content 159 ms on a real click).
+- Every bold is set in Barlow Condensed, so Barlow 700 was dead weight except one chart label (now 600). Preloaded
+  font files per first visit: 6 → 5 (~15 KB less).
+
 ### 3. League frame and static content in the HTML shell — `9ca9fb9`
 Direct visits got a blank dark page from the CDN (~40 ms TTFB) until the league loaded, because the league layout
 wrapped everything, sidebar included, in one Suspense boundary. Now the layout passes the league read as a promise:
@@ -58,10 +84,13 @@ Saves a few ms per page (the database is close), so no visible change.
 
 ## Ideas not yet done (most promising first)
 
-- Draft room loading state: same header-from-layout pattern.
 - First-visit data without a round trip: `"use cache: private"` page data plus `<Link prefetch>` on the sidebar
-  (per-link prefetch includes cached content). Trade-off: up to five minutes of client staleness; needs care during a
-  live draft.
+  (a per-link prefetch includes private-cached content when its `stale` is ≥ 30 s). Deferred: `connection()` is
+  prohibited inside private caches but `getDb()` awaits it to keep queries out of prerenders, so the DB access path
+  would need a second entry point; and every visible prefetching link becomes a server render per page view (~4 per
+  page) for a gain of ~100–300 ms on first visits only.
+- Team page chart: a cold ESPN game-log read adds ~200–300 ms before the chart shows (the cache is per instance, 10
+  min). A shared cache (`"use cache: remote"` / Vercel Runtime Cache, or storing logs) would change the "never stored"
+  rule in CLAUDE.md — needs the user's call.
 - Fonts: six Barlow files (~90 KB) are preloaded on every page; check which weights are used.
 - Team logos: up to 30 SVGs from cdn.nba.com per page (`unoptimized`); check sizes and lazy loading.
-- Remove `/api/debug/latency` when the investigation ends.

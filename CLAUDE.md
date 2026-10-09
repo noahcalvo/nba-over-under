@@ -91,6 +91,8 @@ Next API.
 - Dark theme only. Use tokens (`bg-ink-850`, `text-fog-400`, `text-accent`, `bg-under-deep`, …), not raw hex — team
   colors from data are the exception.
 - Format numbers at the edge with `src/lib/format.ts` (one decimal, U+2212 minus, en-dash records). Compare unrounded.
+- Rosters page: points, totals and pace show two decimals (lines stay one); a pick whose team has not played is
+  projected at 0 points (`projectedPoints` in `src/lib/rosters.ts`). The overview keeps "Not available".
 - Over = lime (`over`), Under = purple (`under`); positive = `positive`, negative = `negative`.
 - Logos: `TeamLogo` loads `https://cdn.nba.com/logos/nba/{nbaId}/global/D/logo.svg` and falls back to `TeamBadge`.
   NBA logos are trademarks — licensing check required before any public launch.

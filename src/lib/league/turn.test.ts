@@ -51,6 +51,10 @@ describe("describeTurn", () => {
     expect(describeTurn(league("live", 2), "m2")).toEqual({ kind: "on_the_clock", managerId: "m3" });
   });
 
+  it("reports the fade stage without anyone on the clock", () => {
+    expect(describeTurn(league("fades", 8), "m1")).toEqual({ kind: "fades", managerId: null });
+  });
+
   it("reports paused and complete drafts", () => {
     expect(describeTurn(league("paused", 1), "m2")).toEqual({ kind: "paused", managerId: "m2" });
     expect(describeTurn(league("complete", 8), "m1")).toEqual({ kind: "complete", managerId: null });

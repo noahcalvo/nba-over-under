@@ -162,16 +162,17 @@ describe("applyDraftAction", () => {
     expect(picksForManager(state, "m4").map((p) => p.pickNumber)).toEqual([4, 5]);
   });
 
-  it("completes after the final pick", () => {
+  it("opens the fade stage after the final pick", () => {
     let state = liveDraft(["m1", "m2"], 2);
     const sides: Array<[string, Side]> = [
       ["MIN", "OVER"], ["MIN", "UNDER"], ["OKC", "OVER"], ["OKC", "UNDER"],
     ];
     for (const [teamId, side] of sides) state = mustApply(state, pick(state, teamId, side));
-    expect(state.status).toBe("complete");
+    expect(state.status).toBe("fades");
     expect(currentPickNumber(state)).toBeNull();
     expect(managerOnTheClock(state)).toBeNull();
     expect(managerUpNext(state)).toBeNull();
     expect(applyDraftAction(state, pick(state, "BOS", "OVER"), TEAM_IDS)).toEqual({ ok: false, error: "not_live" });
+    expect(applyDraftAction(state, { type: "pause" }, TEAM_IDS)).toEqual({ ok: false, error: "invalid_transition" });
   });
 });

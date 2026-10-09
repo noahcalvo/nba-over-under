@@ -3,7 +3,7 @@ import { ACCESS } from "@/config/access";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_IDS } from "@/data/teams";
 import { linkStatus } from "@/lib/access/links";
-import type { DraftAction } from "@/lib/draft";
+import type { DraftCommand } from "@/lib/fades";
 import {
   createLeague,
   decideClaim,
@@ -62,14 +62,14 @@ export interface DraftOutcome {
 }
 
 /**
- * Start, pause, resume or confirm. Fetch the source's lines before calling (no network calls while holding the lock);
+ * Start, pause, resume, confirm or fade. Fetch the source's lines before calling (no network calls while holding the lock);
  * the decision adds the stored overrides.
  */
 export function runDraftAction(
   db: Db,
   leagueId: string,
   sessionId: string | null,
-  action: DraftAction,
+  action: DraftCommand,
   sourceLines: LineSet | null,
 ): Promise<Result<DraftOutcome>> {
   return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {

@@ -1,9 +1,18 @@
-import type { DraftAction } from "@/lib/draft";
+import type { DraftCommand } from "@/lib/fades";
 
-/** Validates an untrusted request body into a DraftAction. */
-export function parseDraftAction(input: unknown): DraftAction | null {
+/** Validates an untrusted request body into a draft action or a fade. */
+export function parseDraftAction(input: unknown): DraftCommand | null {
   if (!input || typeof input !== "object") return null;
-  const { type, teamId, side, pickNumber } = input as Record<string, unknown>;
+  const { type, teamId, side, pickNumber, managerId, targetPickNumber } = input as Record<string, unknown>;
+  if (
+    type === "fade" &&
+    typeof managerId === "string" &&
+    typeof targetPickNumber === "number" &&
+    Number.isInteger(targetPickNumber) &&
+    targetPickNumber > 0
+  ) {
+    return { type, managerId, targetPickNumber };
+  }
   if (type === "pause" || type === "resume") return { type };
   if (type === "start") {
     const { lines } = input as Record<string, unknown>;

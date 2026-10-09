@@ -1,4 +1,5 @@
 import type { DraftError } from "@/lib/draft";
+import type { FadeError } from "@/lib/fades";
 
 /** Every way a league action can fail. Route handlers map these to HTTP statuses in src/server/http.ts. */
 export type DomainError =
@@ -15,7 +16,8 @@ export type DomainError =
   | "lines_locked"
   | "invalid_line"
   | "records_unavailable"
-  | DraftError;
+  | DraftError
+  | FadeError;
 
 export type ApiError = DomainError | "invalid_request";
 
@@ -49,5 +51,9 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   invalid_transition: "The draft can't do that from its current state.",
   stale_pick: "The draft moved on. Check the board and pick again.",
   team_already_held: "A manager can't hold both sides of a team.",
+  not_fading: "Fades open once every team pick is in.",
+  fade_locked: "That fade is already locked in.",
+  unknown_pick: "That pick doesn't exist.",
+  own_pick: "Fade another manager's pick, not your own.",
   invalid_request: "Invalid request.",
 };

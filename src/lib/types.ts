@@ -57,7 +57,8 @@ export interface DraftPick {
   side: Side;
 }
 
-export type DraftStatus = "not_started" | "live" | "paused" | "complete";
+/** "fades": every team pick is in and managers are choosing their fade. "complete": every fade is in too. */
+export type DraftStatus = "not_started" | "live" | "paused" | "fades" | "complete";
 
 export interface DraftState {
   status: DraftStatus;

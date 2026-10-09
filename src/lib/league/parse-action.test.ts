@@ -25,6 +25,18 @@ describe("parseDraftAction", () => {
     });
   });
 
+  it("accepts a fade with a manager and a target pick", () => {
+    expect(parseDraftAction({ type: "fade", managerId: "m2", targetPickNumber: 7, extra: 1 })).toEqual({
+      type: "fade",
+      managerId: "m2",
+      targetPickNumber: 7,
+    });
+    expect(parseDraftAction({ type: "fade", managerId: "m2" })).toBeNull();
+    expect(parseDraftAction({ type: "fade", managerId: "m2", targetPickNumber: 0 })).toBeNull();
+    expect(parseDraftAction({ type: "fade", managerId: "m2", targetPickNumber: 1.5 })).toBeNull();
+    expect(parseDraftAction({ type: "fade", managerId: 2, targetPickNumber: 1 })).toBeNull();
+  });
+
   it("rejects anything else", () => {
     expect(parseDraftAction(null)).toBeNull();
     expect(parseDraftAction("start")).toBeNull();

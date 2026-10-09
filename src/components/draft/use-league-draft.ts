@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DRAFT_POLL_INTERVAL_MS } from "@/config/league";
-import type { DraftAction } from "@/lib/draft";
+import type { DraftCommand } from "@/lib/fades";
 import type { LeagueView } from "@/lib/types";
 
-/** Holds the live league view: polls for other managers' picks and sends this viewer's actions. */
+/** Holds the live league view: polls for other managers' picks and fades (until the draft is complete) and sends this viewer's actions. */
 export function useLeagueDraft(initial: LeagueView) {
   const [view, setView] = useState(initial);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function useLeagueDraft(initial: LeagueView) {
     [accept, refresh],
   );
 
-  const dispatch = useCallback((action: DraftAction) => send(endpoint, "POST", action), [send, endpoint]);
+  const dispatch = useCallback((action: DraftCommand) => send(endpoint, "POST", action), [send, endpoint]);
 
   const saveLineOverrides = useCallback(
     (overrides: Record<string, number>) => send(`/api/leagues/${initial.league.id}/lines`, "PUT", { overrides }),

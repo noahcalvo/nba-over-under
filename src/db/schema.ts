@@ -25,7 +25,7 @@ export const leagues = pgTable(
     seasonLabel: text("season_label").notNull(),
     commissionerId: text("commissioner_id").notNull(),
     rounds: smallint("rounds").notNull(),
-    draftStatus: text("draft_status", { enum: ["not_started", "live", "paused", "complete"] }).notNull(),
+    draftStatus: text("draft_status", { enum: ["not_started", "live", "paused", "fades", "complete"] }).notNull(),
     /** teamId → line, frozen when the draft starts. */
     lines: jsonb("lines").$type<Record<string, number>>(),
     linesSource: text("lines_source"),
@@ -39,7 +39,10 @@ export const leagues = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    check("leagues_draft_status_check", sql`${t.draftStatus} in ('not_started', 'live', 'paused', 'complete')`),
+    check(
+      "leagues_draft_status_check",
+      sql`${t.draftStatus} in ('not_started', 'live', 'paused', 'fades', 'complete')`,
+    ),
     check("leagues_demo_reserved_check", sql`${t.id} <> 'demo'`),
   ],
 );
@@ -77,6 +80,30 @@ export const picks = pgTable(
       name: "picks_manager_fk",
       columns: [t.leagueId, t.managerId],
       foreignColumns: [managers.leagueId, managers.id],
+    }).onDelete("cascade"),
+  ],
+);
+
+/** One fade per manager, locked once stored. Its target is another manager's pick (checked under the league lock). */
+export const fades = pgTable(
+  "fades",
+  {
+    leagueId: text("league_id").notNull(),
+    managerId: text("manager_id").notNull(),
+    targetPickNumber: smallint("target_pick_number").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ name: "fades_pkey", columns: [t.leagueId, t.managerId] }),
+    foreignKey({
+      name: "fades_manager_fk",
+      columns: [t.leagueId, t.managerId],
+      foreignColumns: [managers.leagueId, managers.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "fades_target_fk",
+      columns: [t.leagueId, t.targetPickNumber],
+      foreignColumns: [picks.leagueId, picks.pickNumber],
     }).onDelete("cascade"),
   ],
 );

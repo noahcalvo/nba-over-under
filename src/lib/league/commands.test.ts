@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftAction } from "@/lib/draft";
+import type { FadeAction } from "@/lib/fades";
 import {
   createLeague,
   decideClaim,
@@ -36,7 +37,7 @@ function join(league: League, managerId: string, displayName: string): League {
   return must(decideClaim(league, LEAGUE_INVITE, null, { managerId, displayName })).league;
 }
 
-function act(league: League, actorId: string | null, action: DraftAction): Result<League> {
+function act(league: League, actorId: string | null, action: DraftAction | FadeAction): Result<League> {
   return decideDraftAction(league, actorId, action, TEAM_IDS, LINES);
 }
 
@@ -219,6 +220,65 @@ describe("decideDraftAction", () => {
     const league = must(act(newLeague(), "m1", { type: "start" }));
     expect(act({ ...league, isDemo: true }, "m1", { type: "pause" })).toEqual({ ok: false, error: "demo_league" });
     expect(act(league, "m1", pick(league, "XXX", "OVER"))).toEqual({ ok: false, error: "unknown_team" });
+  });
+});
+
+describe("decideDraftAction: fades", () => {
+  // Every team pick is in: m1 MIN OVER, m2 MIN UNDER, m3 OKC OVER, m4 OKC UNDER. m3 and m4 are open seats.
+  function fadeStage(): League {
+    const league = join(newLeague(), "m2", "Ben");
+    const sides: Array<[string, Side]> = [["MIN", "OVER"], ["MIN", "UNDER"], ["OKC", "OVER"], ["OKC", "UNDER"]];
+    const picks = sides.map(([teamId, side], i) => ({ pickNumber: i + 1, managerId: `m${i + 1}`, teamId, side }));
+    return { ...league, lines: LINES, draft: { ...league.draft, status: "fades", picks } };
+  }
+
+  function fade(managerId: string, targetPickNumber: number): DraftAction | FadeAction {
+    return { type: "fade", managerId, targetPickNumber };
+  }
+
+  it("lets each manager fade an opponent pick, in any order, and completes with the fourth fade", () => {
+    let league = fadeStage();
+    league = must(act(league, "m2", fade("m2", 1)));
+    league = must(act(league, "m1", fade("m1", 2)));
+    league = must(act(league, "m1", fade("m4", 1))); // the commissioner covers open seats
+    expect(league.draft.status).toBe("fades");
+    league = must(act(league, "m1", fade("m3", 1)));
+    expect(league.draft.status).toBe("complete");
+    expect(league.fades.map((f) => [f.managerId, f.targetPickNumber])).toEqual([
+      ["m2", 1],
+      ["m1", 2],
+      ["m4", 1],
+      ["m3", 1],
+    ]);
+  });
+
+  it("refuses fading for someone else's claimed seat, spectators and the demo league", () => {
+    const league = fadeStage();
+    expect(act(league, "m2", fade("m1", 2))).toEqual({ ok: false, error: "forbidden" });
+    expect(act(league, "m1", fade("m2", 1))).toEqual({ ok: false, error: "forbidden" });
+    expect(act(league, "m2", fade("m3", 1))).toEqual({ ok: false, error: "forbidden" });
+    expect(act(league, null, fade("m3", 1))).toEqual({ ok: false, error: "forbidden" });
+    expect(act({ ...league, isDemo: true }, "m1", fade("m1", 2))).toEqual({ ok: false, error: "demo_league" });
+    expect(act(league, "m1", fade("m9", 2))).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("locks a confirmed fade and refuses own or missing picks", () => {
+    const league = must(act(fadeStage(), "m2", fade("m2", 1)));
+    expect(act(league, "m2", fade("m2", 1))).toEqual({ ok: false, error: "fade_locked" });
+    expect(act(league, "m2", fade("m2", 3))).toEqual({ ok: false, error: "fade_locked" });
+    expect(act(league, "m1", fade("m1", 1))).toEqual({ ok: false, error: "own_pick" });
+    expect(act(league, "m1", fade("m1", 5))).toEqual({ ok: false, error: "unknown_pick" });
+  });
+
+  it("refuses fades before the fade stage and team picks or pauses during it", () => {
+    const live = must(act(join(newLeague(), "m2", "Ben"), "m1", { type: "start" }));
+    expect(act(live, "m1", fade("m1", 1))).toEqual({ ok: false, error: "not_fading" });
+    const league = fadeStage();
+    expect(act(league, "m1", { type: "pause" })).toEqual({ ok: false, error: "invalid_transition" });
+    expect(act(league, "m1", { type: "confirm", teamId: "BOS", side: "OVER", pickNumber: 5 })).toEqual({
+      ok: false,
+      error: "not_live",
+    });
   });
 });
 

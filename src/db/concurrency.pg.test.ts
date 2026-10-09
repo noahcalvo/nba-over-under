@@ -2,9 +2,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
 import { claimLink, createLeagueFor, resetSeat, runDraftAction } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
+import { loadLeague } from "@/db/leagues";
 import { listActiveLinks } from "@/db/links";
 import * as schema from "@/db/schema";
 import { createSession } from "@/db/sessions";
@@ -63,5 +65,42 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
     );
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     expect(new Set(results.flatMap((result) => (result.ok ? [] : [result.error])))).toEqual(new Set(["invalid_link"]));
+  });
+
+  /** Every seat but the commissioner's is open, so the commissioner makes all 44 picks and every fade. */
+  async function leagueInFadeStage() {
+    const { leagueId, commissioner } = await newLeague();
+    await runDraftAction(db, leagueId, commissioner, { type: "start" }, STATIC_LINES);
+    for (const { pickNumber, teamId, side } of buildDemoLeague().draft.picks) {
+      await runDraftAction(db, leagueId, commissioner, { type: "confirm", teamId, side, pickNumber }, null);
+    }
+    return { leagueId, commissioner };
+  }
+
+  it("lets exactly one of many parallel fades for a seat lock in", async () => {
+    const { leagueId, commissioner } = await leagueInFadeStage();
+    // All opponent picks (m1 holds 1, 8 and 9), so every loser fails only because the first fade locked.
+    const targets = [2, 3, 4, 5, 6, 7, 10, 11];
+    const results = await Promise.all(
+      targets.map((targetPickNumber) =>
+        runDraftAction(db, leagueId, commissioner, { type: "fade", managerId: "m1", targetPickNumber }, null),
+      ),
+    );
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(new Set(results.flatMap((result) => (result.ok ? [] : [result.error])))).toEqual(new Set(["fade_locked"]));
+  });
+
+  it("completes the draft once when the four fades arrive together", async () => {
+    const { leagueId, commissioner } = await leagueInFadeStage();
+    const results = await Promise.all(
+      ["m1", "m2", "m3", "m4"].map((managerId) => {
+        const targetPickNumber = managerId === "m1" ? 2 : 1;
+        return runDraftAction(db, leagueId, commissioner, { type: "fade", managerId, targetPickNumber }, null);
+      }),
+    );
+    expect(results.every((result) => result.ok)).toBe(true);
+    const league = (await loadLeague(db, leagueId))!;
+    expect(league.draft.status).toBe("complete");
+    expect(league.fades).toHaveLength(4);
   });
 });

@@ -13,6 +13,7 @@ const EMPTY_MESSAGE: Record<DraftStatus, string> = {
   live: "Choose an Over or Under from Available picks to preview it here.",
   paused: "The draft is paused.",
   not_started: "The draft hasn't started yet.",
+  fades: "Every team pick is in. Managers are choosing their fades.",
   complete: "The draft is complete.",
 };
 

@@ -8,6 +8,7 @@ import { Panel } from "@/components/ui/Panel";
 import type { LeagueAccess } from "@/lib/access/links";
 import { currentPickNumber, findPickForSide, holdsTeam, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
+import { openFadeSeats } from "@/lib/fades";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
 import { describeTurn } from "@/lib/league/turn";
@@ -17,6 +18,8 @@ import { AvailablePicks } from "./AvailablePicks";
 import { DraftBoard } from "./DraftBoard";
 import { DraftLobby } from "./DraftLobby";
 import { DraftStatusBar } from "./DraftStatusBar";
+import { FadeConfirm, FadeTargets } from "./FadePicker";
+import { FadeStatusPanel } from "./FadeStatusPanel";
 import { LineReviewPanel } from "./LineReviewPanel";
 import { ManagerPicks } from "./ManagerPicks";
 import { SelectionBar } from "./SelectionBar";
@@ -31,6 +34,10 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
   const [linesDirty, setLinesDirty] = useState(false);
+  const [fadeChoice, setFadeChoice] = useState<{ managerId: string | null; target: number | null }>({
+    managerId: null,
+    target: null,
+  });
   const review = view.lineReview;
   // The "checked" tick belongs to one set of lines; any change to them clears it.
   const linesKey = review ? JSON.stringify(review.lines) : "";
@@ -66,6 +73,25 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
   const canPick = canPickNow(league, viewerId);
   const canControl = canControlDraft(league, viewerId);
   const focusManagerId = viewerId ?? managerOnTheClock(draft) ?? league.managers[0].id;
+
+  // Fade stage: the seat this viewer is fading for (their own first, then open seats for the commissioner) and the
+  // opponent pick they chose. Both fall back when polling shows the seat locked or the choice no longer fits.
+  const fadeSeats = openFadeSeats(league, viewerId);
+  const fadingFor = fadeChoice.managerId !== null && fadeSeats.includes(fadeChoice.managerId) ? fadeChoice.managerId : fadeSeats[0] ?? null;
+  const fadeTarget =
+    fadingFor === null
+      ? null
+      : (draft.picks.find((pick) => pick.pickNumber === fadeChoice.target && pick.managerId !== fadingFor) ?? null);
+
+  async function confirmFade() {
+    if (fadingFor === null || fadeTarget === null) return;
+    const choice = fadeChoice;
+    setFadeChoice({ managerId: null, target: null });
+    const ok = await dispatch({ type: "fade", managerId: fadingFor, targetPickNumber: fadeTarget.pickNumber });
+    if (!ok) setFadeChoice(choice);
+  }
+
+  const clearFade = () => setFadeChoice((current) => ({ ...current, target: null }));
 
   function run(action: DraftAction) {
     void dispatch(action);
@@ -127,57 +153,110 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
         />
       )}
       <DraftBoard league={league} teams={teamsById} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
-        <AvailablePicks
-          teams={view.teams}
-          draft={draft}
-          managers={league.managers}
-          filters={filters}
-          onFiltersChange={setFilters}
-          selection={activeSelection}
-          onSelect={setSelection}
-          selectable={draft.status === "live"}
-        />
-        <div className="min-w-0 xl:sticky xl:top-8 xl:self-start">
-          <Panel title={viewerId ? "Your selection" : "Selection"} bodyClassName="flex flex-col gap-5 p-4 sm:p-5">
-            <SelectionPreview
-              league={league}
+      {draft.status === "fades" ? (
+        fadingFor === null ? (
+          <FadeStatusPanel league={league} teams={teamsById} viewerId={viewerId} />
+        ) : (
+          <>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+              <FadeTargets
+                league={league}
+                teams={teamsById}
+                seats={fadeSeats}
+                fadingFor={fadingFor}
+                onFadingForChange={(managerId) => setFadeChoice({ managerId, target: null })}
+                selected={fadeTarget?.pickNumber ?? null}
+                onSelect={(target) => setFadeChoice({ managerId: fadingFor, target })}
+              />
+              <div className="flex min-w-0 flex-col gap-6 xl:sticky xl:top-8 xl:self-start">
+                <Panel
+                  title={fadingFor === viewerId ? "Your fade" : "Fade"}
+                  bodyClassName="flex flex-col gap-5 p-4 sm:p-5"
+                >
+                  <FadeConfirm
+                    league={league}
+                    teams={teamsById}
+                    fadingFor={fadingFor}
+                    target={fadeTarget}
+                    pending={pending}
+                    onConfirm={confirmFade}
+                    onClear={clearFade}
+                  />
+                </Panel>
+                <FadeStatusPanel league={league} teams={teamsById} viewerId={viewerId} />
+              </div>
+            </div>
+            <SelectionBar
               teams={teamsById}
-              selection={activeSelection}
-              notice={notice}
-              turn={turn}
-              canPick={canPick}
+              selection={fadeTarget}
+              notice={null}
+              canPick
+              confirmLabel="Lock fade"
               pending={pending}
-              onConfirm={confirm}
-              onClear={clear}
+              onConfirm={confirmFade}
+              onClear={clearFade}
             />
-            <ManagerPicks
-              league={league}
-              teams={teamsById}
-              managerId={focusManagerId}
-              isViewer={focusManagerId === viewerId}
+            {fadeTarget && <div aria-hidden className="h-20 xl:hidden" />}
+          </>
+        )
+      ) : (
+        <>
+          {draft.status === "complete" && league.fades.length > 0 && (
+            <FadeStatusPanel league={league} teams={teamsById} viewerId={viewerId} />
+          )}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+            <AvailablePicks
+              teams={view.teams}
+              draft={draft}
+              managers={league.managers}
+              filters={filters}
+              onFiltersChange={setFilters}
+              selection={activeSelection}
+              onSelect={setSelection}
+              selectable={draft.status === "live"}
             />
-            <p className="flex items-center gap-2 text-sm text-fog-400">
-              <Info aria-hidden className="size-4 shrink-0" />
-              {draft.status === "not_started"
-                ? "Lines lock when the draft starts."
-                : league.lines
-                  ? `Lines locked when the draft started: ${describeLineSet(league.lines)}.`
-                  : "Lines locked when the draft started."}
-            </p>
-          </Panel>
-        </div>
-      </div>
-      <SelectionBar
-        teams={teamsById}
-        selection={activeSelection}
-        notice={notice}
-        canPick={canPick}
-        pending={pending}
-        onConfirm={confirm}
-        onClear={clear}
-      />
-      {(activeSelection || notice) && <div aria-hidden className="h-20 xl:hidden" />}
+            <div className="min-w-0 xl:sticky xl:top-8 xl:self-start">
+              <Panel title={viewerId ? "Your selection" : "Selection"} bodyClassName="flex flex-col gap-5 p-4 sm:p-5">
+                <SelectionPreview
+                  league={league}
+                  teams={teamsById}
+                  selection={activeSelection}
+                  notice={notice}
+                  turn={turn}
+                  canPick={canPick}
+                  pending={pending}
+                  onConfirm={confirm}
+                  onClear={clear}
+                />
+                <ManagerPicks
+                  league={league}
+                  teams={teamsById}
+                  managerId={focusManagerId}
+                  isViewer={focusManagerId === viewerId}
+                />
+                <p className="flex items-center gap-2 text-sm text-fog-400">
+                  <Info aria-hidden className="size-4 shrink-0" />
+                  {draft.status === "not_started"
+                    ? "Lines lock when the draft starts."
+                    : league.lines
+                      ? `Lines locked when the draft started: ${describeLineSet(league.lines)}.`
+                      : "Lines locked when the draft started."}
+                </p>
+              </Panel>
+            </div>
+          </div>
+          <SelectionBar
+            teams={teamsById}
+            selection={activeSelection}
+            notice={notice}
+            canPick={canPick}
+            pending={pending}
+            onConfirm={confirm}
+            onClear={clear}
+          />
+          {(activeSelection || notice) && <div aria-hidden className="h-20 xl:hidden" />}
+        </>
+      )}
     </div>
   );
 }

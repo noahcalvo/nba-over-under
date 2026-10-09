@@ -52,6 +52,10 @@ Next API.
 - Draft: snake order; each team's Over and Under are separate sides; 4 × 11 = 44 picks out of 60 sides.
 - A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick
   number is `stale_pick`.
+- Fade stage: the 44th pick moves the draft to `fades` (not `complete`). Each manager submits one fade
+  (`{ type: "fade", managerId, targetPickNumber }` on the draft endpoint) on another manager's pick, in any order; several
+  may share a target. The commissioner also fades for unclaimed seats. A stored fade is locked (`fade_locked`; table
+  `fades`, one row per manager). The fourth fade completes the draft. Rules in `src/lib/fades.ts`.
 - Lines come from `lineSource` (`src/server/lines.ts`): FanDuel's public NBA JSON (one book, never mixed; unofficial
   and keyless, so it can break), cached 5 min, failures retried after 30 s; `LINE_SOURCE=static` serves the mock
   lines. Before the draft `LeagueView.lineReview` shows each team's book line plus the commissioner's overrides

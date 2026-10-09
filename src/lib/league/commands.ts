@@ -2,10 +2,11 @@ import { LINES } from "@/config/lines";
 import { LEAGUE_DEFAULTS } from "@/config/league";
 import { TEAM_INFO } from "@/data/teams";
 import type { LinkKind } from "@/lib/access/links";
-import { applyDraftAction, createDraftState, currentPickNumber, type DraftAction } from "@/lib/draft";
+import { applyDraftAction, createDraftState, currentPickNumber } from "@/lib/draft";
+import { applyFade, type DraftCommand, type FadeAction } from "@/lib/fades";
 import { fail, succeed, type Result } from "@/lib/league/errors";
 import { findManager } from "@/lib/league/managers";
-import { canControlDraft, canManageSeats, canPickNow, canResetSeat } from "@/lib/league/permissions";
+import { canControlDraft, canFadeFor, canManageSeats, canPickNow, canResetSeat } from "@/lib/league/permissions";
 import { buildLineReview, freezeLines, sameLineValues } from "@/lib/lines";
 import type { League, LineSet, Manager, TeamId } from "@/lib/types";
 
@@ -65,16 +66,18 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
  * Start, pause and resume belong to the commissioner; a confirm belongs to the manager on the clock (or the
  * commissioner for an open seat) and must name the current pick. Start freezes the source's lines with the
  * commissioner's overrides on top; when the start names the lines it reviewed, any difference fails with lines_changed.
+ * A fade belongs to its manager (or the commissioner for an open seat) during the fade stage.
  */
 export function decideDraftAction(
   league: League,
   actorId: string | null,
-  action: DraftAction,
+  action: DraftCommand,
   teamIds: ReadonlySet<TeamId>,
   sourceLines: LineSet | null,
   now: Date = new Date(),
 ): Result<League> {
   if (league.isDemo) return fail("demo_league");
+  if (action.type === "fade") return decideFade(league, actorId, action);
   if (action.type === "confirm") {
     if (league.draft.status !== "live") return fail("not_live");
     if (action.pickNumber !== currentPickNumber(league.draft)) return fail("stale_pick");
@@ -95,6 +98,14 @@ export function decideDraftAction(
   const lines = freezeLines(review, now);
   if (!lines) return fail("lines_unavailable");
   return succeed({ ...league, draft: result.state, lines });
+}
+
+function decideFade(league: League, actorId: string | null, action: FadeAction): Result<League> {
+  if (league.draft.status !== "fades") return fail("not_fading");
+  if (!findManager(league.managers, action.managerId)) return fail("not_found");
+  if (!canFadeFor(league, actorId, action.managerId)) return fail("forbidden");
+  const result = applyFade(league, action.managerId, action.targetPickNumber);
+  return result.ok ? succeed({ ...league, ...result.value }) : fail(result.error);
 }
 
 /** Replaces the commissioner's line overrides. Commissioner only, before the draft starts. Validate values first. */

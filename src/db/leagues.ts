@@ -3,7 +3,7 @@ import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { fail, type DomainError, type Result } from "@/lib/league/errors";
 import type { League, Manager } from "@/lib/types";
 import type { Db, Tx } from "./client";
-import { leagues, managers, picks, sessionSeats } from "./schema";
+import { fades, leagues, managers, picks, sessionSeats } from "./schema";
 import { seatInLeague } from "./sessions";
 
 type LeagueRow = typeof leagues.$inferSelect;
@@ -11,6 +11,11 @@ type LeagueRow = typeof leagues.$inferSelect;
 async function assemble(db: Db, row: LeagueRow): Promise<League> {
   const managerRows = await db.select().from(managers).where(eq(managers.leagueId, row.id)).orderBy(asc(managers.seat));
   const pickRows = await db.select().from(picks).where(eq(picks.leagueId, row.id)).orderBy(asc(picks.pickNumber));
+  const fadeRows = await db
+    .select()
+    .from(fades)
+    .where(eq(fades.leagueId, row.id))
+    .orderBy(asc(fades.createdAt), asc(fades.managerId));
   const roster: Manager[] = managerRows.map((manager) => ({
     id: manager.id,
     seat: manager.seat,
@@ -35,7 +40,11 @@ async function assemble(db: Db, row: LeagueRow): Promise<League> {
         side: pick.side,
       })),
     },
-    fades: [],
+    fades: fadeRows.map((fade) => ({
+      id: `fade-${fade.managerId}`,
+      managerId: fade.managerId,
+      targetPickNumber: fade.targetPickNumber,
+    })),
     lineOverrides: row.lineOverrides,
     lines:
       row.lines && row.linesSource && row.linesAsOf
@@ -84,11 +93,17 @@ export async function insertLeague(tx: Tx, league: League): Promise<boolean> {
   return true;
 }
 
-/** Writes what changed between two versions of a locked league (new picks, names, status, lines) and bumps version. */
+/** Writes what changed between two versions of a locked league (new picks and fades, names, status, lines) and bumps version. */
 export async function saveLeague(tx: Tx, before: League, after: League): Promise<League> {
   const newPicks = after.draft.picks.slice(before.draft.picks.length);
   if (newPicks.length > 0) {
     await tx.insert(picks).values(newPicks.map((pick) => ({ leagueId: after.id, ...pick })));
+  }
+  const newFades = after.fades.filter((fade) => !before.fades.some((old) => old.managerId === fade.managerId));
+  if (newFades.length > 0) {
+    await tx.insert(fades).values(
+      newFades.map((fade) => ({ leagueId: after.id, managerId: fade.managerId, targetPickNumber: fade.targetPickNumber })),
+    );
   }
   for (const manager of after.managers) {
     const previous = before.managers.find((candidate) => candidate.id === manager.id);
@@ -134,6 +149,7 @@ const UNIQUE_VIOLATIONS: Readonly<Record<string, DomainError>> = {
   picks_pkey: "stale_pick",
   picks_side_unique: "side_taken",
   picks_manager_team_unique: "team_already_held",
+  fades_pkey: "fade_locked",
 };
 
 function uniqueViolation(error: unknown): DomainError | null {

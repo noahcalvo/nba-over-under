@@ -10,6 +10,7 @@ export function SelectionBar({
   selection,
   notice,
   canPick,
+  confirmLabel = "Confirm",
   pending,
   onConfirm,
   onClear,
@@ -18,6 +19,7 @@ export function SelectionBar({
   selection: SideRef | null;
   notice: string | null;
   canPick: boolean;
+  confirmLabel?: string;
   pending: boolean;
   onConfirm: () => void;
   onClear: () => void;
@@ -48,7 +50,7 @@ export function SelectionBar({
         <X aria-hidden className="size-4" />
       </Button>
       <Button size="sm" onClick={onConfirm} disabled={!canPick || pending}>
-        Confirm
+        {confirmLabel}
       </Button>
     </div>
   );

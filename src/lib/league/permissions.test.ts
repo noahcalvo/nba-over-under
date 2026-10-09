@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canControlDraft,
+  canFadeFor,
   canManageSeats,
   canPickNow,
   canRefreshRecords,
@@ -67,6 +68,27 @@ describe("canPickNow", () => {
     expect(canPickNow(league("paused"), "m1")).toBe(false);
     expect(canPickNow(league("not_started"), "m1")).toBe(false);
     expect(canPickNow(league("live", 0, true), "m1")).toBe(false);
+  });
+});
+
+describe("canFadeFor", () => {
+  it("lets each manager fade for their own seat during the fade stage", () => {
+    expect(canFadeFor(league("fades", 4), "m2", "m2")).toBe(true);
+    expect(canFadeFor(league("fades", 4), "m1", "m1")).toBe(true);
+  });
+
+  it("lets the commissioner fade for an open seat, but not for another claimed one", () => {
+    expect(canFadeFor(league("fades", 4), "m1", "m3")).toBe(true); // open
+    expect(canFadeFor(league("fades", 4), "m1", "m2")).toBe(false);
+    expect(canFadeFor(league("fades", 4), "m2", "m3")).toBe(false); // only the commissioner covers open seats
+    expect(canFadeFor(league("fades", 4), null, "m3")).toBe(false);
+  });
+
+  it("blocks everyone outside the fade stage and in the demo league", () => {
+    for (const status of ["not_started", "live", "paused", "complete"] as const) {
+      expect(canFadeFor(league(status, 4), "m1", "m1")).toBe(false);
+    }
+    expect(canFadeFor(league("fades", 4, true), "m1", "m1")).toBe(false);
   });
 });
 

@@ -1,6 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
+import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
 import {
   claimLink,
   claimLinkInLeague,
@@ -17,13 +19,15 @@ import type { Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import { loadSeasonRecords } from "@/db/records";
 import { findLink, listActiveLinks } from "@/db/links";
-import { accessLinks } from "@/db/schema";
+import { accessLinks, fades } from "@/db/schema";
 import { createSession, findSession, seatInLeague } from "@/db/sessions";
 import { createTestDb } from "@/db/test-db";
 import type { LinkKind } from "@/lib/access/links";
 import { FeedError } from "@/lib/feed-error";
+import { indexTeams, withLines } from "@/lib/lines";
 import { seasonEndYear } from "@/lib/records/season";
 import type { RecordSource } from "@/lib/records/types";
+import { computeStandings } from "@/lib/standings";
 import type { Side } from "@/lib/types";
 
 const LEAGUE = "lg0001";
@@ -45,6 +49,20 @@ async function joinAs(sessionId: string, managerId: string, displayName: string)
 
 function confirm(sessionId: string, pickNumber: number, teamId: string, side: Side) {
   return runDraftAction(db, LEAGUE, sessionId, { type: "confirm", teamId, side, pickNumber }, null);
+}
+
+function fade(sessionId: string | null, managerId: string, targetPickNumber: number) {
+  return runDraftAction(db, LEAGUE, sessionId, { type: "fade", managerId, targetPickNumber }, null);
+}
+
+/** Ben holds m2; the commissioner picks for the open seats m3 and m4. Uses the demo league's 44 picks. */
+async function draftAllPicks() {
+  await joinAs(ben, "m2", "Ben");
+  await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+  for (const pick of buildDemoLeague().draft.picks) {
+    const result = await confirm(pick.managerId === "m2" ? ben : ana, pick.pickNumber, pick.teamId, pick.side);
+    if (!result.ok) throw new Error(`pick ${pick.pickNumber}: ${result.error}`);
+  }
 }
 
 beforeEach(async () => {
@@ -353,5 +371,104 @@ describe("line overrides", () => {
     expect(await setLineOverrides(db, LEAGUE, ben, {})).toEqual({ ok: false, error: "forbidden" });
     await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
     expect(await setLineOverrides(db, LEAGUE, ana, {})).toEqual({ ok: false, error: "lines_locked" });
+  });
+});
+
+describe("fade stage", () => {
+  // Demo picks: 1 MIN OVER (m1), 2 OKC OVER (m2), 3 BOS UNDER (m3), 4 CLE OVER (m4).
+  beforeEach(draftAllPicks);
+
+  it("opens after the 44th pick instead of completing the draft", async () => {
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.picks).toHaveLength(44);
+    expect(league.draft.status).toBe("fades");
+    expect(league.fades).toEqual([]);
+  });
+
+  it("lets managers fade for their own seat and the commissioner for open seats only", async () => {
+    expect(await fade(ben, "m1", 1)).toEqual({ ok: false, error: "forbidden" });
+    expect(await fade(ben, "m3", 1)).toEqual({ ok: false, error: "forbidden" });
+    expect(await fade(ana, "m2", 1)).toEqual({ ok: false, error: "forbidden" }); // Ben's seat is claimed
+    expect(await fade(cal, "m3", 1)).toEqual({ ok: false, error: "forbidden" }); // spectator
+    expect(await fade(null, "m3", 1)).toEqual({ ok: false, error: "forbidden" });
+    expect(await fade(ana, "m1", 1)).toEqual({ ok: false, error: "own_pick" });
+    expect(await fade(ana, "m1", 45)).toEqual({ ok: false, error: "unknown_pick" });
+    expect((await loadLeague(db, LEAGUE))!.fades).toEqual([]);
+
+    expect((await fade(ben, "m2", 1)).ok).toBe(true);
+    expect((await fade(ana, "m3", 1)).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.fades.map((f) => f.managerId)).toEqual(["m2", "m3"]);
+  });
+
+  it("stores the fade and bumps the version", async () => {
+    const before = (await loadLeague(db, LEAGUE))!.version;
+    const result = await fade(ben, "m2", 1);
+    expect(result.ok && result.value.league.fades).toEqual([{ id: "fade-m2", managerId: "m2", targetPickNumber: 1 }]);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.version).toBe(before + 1);
+    expect(league.fades).toEqual([{ id: "fade-m2", managerId: "m2", targetPickNumber: 1 }]);
+  });
+
+  it("locks a confirmed fade, even against a simultaneous second submission", async () => {
+    const results = await Promise.all([fade(ben, "m2", 1), fade(ben, "m2", 3)]);
+    expect(results.map((result) => (result.ok ? "ok" : result.error)).sort()).toEqual(["fade_locked", "ok"]);
+    expect(await fade(ben, "m2", 4)).toEqual({ ok: false, error: "fade_locked" });
+    expect(await db.select().from(fades)).toHaveLength(1);
+  });
+
+  it("refuses a duplicate row at the database too", async () => {
+    await fade(ben, "m2", 1);
+    await expect(db.insert(fades).values({ leagueId: LEAGUE, managerId: "m2", targetPickNumber: 3 })).rejects.toThrow();
+  });
+
+  it("lets several managers fade the same pick", async () => {
+    expect((await fade(ben, "m2", 1)).ok).toBe(true);
+    expect((await fade(ana, "m3", 1)).ok).toBe(true);
+    expect((await fade(ana, "m4", 1)).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.fades.map((f) => f.targetPickNumber)).toEqual([1, 1, 1]);
+  });
+
+  it("completes the draft with the fourth fade, then refuses more", async () => {
+    await fade(ben, "m2", 1);
+    await fade(ana, "m3", 1);
+    await fade(ana, "m4", 2);
+    expect((await loadLeague(db, LEAGUE))!.draft.status).toBe("fades");
+    await fade(ana, "m1", 2);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.status).toBe("complete");
+    expect(league.fades).toHaveLength(4);
+    expect(await fade(ana, "m1", 3)).toEqual({ ok: false, error: "not_fading" });
+  });
+
+  it("scores stored fades: +2 when the target misses, 0 when it hits", async () => {
+    await fade(ben, "m2", 1); // MIN OVER
+    await fade(ana, "m1", 2); // OKC OVER
+    const league = (await loadLeague(db, LEAGUE))!;
+    // MIN wins at a pace well above its line (OVER hits); OKC wins none (OVER misses).
+    const records: Record<string, { wins: number; losses: number }> = { MIN: { wins: 10, losses: 0 }, OKC: { wins: 0, losses: 10 } };
+    const teams = indexTeams(withLines(TEAM_INFO, league.lines!).map((team) => ({ ...team, ...records[team.id] })));
+    const rows = computeStandings(league, teams, "projected").rows;
+    const row = (managerId: string) => rows.find((candidate) => candidate.managerId === managerId)!;
+    expect(row("m1").fades.map((f) => f.evaluation.points)).toEqual([2]);
+    expect(row("m1").fadePoints).toBe(2);
+    expect(row("m2").fades.map((f) => f.evaluation.points)).toEqual([0]);
+    expect(row("m2").fadePoints).toBe(0);
+  });
+
+  it("keeps team picks closed during the fade stage", async () => {
+    expect(await confirm(ana, 45, "MIN", "UNDER")).toEqual({ ok: false, error: "not_live" });
+    expect(await runDraftAction(db, LEAGUE, ana, { type: "pause" }, null)).toEqual({
+      ok: false,
+      error: "invalid_transition",
+    });
+  });
+});
+
+describe("fades before the fade stage", () => {
+  it("are refused while team picks are still being made", async () => {
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    await confirm(ana, 1, "MIN", "OVER");
+    await confirm(ana, 2, "OKC", "OVER");
+    expect(await fade(ana, "m1", 2)).toEqual({ ok: false, error: "not_fading" });
   });
 });

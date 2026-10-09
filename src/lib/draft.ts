@@ -84,7 +84,7 @@ export type DraftResult = { ok: true; state: DraftState } | { ok: false; error: 
 /**
  * Applies one draft action. Who is allowed to act is decided by the caller (see league/permissions);
  * this only enforces draft rules: status transitions, the expected pick number, side availability, one side per team
- * per manager, and snake order.
+ * per manager, and snake order. The last pick opens the fade stage (see fades.ts).
  */
 export function applyDraftAction(state: DraftState, action: DraftAction, teamIds: ReadonlySet<TeamId>): DraftResult {
   switch (action.type) {
@@ -104,7 +104,7 @@ export function applyDraftAction(state: DraftState, action: DraftAction, teamIds
       if (managerId === null) return fail("not_live");
       if (holdsTeam(state, managerId, action.teamId)) return fail("team_already_held");
       const picks = [...state.picks, { pickNumber, managerId, teamId: action.teamId, side: action.side }];
-      return ok({ ...state, picks, status: picks.length === draftTotalPicks(state) ? "complete" : "live" });
+      return ok({ ...state, picks, status: picks.length === draftTotalPicks(state) ? "fades" : "live" });
     }
   }
 }

@@ -18,6 +18,18 @@ export function canPickNow(league: DraftAccess, actorId: string | null): boolean
   return actorId === league.commissionerId && onClock !== undefined && onClock.displayName === null;
 }
 
+/** During the fade stage a manager submits their own fade; the commissioner also submits for an unclaimed seat. */
+export function canFadeFor(
+  league: Pick<League, "isDemo" | "commissionerId" | "managers" | "draft">,
+  actorId: string | null,
+  managerId: string,
+): boolean {
+  if (league.isDemo || actorId === null || league.draft.status !== "fades") return false;
+  if (managerId === actorId) return true;
+  const seat = league.managers.find((manager) => manager.id === managerId);
+  return actorId === league.commissionerId && seat !== undefined && seat.displayName === null;
+}
+
 /** Invite links and seat resets belong to the commissioner. The demo league is read-only. */
 export function canManageSeats(league: Pick<League, "isDemo" | "commissionerId">, actorId: string | null): boolean {
   return !league.isDemo && actorId !== null && actorId === league.commissionerId;

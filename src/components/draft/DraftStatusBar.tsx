@@ -1,4 +1,4 @@
-import { Check, Pause, Play } from "lucide-react";
+import { Check, Crosshair, Pause, Play } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -48,7 +48,7 @@ export function DraftStatusBar({
           />
         ) : (
           <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-ink-800 text-accent">
-            <Check aria-hidden className="size-6" />
+            {turn.kind === "fades" ? <Crosshair aria-hidden className="size-6" /> : <Check aria-hidden className="size-6" />}
           </span>
         )}
         <div className="min-w-0">
@@ -56,9 +56,11 @@ export function DraftStatusBar({
             <TurnHeadline turn={turn} manager={manager} />
           </p>
           <p className="text-sm text-fog-300">
-            {pickNumber === null
-              ? `All ${total} picks are in.`
-              : `Round ${roundOf(pickNumber, draft.seatOrder.length)} · Pick ${pickNumber} of ${total}`}
+            {turn.kind === "fades"
+              ? `All ${total} picks are in · ${league.fades.length} of ${managers.length} fades locked`
+              : pickNumber === null
+                ? `All ${total} picks${league.fades.length > 0 ? ` and ${league.fades.length} fades` : ""} are in.`
+                : `Round ${roundOf(pickNumber, draft.seatOrder.length)} · Pick ${pickNumber} of ${total}`}
           </p>
         </div>
       </div>
@@ -75,6 +77,8 @@ export function DraftStatusBar({
           <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
             League overview
           </Link>
+        ) : turn.kind === "fades" ? (
+          <Badge tone="accent">Fades</Badge>
         ) : canControl ? (
           paused ? (
             <Button onClick={onResume} disabled={pending}>
@@ -116,6 +120,12 @@ function TurnHeadline({ turn, manager }: { turn: TurnSummary; manager: Manager |
       return (
         <>
           <span className="text-negative">Draft paused</span> · {name} is up
+        </>
+      );
+    case "fades":
+      return (
+        <>
+          <span className="text-accent">Fade picks</span> · one per manager
         </>
       );
     case "complete":

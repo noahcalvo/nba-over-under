@@ -75,7 +75,7 @@ export function SeasonProgressPanel({
           <Legend pace={lockedLine !== null} projected={model.showsProjected} />
         </>
       ) : (
-        <p className="mt-6 py-12 text-center text-fog-300">No games played yet.</p>
+        <p className="mt-6 py-12 text-center text-fog-300">{played === 0 ? "No games played yet." : "Nothing to chart yet."}</p>
       )}
 
       {notes.length > 0 && (

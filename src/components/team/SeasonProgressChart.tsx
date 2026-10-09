@@ -56,6 +56,15 @@ export function SeasonProgressChart({
   const showNow = zoomed && range.current >= range.first && range.current >= 1;
   const upcomingStart =
     zoomed && range.upcoming > 0 ? (range.current >= range.first ? x(range.current + 0.5) : MARGIN.left) : null;
+  const plotRight = MARGIN.left + plotWidth;
+  const pillX = showNow ? Math.min(Math.max(x(range.current) - 22, 2), width - 46) : 0;
+  // "Upcoming" sits at the top beside the "Now" pill when it fits, else inside the shaded region, else is omitted.
+  let upcomingLabel: { y: number; size: number } | null = null;
+  if (upcomingStart !== null) {
+    const beside = showNow ? plotRight - 4 - (pillX + 44 + 8) : plotRight - upcomingStart;
+    if (beside >= 60) upcomingLabel = { y: MARGIN.top - 12, size: 12 };
+    else if (plotRight - upcomingStart - 8 >= 52) upcomingLabel = { y: MARGIN.top + 14, size: 11 };
+  }
   const xTicks = zoomed ? points.map((point) => point.game) : FULL_SEASON_TICKS;
   const activePoint = active === null ? null : (points.find((point) => point.game === active) ?? null);
 
@@ -89,19 +98,21 @@ export function SeasonProgressChart({
               <rect
                 x={upcomingStart}
                 y={MARGIN.top}
-                width={Math.max(0, MARGIN.left + plotWidth - upcomingStart)}
+                width={Math.max(0, plotRight - upcomingStart)}
                 height={plotHeight}
                 className="fill-fog-50/[0.04]"
               />
-              <text
-                x={(upcomingStart + MARGIN.left + plotWidth) / 2}
-                y={MARGIN.top - 12}
-                textAnchor="middle"
-                fontSize={12}
-                className="fill-fog-300"
-              >
-                Upcoming
-              </text>
+              {upcomingLabel && (
+                <text
+                  x={plotRight - 4}
+                  y={upcomingLabel.y}
+                  textAnchor="end"
+                  fontSize={upcomingLabel.size}
+                  className="fill-fog-300"
+                >
+                  Upcoming
+                </text>
+              )}
             </>
           )}
 
@@ -145,8 +156,8 @@ export function SeasonProgressChart({
           {showNow && (
             <g>
               <line x1={x(range.current)} x2={x(range.current)} y1={MARGIN.top - 4} y2={bottom} strokeDasharray="4 4" className="stroke-progress/70" />
-              <rect x={x(range.current) - 22} y={MARGIN.top - 26} width={44} height={20} rx={4} className="fill-ink-700" />
-              <text x={x(range.current)} y={MARGIN.top - 12} textAnchor="middle" fontSize={12} fontWeight={600} className="fill-progress">
+              <rect x={pillX} y={MARGIN.top - 26} width={44} height={20} rx={4} className="fill-ink-700" />
+              <text x={pillX + 22} y={MARGIN.top - 12} textAnchor="middle" fontSize={12} fontWeight={600} className="fill-progress">
                 Now
               </text>
             </g>

@@ -1,6 +1,6 @@
-import type { Team } from "@/lib/types";
+import type { TeamInfo } from "@/lib/types";
 
-export function TeamBadge({ team, size = 32, className = "" }: { team: Team; size?: number; className?: string }) {
+export function TeamBadge({ team, size = 32, className = "" }: { team: Pick<TeamInfo, "id" | "nbaId" | "color">; size?: number; className?: string }) {
   return (
     <span
       aria-hidden

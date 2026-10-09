@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlert } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Suspense, use, useMemo, useState } from "react";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import type { ChartMode } from "@/lib/chart-window";
 import { buildChartModel } from "@/lib/game-log/chart-model";
@@ -11,6 +11,9 @@ import { gamesPlayed } from "@/lib/scoring";
 import type { TeamId } from "@/lib/types";
 import { SeasonProgressChart } from "./SeasonProgressChart";
 
+const SECTION_CLASS = "flex min-w-0 flex-col rounded-xl border border-ink-700 bg-ink-850/90 p-5 sm:p-6";
+
+/** The panel shell streams: the heading shows at once and the chart arrives with the game log. */
 export function SeasonProgressPanel({
   gameLog,
   record,
@@ -19,13 +22,61 @@ export function SeasonProgressPanel({
   teamNames,
   className = "",
 }: {
-  gameLog: GameLogRead;
+  /** Never rejects: `readGameLog` reports a failed feed as a read with no log. */
+  gameLog: Promise<GameLogRead>;
   record: TeamRecord;
   lockedLine: number | null;
   showProjected: boolean;
   teamNames: Readonly<Record<TeamId, string>>;
   className?: string;
 }) {
+  return (
+    <Suspense fallback={<ProgressSkeleton className={className} />}>
+      <SeasonProgress
+        gameLog={gameLog}
+        record={record}
+        lockedLine={lockedLine}
+        showProjected={showProjected}
+        teamNames={teamNames}
+        className={className}
+      />
+    </Suspense>
+  );
+}
+
+function ProgressSkeleton({ className }: { className: string }) {
+  return (
+    <section aria-busy="true" aria-labelledby="progress-heading" className={`${SECTION_CLASS} ${className}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="progress-heading" className="font-display text-3xl font-bold text-accent">
+            Season progress
+          </h2>
+          <p className="mt-1 text-fog-400">Loading game history…</p>
+        </div>
+        <div className="h-10 w-48 animate-pulse rounded-lg bg-ink-800" />
+      </div>
+      <div className="mt-4 h-[260px] w-full animate-pulse rounded-lg bg-ink-900/60 sm:h-[300px]" />
+    </section>
+  );
+}
+
+function SeasonProgress({
+  gameLog: gameLogPromise,
+  record,
+  lockedLine,
+  showProjected,
+  teamNames,
+  className = "",
+}: {
+  gameLog: Promise<GameLogRead>;
+  record: TeamRecord;
+  lockedLine: number | null;
+  showProjected: boolean;
+  teamNames: Readonly<Record<TeamId, string>>;
+  className?: string;
+}) {
+  const gameLog = use(gameLogPromise);
   // Always opens on the latest window; switching back to "Last 8" recomputes it from games played.
   const [mode, setMode] = useState<ChartMode>("last8");
   const model = useMemo(
@@ -36,13 +87,12 @@ export function SeasonProgressPanel({
   const notes: string[] = [];
   if (gameLog.log && model.history === "partial") notes.push(`Game log covers ${model.historyGames} of ${played} games.`);
   if (gameLog.log && model.history === "mismatch") notes.push("Game log doesn't match the stored record yet.");
-  if (played === 0 && model.hasData) notes.push("No games played yet.");
   if (lockedLine === null) notes.push("The locked-line pace appears once the draft starts.");
 
   return (
     <section
       aria-labelledby="progress-heading"
-      className={`flex min-w-0 flex-col rounded-xl border border-ink-700 bg-ink-850/90 p-5 sm:p-6 ${className}`}
+      className={`${SECTION_CLASS} ${className}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -72,7 +122,7 @@ export function SeasonProgressPanel({
       ) : model.hasData ? (
         <>
           <SeasonProgressChart model={model} teamNames={teamNames} />
-          <Legend pace={lockedLine !== null} projected={model.showsProjected} />
+          <Legend actual={model.hasActual} pace={lockedLine !== null} projected={model.showsProjected} />
         </>
       ) : (
         <p className="mt-6 py-12 text-center text-fog-300">{played === 0 ? "No games played yet." : "Nothing to chart yet."}</p>
@@ -89,10 +139,10 @@ export function SeasonProgressPanel({
   );
 }
 
-function Legend({ pace, projected }: { pace: boolean; projected: boolean }) {
+function Legend({ actual, pace, projected }: { actual: boolean; pace: boolean; projected: boolean }) {
   return (
     <ul className="mt-2 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-fog-50">
-      <LegendItem label="Actual wins" className="stroke-progress" />
+      {actual && <LegendItem label="Actual wins" className="stroke-progress" />}
       {pace && <LegendItem label="Locked-line pace" className="stroke-fog-300" dash="7 6" />}
       {projected && <LegendItem label="Projected wins" className="stroke-progress" dash="7 6" />}
     </ul>

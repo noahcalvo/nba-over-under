@@ -34,8 +34,9 @@ export interface TeamPageData {
   lockedLine: number | null;
   /** Every team, sorted by full name, for the team selector. */
   teamOptions: TeamOption[];
-  gameLog: GameLogRead;
-  market: MarketLine;
+  /** Streamed: both promises resolve after the page first renders and never reject. */
+  gameLog: Promise<GameLogRead>;
+  market: Promise<MarketLine>;
 }
 
 export interface FadeOnPick {

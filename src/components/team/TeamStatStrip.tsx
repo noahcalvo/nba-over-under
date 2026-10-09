@@ -19,6 +19,7 @@ function versusLine(diff: number): string {
 }
 
 function remainingText(needed: number, remaining: number): string {
+  if (remaining === 0) return "Season complete";
   const games = `${remaining} ${remaining === 1 ? "game" : "games"} remaining`;
   if (needed === 0) return `${games} · Clinched`;
   return needed > remaining ? `${games} · Out of reach` : games;

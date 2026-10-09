@@ -91,4 +91,27 @@ describe("buildChartModel", () => {
     expect(model.history).toBe("partial");
     expect(model.historyGames).toBe(40);
   });
+
+  it("draws no projection for a settled season and says so", () => {
+    const results = [..."W".repeat(52), ..."L".repeat(30)];
+    const games: Game[] = results.map((r, i) => ({
+      number: i + 1,
+      date: null,
+      opponentId: null,
+      home: null,
+      result: r as "W" | "L",
+    }));
+    const model = buildChartModel({ games, record: { wins: 52, losses: 30 }, line: 51.5, mode: "last8", showProjected: true });
+    expect(model.points.map((p) => p.game)).toEqual([75, 76, 77, 78, 79, 80, 81, 82]);
+    expect(model.showsProjected).toBe(false);
+    expect(model.hasActual).toBe(true);
+  });
+
+  it("has pace but no actual wins before the first game", () => {
+    const model = buildChartModel({ games: [], record: { wins: 0, losses: 0 }, line: 43.5, mode: "last8", showProjected: true });
+    expect(model.points.map((p) => p.game)).toEqual([1, 2]);
+    expect(model.hasActual).toBe(false);
+    expect(model.points.every((p) => p.pace !== null)).toBe(true);
+    expect(model.showsProjected).toBe(false);
+  });
 });

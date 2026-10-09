@@ -9,17 +9,19 @@ const MARGIN = { top: 34, right: 16, bottom: 46, left: 50 };
 const FULL_SEASON_TICKS = [1, 10, 20, 30, 40, 50, 60, 70, 82];
 const DASH = "7 6";
 
-function useWidth<T extends HTMLElement>() {
+function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    const observer = new ResizeObserver(([entry]) =>
+      setSize({ width: entry.contentRect.width, height: entry.contentRect.height }),
+    );
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  return [ref, width] as const;
+  return [ref, size] as const;
 }
 
 function linePath(points: Array<[number, number]>): string {
@@ -33,11 +35,10 @@ export function SeasonProgressChart({
   model: ChartModel;
   teamNames: Readonly<Record<TeamId, string>>;
 }) {
-  const [containerRef, width] = useWidth<HTMLDivElement>();
+  const [containerRef, { width, height }] = useSize<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
   const { window: range, points, axis, mode } = model;
   const zoomed = mode === "last8";
-  const height = width > 0 && width < 640 ? 260 : 300;
   const plotWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const plotHeight = height - MARGIN.top - MARGIN.bottom;
   const steps = Math.max(1, range.last - range.first);
@@ -79,8 +80,8 @@ export function SeasonProgressChart({
 
   const summary = describe(model, current);
   return (
-    <div ref={containerRef} className="relative mt-4 w-full" style={{ height }}>
-      {width > 0 && (
+    <div ref={containerRef} className="relative mt-4 h-[260px] w-full sm:h-[300px]">
+      {width > 0 && height > 0 && (
         <svg
           width={width}
           height={height}
@@ -213,7 +214,7 @@ export function SeasonProgressChart({
           ))}
         </svg>
       )}
-      {activePoint && width > 0 && (
+      {activePoint && width > 0 && height > 0 && (
         <Tooltip point={activePoint} teamNames={teamNames} left={Math.min(Math.max(x(activePoint.game), 90), width - 90)} />
       )}
     </div>

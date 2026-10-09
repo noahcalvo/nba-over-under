@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { Suspense, use, type ReactNode } from "react";
 import { SignedValue } from "@/components/ui/SignedValue";
 import { formatDateTimeET, formatNumber } from "@/lib/format";
 import { lineMovement, type MarketLine } from "@/lib/team-detail";
@@ -12,20 +14,60 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+const SECTION_CLASS = "flex min-w-0 flex-col rounded-xl border border-ink-700 bg-ink-850/90 p-5 sm:p-6";
+
+/** The panel streams: the heading shows at once and the rows arrive with the market read. */
 export function SportsbookPanel({
   market,
   lockedLine,
   className = "",
 }: {
-  market: MarketLine;
+  /** Never rejects: `readLines` reports a failed feed as a read with no lines. */
+  market: Promise<MarketLine>;
   lockedLine: number | null;
   className?: string;
 }) {
+  return (
+    <Suspense fallback={<SportsbookSkeleton className={className} />}>
+      <Sportsbook market={market} lockedLine={lockedLine} className={className} />
+    </Suspense>
+  );
+}
+
+function SportsbookSkeleton({ className }: { className: string }) {
+  return (
+    <section aria-busy="true" aria-labelledby="sportsbook-heading" className={`${SECTION_CLASS} ${className}`}>
+      <h2 id="sportsbook-heading" className="font-display text-3xl font-bold text-accent">
+        Sportsbook line
+      </h2>
+      <p className="mt-1 text-fog-400">Loading the latest line…</p>
+      <div className="mt-4 divide-y divide-ink-700 border-y border-ink-700">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex items-center justify-between gap-4 py-4">
+            <div className="h-6 w-32 animate-pulse rounded bg-ink-800" />
+            <div className="h-9 w-20 animate-pulse rounded bg-ink-800" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Sportsbook({
+  market: marketPromise,
+  lockedLine,
+  className,
+}: {
+  market: Promise<MarketLine>;
+  lockedLine: number | null;
+  className: string;
+}) {
+  const market = use(marketPromise);
   const movement = lineMovement(market.line, lockedLine);
   return (
     <section
       aria-labelledby="sportsbook-heading"
-      className={`flex min-w-0 flex-col rounded-xl border border-ink-700 bg-ink-850/90 p-5 sm:p-6 ${className}`}
+      className={`${SECTION_CLASS} ${className}`}
     >
       <h2 id="sportsbook-heading" className="font-display text-3xl font-bold text-accent">
         Sportsbook line

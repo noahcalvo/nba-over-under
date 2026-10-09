@@ -27,7 +27,10 @@ export interface ChartModel {
   history: HistoryStatus | null;
   /** Completed games the log covers (up to the record's games played). */
   historyGames: number;
+  /** True only when a projected continuation is drawn: a projected point after the current game. */
   showsProjected: boolean;
+  /** True when at least one actual-wins point is drawn. */
+  hasActual: boolean;
   /** False when no series has a single value (before the draft and the first game). */
   hasData: boolean;
 }
@@ -75,7 +78,8 @@ export function buildChartModel({
     axis: yAxis(mode === "full" ? [0, ...values] : values, mode),
     history: series?.status ?? null,
     historyGames: series?.points.length ?? 0,
-    showsProjected: points.some((point) => point.projected !== null),
+    showsProjected: points.some((point) => point.game > played && point.projected !== null),
+    hasActual: points.some((point) => point.actual !== null),
     hasData: values.length > 0,
   };
 }

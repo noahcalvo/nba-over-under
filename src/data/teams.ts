@@ -52,3 +52,18 @@ export function teamIdByNickname(name: string): TeamId | null {
   });
   return team?.id ?? null;
 }
+
+/** ESPN's abbreviations where they differ from ours, for ESPN URLs. */
+const ESPN_ABBR: Readonly<Record<TeamId, string>> = {
+  GSW: "gs",
+  NOP: "no",
+  NYK: "ny",
+  SAS: "sa",
+  UTA: "utah",
+  WAS: "wsh",
+};
+
+/** The team's abbreviation in ESPN URLs: "orl", "ny", "utah". */
+export function espnAbbr(teamId: TeamId): string {
+  return ESPN_ABBR[teamId] ?? teamId.toLowerCase();
+}

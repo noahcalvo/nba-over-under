@@ -27,18 +27,22 @@ Next API.
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
   11 rounds), `SEASON` (demo and mock data), `LINES` (book, drafted season, feed cache timings),
-  `RECORDS` (records source, refresh cooldown, fetch timeout), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
+  `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
-  (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), feed errors (`feed-error.ts`),
-  environment checks (`env.ts`).
+  (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
+  schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
+  team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest market line), feed errors
+  (`feed-error.ts`), environment checks (`env.ts`).
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
-  mock lines) and `demo-league.ts`. Never add per-page fixtures.
+  mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) and `demo-league.ts`. Never
+  add per-page fixtures.
 - `src/db/` — Drizzle schema, repositories and `actions.ts` (every league mutation). No `server-only`, so Vitest can
   load it; only `src/server/` and `src/app/` (the route handlers) import it, never components. Migrations live in
   `drizzle/`.
 - `src/server/` — server-only glue (`import "server-only"`): database singleton, session cookie, league loading, links,
-  line source, outside feeds (`feed.ts`), record source (`records.ts`), HTTP helpers.
+  line source, outside feeds (`feed.ts`), record source (`records.ts`), game-log source (`game-log.ts`), team page
+  loader (`team-page.ts`), HTTP helpers.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area.
@@ -68,6 +72,13 @@ Next API.
   at 10:00 UTC with `CRON_SECRET`. The demo league keeps its mock records in code. `prevWins` is still mock.
   A refresh with `RECORD_SOURCE=static` stores mock records under the real season; games played may never go down, so
   later ESPN refreshes of it then fail. Delete `.data/pglite` (or those `team_records` rows) after testing with it.
+- Team page (`/l/{id}/teams/{teamId}`; breadcrumb to the overview, no nav item highlighted; team names and logos on the
+  Overview and Rosters link to it via `TeamLink`). Game history comes from ESPN's team schedule JSON, read per team when
+  the page opens (cached 10 min, failures retried after 30 s, never stored); the NBA Cup Championship and postponed
+  entries are dropped. The chart trims the log to the stored record's games played and says so when the log is short or
+  disagrees. The demo league and `RECORD_SOURCE=static` use the mock log. A failed game log or line read only empties
+  its own panel. The sportsbook panel shows FanDuel's current line only for the league's season, never in scoring;
+  locked-line pace and wins needed use the frozen line.
 - Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
   league invite and resets seats.
 

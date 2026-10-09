@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/Badge";
 import { SignedValue } from "@/components/ui/SignedValue";
 import { fadeStatus } from "@/lib/fade-status";
 import { managerLabel } from "@/lib/league/managers";
-import type { RosterColumn } from "@/lib/rosters";
+import { projectedFadePoints, type RosterColumn } from "@/lib/rosters";
 import { TeamLineSummary } from "./TeamLineSummary";
 
 export function RosterFade({
@@ -18,7 +18,9 @@ export function RosterFade({
       <div className="flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-2 text-sm font-medium text-fog-50">
           <Crosshair aria-hidden className="size-4 shrink-0 text-fog-300" />
-          <span className="truncate">{fade && fadeTarget ? `Fading ${managerLabel(fadeTarget)}` : "No fade yet"}</span>
+          <span className="truncate">
+            {fade ? `Fading ${fadeTarget ? managerLabel(fadeTarget) : "an opponent"}` : "No fade yet"}
+          </span>
         </p>
         {status && <Badge tone={status.tone}>{status.label}</Badge>}
       </div>
@@ -27,7 +29,7 @@ export function RosterFade({
           <TeamLineSummary call={fade.target} showProjected={showProjected} />
           {showProjected && (
             <span className="shrink-0 font-display text-xl font-bold">
-              <SignedValue value={fade.evaluation.points ?? 0} digits={0} suffix="pts" />
+              <SignedValue value={projectedFadePoints(fade)} digits={0} suffix="pts" />
             </span>
           )}
         </div>

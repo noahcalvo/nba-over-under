@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
 import { TEAM_INFO } from "@/data/teams";
 import { indexTeams, withLines } from "@/lib/lines";
-import { projectedPoints, rosterColumns, rosterGroups } from "@/lib/rosters";
-import { computeStandings, type ScoredCall } from "@/lib/standings";
+import { projectedFadePoints, projectedPoints, rosterColumns, rosterGroups } from "@/lib/rosters";
+import { computeStandings, type ScoredCall, type ScoredFade } from "@/lib/standings";
 import type { Side } from "@/lib/types";
 
 function call(pickNumber: number, side: Side, line: number, points: number | null): ScoredCall {
@@ -45,6 +45,10 @@ describe("rosterGroups", () => {
     expect(groups.map((g) => g.side)).toEqual(["UNDER"]);
   });
 
+  it("quality: no picks gives no groups", () => {
+    expect(rosterGroups([], "quality")).toEqual([]);
+  });
+
   it("traditional: no picks gives no groups", () => {
     expect(rosterGroups([], "traditional")).toEqual([]);
   });
@@ -79,6 +83,22 @@ describe("projectedPoints", () => {
 
   it("is 0 before the team has played", () => {
     expect(projectedPoints(call(1, "OVER", 40.5, null))).toBe(0);
+  });
+});
+
+describe("projectedFadePoints", () => {
+  const fadeOf = (target: ScoredCall, points: number | null): ScoredFade => ({
+    fade: { id: "f1", managerId: "m2", targetPickNumber: target.pick.pickNumber },
+    target,
+    evaluation: { status: points === null ? "not_available" : "scored", points } as ScoredFade["evaluation"],
+  });
+
+  it("is the fade's points when scored", () => {
+    expect(projectedFadePoints(fadeOf(call(1, "OVER", 40.5, 1), 2))).toBe(2);
+  });
+
+  it("is 0 before the target's team has played", () => {
+    expect(projectedFadePoints(fadeOf(call(1, "OVER", 40.5, null), null))).toBe(0);
   });
 });
 

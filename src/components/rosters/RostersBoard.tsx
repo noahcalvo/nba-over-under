@@ -22,6 +22,7 @@ export function RostersBoard({ league, teams }: { league: League; teams: Team[] 
   const standings = useMemo(() => computeStandings(league, teamsById, "projected"), [league, teamsById]);
   const columns = useMemo(() => rosterColumns(league.managers, standings), [league.managers, standings]);
 
+  const hasPicks = league.draft.picks.length > 0;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -29,29 +30,31 @@ export function RostersBoard({ league, teams }: { league: League; teams: Team[] 
         subtitle={`${league.name} • ${league.seasonLabel}`}
         tag={league.isDemo ? "Demo data" : undefined}
         actions={
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <Switch checked={showProjected} onChange={setShowProjected} label="Show projected" />
-            <Select
-              label="Sort picks"
-              value={sort}
-              onChange={setSort}
-              className="w-48"
-              options={[
-                { value: "traditional", label: "Sort: Traditional" },
-                { value: "quality", label: "Sort: Pick quality" },
-              ]}
-            />
-            {showProjected && (
-              <p className="flex items-center gap-1.5 text-sm text-fog-300">
-                <Info aria-hidden className="size-4" />
-                Points include fades
-              </p>
-            )}
-          </div>
+          hasPicks ? (
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <Switch checked={showProjected} onChange={setShowProjected} label="Show projected" />
+              <Select
+                label="Sort picks"
+                value={sort}
+                onChange={setSort}
+                className="w-48"
+                options={[
+                  { value: "traditional", label: "Sort: Traditional" },
+                  { value: "quality", label: "Sort: Pick quality" },
+                ]}
+              />
+              {showProjected && (
+                <p className="flex items-center gap-1.5 text-sm text-fog-300">
+                  <Info aria-hidden className="size-4" />
+                  Points include fades
+                </p>
+              )}
+            </div>
+          ) : undefined
         }
       />
 
-      {league.draft.picks.length === 0 ? (
+      {!hasPicks ? (
         <Panel bodyClassName="flex flex-col items-start gap-3 px-4 py-8 sm:px-5">
           <p className="text-fog-300">No picks yet. Rosters fill in as the draft runs.</p>
           <Link href={`/l/${league.id}/draft`} className={buttonClasses("secondary", "sm")}>
@@ -68,11 +71,13 @@ export function RostersBoard({ league, teams }: { league: League; teams: Team[] 
         </div>
       )}
 
-      <p className="text-sm text-fog-400">
-        {showProjected
-          ? "Turn off Show projected to hide projected scores and pace."
-          : "Turn on Show projected to see projected scores and pace."}
-      </p>
+      {hasPicks && (
+        <p className="text-sm text-fog-400">
+          {showProjected
+            ? "Turn off Show projected to hide projected scores and pace."
+            : "Turn on Show projected to see projected scores and pace."}
+        </p>
+      )}
     </div>
   );
 }

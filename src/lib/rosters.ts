@@ -10,6 +10,11 @@ export function projectedPoints(call: ScoredCall): number {
   return call.evaluation.points ?? 0;
 }
 
+/** A fade's projected points; a fade whose target has not played yet is projected at 0. */
+export function projectedFadePoints(fade: ScoredFade): number {
+  return fade.evaluation.points ?? 0;
+}
+
 /** One block of a roster. side is null when the sort mixes Overs and Unders. */
 export interface RosterGroup {
   side: Side | null;
@@ -39,8 +44,9 @@ export function rosterColumns(managers: readonly Manager[], standings: Standings
 
 const SIDES: readonly Side[] = ["OVER", "UNDER"];
 
+/** A roster's blocks for the sort; empty when there are no picks. */
 export function rosterGroups(calls: readonly ScoredCall[], sort: RosterSort): RosterGroup[] {
-  if (sort === "quality") return [{ side: null, calls: [...calls].sort(byQuality) }];
+  if (sort === "quality") return calls.length ? [{ side: null, calls: [...calls].sort(byQuality) }] : [];
   return SIDES.map((side) => ({ side, calls: calls.filter((call) => call.pick.side === side).sort(byLine) })).filter(
     (group) => group.calls.length > 0,
   );

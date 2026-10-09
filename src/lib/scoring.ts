@@ -27,7 +27,9 @@ export function signedMargin(side: Side, line: number, wins: number): number {
   return side === "OVER" ? wins - line : line - wins;
 }
 
+/** A margin of exactly 0 is a push: final wins (or the pace) equal the line, and the call earns nothing. */
 export function callPoints(margin: number, config: ScoringConfig = SCORING): number {
+  if (margin === 0) return 0;
   const base = margin > 0 ? config.correctCall : config.missedCall;
   return base + margin * config.marginWeight;
 }
@@ -39,6 +41,8 @@ export interface CallEvaluation {
   wins: number | null;
   margin: number | null;
   correct: boolean | null;
+  /** True when the margin is exactly 0. A push is neither correct nor missed. Null unless scored. */
+  push: boolean | null;
   points: number | null;
 }
 
@@ -57,27 +61,27 @@ export function evaluateCall(
     wins = team.wins;
   }
   const margin = signedMargin(side, team.line, wins);
-  return { basis, status: "scored", wins, margin, correct: margin > 0, points: callPoints(margin, config) };
+  return { basis, status: "scored", wins, margin, correct: margin > 0, push: margin === 0, points: callPoints(margin, config) };
 }
 
 function unscored(basis: Basis, status: Exclude<EvaluationStatus, "scored">): CallEvaluation {
-  return { basis, status, wins: null, margin: null, correct: null, points: null };
+  return { basis, status, wins: null, margin: null, correct: null, push: null, points: null };
 }
 
 export interface FadeEvaluation {
   basis: Basis;
   status: EvaluationStatus;
-  /** True when the targeted pick misses. Null unless scored. */
+  /** True when the targeted pick misses (a push is not a miss). Null unless scored. */
   targetMissed: boolean | null;
   points: number | null;
 }
 
-/** A fade scores off its target: the bonus when the target misses, nothing when it hits. */
+/** A fade scores off its target: the bonus when the target misses, nothing when it hits or pushes. */
 export function evaluateFade(target: CallEvaluation, config: ScoringConfig = SCORING): FadeEvaluation {
   if (target.status !== "scored") {
     return { basis: target.basis, status: target.status, targetMissed: null, points: null };
   }
-  const targetMissed = target.correct === false;
+  const targetMissed = target.correct === false && target.push === false;
   return {
     basis: target.basis,
     status: "scored",

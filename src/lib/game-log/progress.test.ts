@@ -87,7 +87,7 @@ describe("winsNeededForOver", () => {
     expect(winsNeededForOver(51.5, 30)).toBe(22);
   });
 
-  it("needs to beat an integer line outright, because a push misses", () => {
+  it("needs to beat an integer line outright, because a push is not a hit", () => {
     expect(winsNeededForOver(50, 30)).toBe(21);
   });
 

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ScoringRulesPanel } from "@/components/settings/ScoringRulesPanel";
 import { SeatsPanel } from "@/components/access/SeatsPanel";
 import { YourAccessPanel } from "@/components/access/YourAccessPanel";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -28,10 +29,8 @@ async function SettingsContent({ params }: { params: PageProps<"/l/[leagueId]/se
         subtitle={`${league.name} • ${league.seasonLabel}`}
         tag={league.isDemo ? "Demo data" : undefined}
       />
+      <ScoringRulesPanel />
       <SettingsBody league={league} viewerId={viewerId} />
-      <Panel bodyClassName="p-4 text-sm text-fog-400 sm:p-5">
-        Scoring weights and round count aren&apos;t configurable yet.
-      </Panel>
     </div>
   );
 }

@@ -17,6 +17,7 @@ function call(pickNumber: number, side: Side, line: number, points: number | nul
       wins: null,
       margin: null,
       correct: null,
+      push: null,
       points,
     },
   };

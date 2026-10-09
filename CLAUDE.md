@@ -52,6 +52,8 @@ Next API.
   `src/lib/scoring.ts` and `src/lib/standings.ts`. Never hardcode a display total or re-implement scoring in a component.
 - Two bases, always shown separately: `projected` (win pace = wins ÷ games played × 82) and `final` (settled once the
   team has played 82 games).
+- Push: a margin of exactly 0 (final wins or pace equal the line) earns 0 for the pick and for a fade on it
+  (`CallEvaluation.push`).
 - Zero games played → "Not available". Unsettled pick on the final basis → "Pending".
 - Draft: snake order; each team's Over and Under are separate sides; 4 × 11 = 44 picks out of 60 sides.
 - A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick

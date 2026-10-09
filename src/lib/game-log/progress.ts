@@ -46,7 +46,7 @@ export function projectedAt(record: TeamRecord, game: number, config: ScoringCon
   return record.wins + (game - gamesPlayed(record)) * (projected / config.seasonGames);
 }
 
-/** Wins still needed for the Over to hit. A push misses, so an integer line needs one more than the line. */
+/** Wins still needed for the Over to hit. A push is not a hit, so an integer line needs one more than the line. */
 export function winsNeededForOver(line: number, wins: number): number {
   return Math.max(0, Math.floor(line) + 1 - wins);
 }

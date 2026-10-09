@@ -52,8 +52,9 @@ All weights live in one object, `SCORING` in `src/config/scoring.ts`:
 | Season length | 82 games |
 
 - **Signed margin**: Over → wins − line. Under → line − wins.
-- **Call points**: (margin > 0 ? correct : missed) + margin × marginWeight. Lines end in .5, so there are no pushes.
-- A projected pace exactly on the line counts as a miss (margin 0 is not > 0); final results can't land exactly on a .5 line.
+- **Call points**: (margin > 0 ? correct : missed) + margin × marginWeight. A margin of exactly 0 is a push and earns 0.
+- A push (final wins, or a projected pace, exactly on the line) is neither correct nor missed: the pick earns 0 and a fade
+  on it earns `fadeMiss` (0). Only whole-number lines can push on the final basis.
 - **Projected wins**: wins ÷ games played × 82. Zero games played → "Not available" (call is unscored, adds nothing).
 - **Fade**: scores `fadeHit` when its targeted opponent pick misses, otherwise `fadeMiss`. It inherits "Not available"
   or "Pending" from its target.

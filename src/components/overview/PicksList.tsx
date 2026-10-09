@@ -29,6 +29,7 @@ function FinalWins({ evaluation }: { evaluation: CallEvaluation }) {
 
 function Result({ evaluation }: { evaluation: CallEvaluation }) {
   if (evaluation.status !== "scored") return <Badge>Pending</Badge>;
+  if (evaluation.push) return <Badge>Push</Badge>;
   return evaluation.correct ? <Badge tone="accent">Correct</Badge> : <Badge tone="danger">Missed</Badge>;
 }
 

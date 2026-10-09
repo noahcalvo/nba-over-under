@@ -138,11 +138,13 @@ export function pickStatus(ownership: SideOwnership, record: TeamRecord, showPro
   if (!pick || line === null || !projected || !final) return null;
   if (final.status === "scored") {
     const text = `${formatNumber(final.wins ?? 0, 0)} wins vs ${formatNumber(line)}`;
+    if (final.push) return { label: `Push · ${text}`, tone: "neutral" };
     return final.correct ? { label: `Hit · ${text}`, tone: "accent" } : { label: `Missed · ${text}`, tone: "danger" };
   }
   if (showProjected) {
     if (projected.status !== "scored") return { label: "No games played yet", tone: "neutral" };
     const text = `projected ${formatNumber(projected.wins ?? 0)} vs ${formatNumber(line)}`;
+    if (projected.push) return { label: `On track to push · ${text}`, tone: "neutral" };
     return projected.correct
       ? { label: `On track to hit · ${text}`, tone: "accent" }
       : { label: `On track to miss · ${text}`, tone: "danger" };

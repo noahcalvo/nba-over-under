@@ -88,7 +88,7 @@ describe("decidedOutcome", () => {
     expect(decidedOutcome("UNDER", 51.5, { wins: 52, losses: 10 })).toBe("eliminated");
   });
 
-  it("eliminates the Under at an integer line reached, because a push misses", () => {
+  it("eliminates the Under at an integer line reached, because a push is not a hit", () => {
     expect(decidedOutcome("UNDER", 50, { wins: 50, losses: 10 })).toBe("eliminated");
     expect(decidedOutcome("OVER", 50, { wins: 50, losses: 10 })).toBeNull();
   });
@@ -132,6 +132,16 @@ describe("pickStatus", () => {
     const [over, under] = teamOwnership(league, "ORL", done);
     expect(pickStatus(over, done, false)).toEqual({ label: "Hit · 52 wins vs 51.5", tone: "accent" });
     expect(pickStatus(under, done, true)).toEqual({ label: "Missed · 52 wins vs 51.5", tone: "danger" });
+  });
+
+  it("calls a pick on a whole-number line a push when wins equal it", () => {
+    const pushed = orl({ line: 50, wins: 50, losses: 32 });
+    const [over, under] = teamOwnership(league, "ORL", pushed);
+    expect(pickStatus(over, pushed, false)).toEqual({ label: "Push · 50 wins vs 50.0", tone: "neutral" });
+    expect(pickStatus(under, pushed, true)).toEqual({ label: "Push · 50 wins vs 50.0", tone: "neutral" });
+    const level = orl({ line: 41, wins: 20, losses: 20 });
+    const [paceOver] = teamOwnership(league, "ORL", level);
+    expect(pickStatus(paceOver, level, true)).toEqual({ label: "On track to push · projected 41.0 vs 41.0", tone: "neutral" });
   });
 
   it("says when no games have been played", () => {

@@ -76,6 +76,10 @@ describe("callPoints", () => {
     expect(callPoints(-3.4)).toBeCloseTo(-1.34);
   });
 
+  it("scores a push as zero", () => {
+    expect(callPoints(0)).toBe(0);
+  });
+
   it("reads every weight from the config", () => {
     const config: ScoringConfig = { ...SCORING, correctCall: 3, missedCall: -2, marginWeight: 0.5 };
     expect(callPoints(2, config)).toBeCloseTo(4);
@@ -107,6 +111,7 @@ describe("evaluateCall", () => {
       wins: null,
       margin: null,
       correct: null,
+      push: null,
       points: null,
     });
   });
@@ -118,6 +123,7 @@ describe("evaluateCall", () => {
       wins: null,
       margin: null,
       correct: null,
+      push: null,
       points: null,
     });
   });
@@ -129,12 +135,16 @@ describe("evaluateCall", () => {
     expect(result.points).toBeCloseTo(1.25);
   });
 
-  it("counts a projected pace exactly on the line as a miss", () => {
+  it("counts a projected pace exactly on the line as a push", () => {
     // 10–30 paces to exactly 20.5 wins.
     const result = evaluateCall("OVER", team({ line: 20.5, wins: 10, losses: 30 }), "projected");
-    expect(result.margin).toBe(0);
-    expect(result.correct).toBe(false);
-    expect(result.points).toBe(-1);
+    expect(result).toMatchObject({ margin: 0, correct: false, push: true, points: 0 });
+  });
+
+  it("scores final wins equal to a whole-number line as a push for either side", () => {
+    const settled = team({ line: 50, wins: 50, losses: 32 });
+    expect(evaluateCall("OVER", settled, "final")).toMatchObject({ margin: 0, correct: false, push: true, points: 0 });
+    expect(evaluateCall("UNDER", settled, "final")).toMatchObject({ margin: 0, correct: false, push: true, points: 0 });
   });
 });
 
@@ -148,6 +158,11 @@ describe("evaluateFade", () => {
   it("earns nothing when the targeted pick hits", () => {
     const target = evaluateCall("OVER", team(), "projected");
     expect(evaluateFade(target)).toEqual({ basis: "projected", status: "scored", targetMissed: false, points: 0 });
+  });
+
+  it("earns nothing when the targeted pick pushes", () => {
+    const target = evaluateCall("OVER", team({ line: 50, wins: 50, losses: 32 }), "final");
+    expect(evaluateFade(target)).toEqual({ basis: "final", status: "scored", targetMissed: false, points: 0 });
   });
 
   it("inherits not available and pending from its target", () => {

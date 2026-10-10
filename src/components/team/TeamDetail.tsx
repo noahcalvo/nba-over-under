@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { teamOwnership, type TeamPageData } from "@/lib/team-detail";
 import type { Team } from "@/lib/types";
 import { OwnershipCard } from "./OwnershipCard";
 import { SeasonProgressPanel } from "./SeasonProgressPanel";
+import { useShowProjected } from "./ShowProjected";
 import { SportsbookPanel } from "./SportsbookPanel";
 import { TeamHeader } from "./TeamHeader";
 import { TeamStatStrip } from "./TeamStatStrip";
 
 export function TeamDetail({ league, info, lockedLine, teamOptions, market, gameLog }: TeamPageData) {
-  const [showProjected, setShowProjected] = useState(true);
+  const [showProjected, setShowProjected] = useShowProjected();
   const team = useMemo<Team | null>(() => (lockedLine === null ? null : { ...info, line: lockedLine }), [info, lockedLine]);
   const [over, under] = useMemo(() => teamOwnership(league, info.id, team), [league, info.id, team]);
   const teamNames = useMemo(

@@ -7,11 +7,11 @@ import { PageHeaderSkeleton } from "@/components/shell/PageHeader";
 import { TEAM_INFO } from "@/data/teams";
 import { teamOptions } from "@/lib/team-detail";
 import { ProgressSkeleton } from "./SeasonProgressPanel";
+import { useShowProjected } from "./ShowProjected";
 import { SportsbookSkeleton } from "./SportsbookPanel";
 import { TeamHeader } from "./TeamHeader";
 
 const OPTIONS = teamOptions(TEAM_INFO);
-const noop = () => {};
 
 /**
  * The team page while its data loads. The team comes from the URL and the league from the layout, so on a client
@@ -30,8 +30,17 @@ function KnownTeamHeader() {
   const league = useCurrentLeague();
   const { teamId } = useParams<{ teamId: string }>();
   const info = TEAM_INFO.find((team) => team.id === teamId?.toUpperCase());
+  const [showProjected, setShowProjected] = useShowProjected();
   if (!league || !info) return <PageHeaderSkeleton />;
-  return <TeamHeader league={league} info={info} teamOptions={OPTIONS} showProjected onShowProjectedChange={noop} />;
+  return (
+    <TeamHeader
+      league={league}
+      info={info}
+      teamOptions={OPTIONS}
+      showProjected={showProjected}
+      onShowProjectedChange={setShowProjected}
+    />
+  );
 }
 
 function TeamSkeleton({ header }: { header: ReactNode }) {

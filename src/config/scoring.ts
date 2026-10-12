@@ -11,6 +11,10 @@ export interface ScoringConfig {
   fadeMiss: number;
   /** Regular-season length, used for win pace and settlement. */
   seasonGames: number;
+  /** Season award to the owner of the league's highest-scoring pick (every tied pick gets it). */
+  bestPickAward: number;
+  /** Season award to the owner of the league's lowest-scoring pick (every tied pick gets it). */
+  worstPickAward: number;
 }
 
 export const SCORING: ScoringConfig = {
@@ -20,4 +24,6 @@ export const SCORING: ScoringConfig = {
   fadeHit: 2,
   fadeMiss: 0,
   seasonGames: 82,
+  bestPickAward: 2,
+  worstPickAward: -2,
 };

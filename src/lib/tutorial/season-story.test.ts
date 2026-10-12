@@ -98,7 +98,7 @@ describe("fadeStory and standingsStory on a demo season", () => {
     expect(story.viewer.managerId).toBe(TUTORIAL_VIEWER_ID);
     expect(story.summary).toMatch(story.viewer === story.leader ? /^You win the league/ : /wins the league with .* You finished/);
     expect(story.rows[2]).toEqual({ label: "Final total", value: formatSigned(story.viewer.totalPoints, 2) });
-    expect(story.viewer.totalPoints).toBeCloseTo(story.viewer.callPoints + story.viewer.fadePoints);
+    expect(story.viewer.totalPoints).toBeCloseTo(story.viewer.callPoints + story.viewer.fadePoints + story.viewer.awardPoints);
     const before = standingsStory(standingsAt(0, "projected"), league.managers, TUTORIAL_VIEWER_ID);
     expect(before.summary).toContain("no ranking");
     expect(before.rows).toEqual([]);

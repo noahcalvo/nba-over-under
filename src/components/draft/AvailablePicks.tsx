@@ -65,6 +65,7 @@ export function AvailablePicks({
   return (
     <Panel
       title="Available picks"
+      tour="available-picks"
       bodyClassName="@container"
       actions={
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">

@@ -4,6 +4,7 @@ import { TeamLogo } from "@/components/ui/TeamLogo";
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
 import type { TeamLookup } from "@/lib/standings";
+import type { TourTargetId } from "@/lib/tour/targets";
 
 export function SelectionBar({
   teams,
@@ -14,6 +15,8 @@ export function SelectionBar({
   pending,
   onConfirm,
   onClear,
+  tourBar,
+  tourConfirm,
 }: {
   teams: TeamLookup;
   selection: SideRef | null;
@@ -23,6 +26,10 @@ export function SelectionBar({
   pending: boolean;
   onConfirm: () => void;
   onClear: () => void;
+  /** Names the selection bar for a guided tour (data-tour). */
+  tourBar?: TourTargetId;
+  /** Names the confirm button for a guided tour (data-tour). */
+  tourConfirm?: TourTargetId;
 }) {
   if (!selection && !notice) return null;
   const frame =
@@ -39,7 +46,7 @@ export function SelectionBar({
   }
   const team = teams[selection.teamId];
   return (
-    <div className={`${frame} border-ink-600`}>
+    <div data-tour={tourBar} className={`${frame} border-ink-600`}>
       <TeamLogo team={team} size={36} />
       <p className="min-w-0 flex-1 truncate text-sm">
         <span className="font-semibold">{team.name}</span>{" "}
@@ -49,7 +56,7 @@ export function SelectionBar({
       <Button size="sm" variant="ghost" onClick={onClear} aria-label="Clear selection">
         <X aria-hidden className="size-4" />
       </Button>
-      <Button size="sm" onClick={onConfirm} disabled={!canPick || pending}>
+      <Button data-tour={tourConfirm} size="sm" onClick={onConfirm} disabled={!canPick || pending}>
         {confirmLabel}
       </Button>
     </div>

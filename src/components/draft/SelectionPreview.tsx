@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import type { TurnSummary } from "@/lib/league/turn";
 import type { TeamLookup } from "@/lib/standings";
+import { tourTarget } from "@/lib/tour/targets";
 import type { DraftStatus, League } from "@/lib/types";
 
 const EMPTY_MESSAGE: Record<DraftStatus, string> = {
@@ -79,7 +80,7 @@ export function SelectionPreview({
         <dt className="text-fog-300">{SEASON.previousLabel} wins</dt>
         <dd className="font-display text-xl font-bold">{team.prevWins}</dd>
       </dl>
-      <Button size="lg" onClick={onConfirm} disabled={!canPick || pending}>
+      <Button {...tourTarget("confirm-pick")} size="lg" onClick={onConfirm} disabled={!canPick || pending}>
         Confirm pick
       </Button>
       {!canPick && waiting && <p className="-mt-2 text-center text-xs text-fog-400">{waiting}</p>}

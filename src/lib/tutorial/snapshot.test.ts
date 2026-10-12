@@ -4,7 +4,8 @@ import type { Result } from "@/lib/league/errors";
 import type { League } from "@/lib/types";
 import { applyTutorialCommand } from "./session";
 import { simulateAll, simulateStep } from "./simulation";
-import { restoreTutorial, snapshotOf, tutorialResult } from "./snapshot";
+import { restoreTutorial, snapshotOf, tutorialResult, type TutorialSnapshot } from "./snapshot";
+import { INITIAL_SEASON_PROGRESS, type SeasonProgress } from "./season-steps";
 import { INITIAL_PROGRESS, type TutorialProgress } from "./steps";
 
 const teams = tutorialTeams();
@@ -27,6 +28,28 @@ const faded = must(
 const complete = simulateAll(faded, teams, "fades");
 const seen: TutorialProgress = { welcomed: true, snakeExplained: true, fadesWatched: false };
 
+describe("season progress in the snapshot", () => {
+  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "draft-standings", "mid-chart"] };
+  const watched = { ...seen, fadesWatched: true };
+  const roundTrip = (snapshot: unknown) => restoreTutorial(JSON.parse(JSON.stringify(snapshot)));
+
+  it("keeps the season with a completed draft", () => {
+    expect(roundTrip(snapshotOf(complete, watched, midseason))?.season).toEqual(midseason);
+  });
+
+  it("starts the season over for snapshots without one or with a broken one", () => {
+    const older: Partial<TutorialSnapshot> = snapshotOf(complete, watched, midseason);
+    delete older.season;
+    expect(roundTrip(older)).toEqual({ league: complete, progress: watched, season: INITIAL_SEASON_PROGRESS });
+    const broken = { ...snapshotOf(complete, watched), season: { checkpoint: "playoffs", seen: [] } };
+    expect(roundTrip(broken)?.season).toEqual(INITIAL_SEASON_PROGRESS);
+  });
+
+  it("never carries a season into an unfinished draft", () => {
+    expect(roundTrip(snapshotOf(drafted, seen, midseason))?.season).toEqual(INITIAL_SEASON_PROGRESS);
+  });
+});
+
 describe("snapshotOf / restoreTutorial", () => {
   it("restores the same league and progress at every stage, through JSON", () => {
     const stages: Array<[League, TutorialProgress]> = [
@@ -39,7 +62,7 @@ describe("snapshotOf / restoreTutorial", () => {
     ];
     for (const [league, progress] of stages) {
       const stored: unknown = JSON.parse(JSON.stringify(snapshotOf(league, progress)));
-      expect(restoreTutorial(stored)).toEqual({ league, progress });
+      expect(restoreTutorial(stored)).toEqual({ league, progress, season: INITIAL_SEASON_PROGRESS });
     }
   });
 

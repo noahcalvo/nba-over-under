@@ -2,6 +2,7 @@ import { buildTutorialLeague, TUTORIAL_VIEWER_ID, tutorialTeams } from "@/data/t
 import { currentPickNumber, managerOnTheClock } from "@/lib/draft";
 import { fadeFor } from "@/lib/fades";
 import type { DraftPick, Fade, League, Side, Team, TeamId } from "@/lib/types";
+import { INITIAL_SEASON_PROGRESS, parseSeasonProgress, type SeasonProgress } from "./season-steps";
 import { applyTutorialCommand } from "./session";
 import type { TutorialProgress } from "./steps";
 
@@ -16,14 +17,21 @@ export interface TutorialSnapshot {
   picks: Array<{ teamId: TeamId; side: Side }>;
   /** Every fade in the order it was locked. */
   fades: Array<{ managerId: string; targetPickNumber: number }>;
+  /** The guided season's checkpoint and seen steps. Missing in snapshots saved before the season existed. */
+  season?: SeasonProgress;
 }
 
-export function snapshotOf(league: League, progress: TutorialProgress): TutorialSnapshot {
+export function snapshotOf(
+  league: League,
+  progress: TutorialProgress,
+  season: SeasonProgress = INITIAL_SEASON_PROGRESS,
+): TutorialSnapshot {
   return {
     v: 1,
     progress,
     picks: league.draft.picks.map(({ teamId, side }) => ({ teamId, side })),
     fades: league.fades.map(({ managerId, targetPickNumber }) => ({ managerId, targetPickNumber })),
+    season,
   };
 }
 
@@ -31,8 +39,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+export interface RestoredTutorial {
+  league: League;
+  progress: TutorialProgress;
+  /** The initial season unless the draft is complete and the stored season progress is valid. */
+  season: SeasonProgress;
+}
+
 /** The demo a snapshot describes, or null when it isn't one or any command breaks a rule. */
-export function restoreTutorial(raw: unknown): { league: League; progress: TutorialProgress } | null {
+export function restoreTutorial(raw: unknown): RestoredTutorial | null {
   if (!isRecord(raw) || raw.v !== 1 || !Array.isArray(raw.picks) || !Array.isArray(raw.fades)) return null;
   const progress = raw.progress;
   if (
@@ -60,6 +75,7 @@ export function restoreTutorial(raw: unknown): { league: League; progress: Tutor
     if (!result.ok) return null;
     league = result.value;
   }
+  const season = (league.draft.status === "complete" && parseSeasonProgress(raw.season)) || INITIAL_SEASON_PROGRESS;
   return {
     league,
     progress: {
@@ -67,6 +83,7 @@ export function restoreTutorial(raw: unknown): { league: League; progress: Tutor
       snakeExplained: progress.snakeExplained,
       fadesWatched: progress.fadesWatched,
     },
+    season,
   };
 }
 

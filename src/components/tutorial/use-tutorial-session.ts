@@ -7,6 +7,7 @@ import type { DraftCommand } from "@/lib/fades";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
 import { applyTutorialCommand } from "@/lib/tutorial/session";
 import { simulateAll, simulateStep, type SimulationKind } from "@/lib/tutorial/simulation";
+import { INITIAL_SEASON_PROGRESS, type SeasonProgress } from "@/lib/tutorial/season-steps";
 import { restoreTutorial, snapshotOf } from "@/lib/tutorial/snapshot";
 import { INITIAL_PROGRESS, type TutorialProgress } from "@/lib/tutorial/steps";
 import type { League, LeagueView } from "@/lib/types";
@@ -15,12 +16,14 @@ import { clearTutorialSnapshot, readTutorialSnapshot, writeTutorialSnapshot } fr
 interface SessionState {
   league: League;
   progress: TutorialProgress;
+  /** Kept as restored, so saving the draft never loses the guided season's place. */
+  season: SeasonProgress;
 }
 
 /** Client only (DraftTour renders this after mount): resumes this tab's demo when its snapshot replays cleanly. */
 function initialState(): SessionState {
   const restored = typeof window === "undefined" ? null : restoreTutorial(readTutorialSnapshot());
-  return restored ?? { league: buildTutorialLeague(), progress: INITIAL_PROGRESS };
+  return restored ?? { league: buildTutorialLeague(), progress: INITIAL_PROGRESS, season: INITIAL_SEASON_PROGRESS };
 }
 
 /** The guided demo's league, held in memory: a DraftRoomDriver whose actions run the real rules and go nowhere. */
@@ -28,13 +31,13 @@ export function useTutorialSession() {
   const [state, setState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
   const teams = useMemo(() => tutorialTeams(), []);
-  const { league, progress } = state;
+  const { league, progress, season } = state;
   // Set by exit, so a simulated step landing during the navigation away can't save the demo again.
   const exited = useRef(false);
 
   useEffect(() => {
-    if (!exited.current) writeTutorialSnapshot(snapshotOf(league, progress));
-  }, [league, progress]);
+    if (!exited.current) writeTutorialSnapshot(snapshotOf(league, progress, season));
+  }, [league, progress, season]);
 
   const view = useMemo<LeagueView>(
     () => ({ league, viewerId: TUTORIAL_VIEWER_ID, teams, lineReview: null, records: null }),

@@ -34,14 +34,15 @@ Next API.
 
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
-  11 rounds), `SEASON` (demo and mock data), `LINES` (book, drafted season, feed cache timings),
+  11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data), `LINES` (book, drafted season, feed cache timings),
   `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
   schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
   team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest market line), feed errors
-  (`feed-error.ts`), environment checks (`env.ts`).
+  (`feed-error.ts`), league size rules (`league/config.ts`), scripted test drafts (`draft-scenarios.ts`, tests only),
+  environment checks (`env.ts`).
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
   mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) and `demo-league.ts`. Never
   add per-page fixtures.
@@ -63,13 +64,20 @@ Next API.
 - Push: a margin of exactly 0 (final wins or pace equal the line) earns 0 for the pick and for a fade on it
   (`CallEvaluation.push`).
 - Zero games played → "Not available". Unsettled pick on the final basis → "Pending".
-- Draft: snake order; each team's Over and Under are separate sides; 4 × 11 = 44 picks out of 60 sides.
+- Draft: snake order; each team's Over and Under are separate sides (60). The commissioner sets 2–12 managers and
+  1–⌊60 ÷ managers⌋ rounds before the start (`PUT /api/leagues/{id}/config`, `decideLeagueConfig`; seats are added or
+  removed at the end, never a claimed one); default 4 × 11 = 44 picks.
 - A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick
   number is `stale_pick`.
-- Fade stage: the 44th pick moves the draft to `fades` (not `complete`). Each manager submits one fade
+- Early end: after each pick, if the manager on the clock for the next pick has no eligible side (every open side is
+  the other side of a team they hold), regular drafting ends for everyone in the same write: only completed rounds are
+  kept (`draft.picks`), the cut-short round's picks move to `draft.voidedPicks` (stored as `picks.voided`, shown on the
+  board as Voided, never scored or faded; `voided_pick`) and `draft.blockedPick` records where it stopped. The
+  configured last pick always finishes normally. 4 × 11 can never end early.
+- Fade stage: the last pick (or an early end) moves the draft to `fades` (not `complete`). Each manager submits one fade
   (`{ type: "fade", managerId, targetPickNumber }` on the draft endpoint) on another manager's pick, in any order; several
   may share a target. The commissioner also fades for unclaimed seats. A stored fade is locked (`fade_locked`; table
-  `fades`, one row per manager). The fourth fade completes the draft. Rules in `src/lib/fades.ts`.
+  `fades`, one row per manager). The last manager's fade completes the draft. Rules in `src/lib/fades.ts`.
 - Lines come from `lineSource` (`src/server/lines.ts`): FanDuel's public NBA JSON (one book, never mixed; unofficial
   and keyless, so it can break), cached 5 min, failures retried after 30 s; `LINE_SOURCE=static` serves the mock
   lines. Before the draft `LeagueView.lineReview` shows each team's book line plus the commissioner's overrides

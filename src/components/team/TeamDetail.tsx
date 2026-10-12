@@ -50,6 +50,7 @@ export function TeamDetail({
           showProjected={showProjected}
           teamNames={teamNames}
           note={historyNote}
+          compactTooltip={league.isDemo}
           className={market ? "xl:col-span-2" : "xl:col-span-3"}
         />
         {market && <SportsbookPanel market={market} lockedLine={lockedLine} />}

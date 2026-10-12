@@ -31,9 +31,11 @@ function linePath(points: Array<[number, number]>): string {
 export function SeasonProgressChart({
   model,
   teamNames,
+  compact = false,
 }: {
   model: ChartModel;
   teamNames: Readonly<Record<TeamId, string>>;
+  compact?: boolean;
 }) {
   const [containerRef, { width, height }] = useSize<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
@@ -215,7 +217,7 @@ export function SeasonProgressChart({
         </svg>
       )}
       {activePoint && width > 0 && height > 0 && (
-        <Tooltip point={activePoint} teamNames={teamNames} left={Math.min(Math.max(x(activePoint.game), 90), width - 90)} />
+        <Tooltip point={activePoint} teamNames={teamNames} compact={compact} left={Math.min(Math.max(x(activePoint.game), 90), width - 90)} />
       )}
     </div>
   );
@@ -224,20 +226,38 @@ export function SeasonProgressChart({
 function Tooltip({
   point,
   teamNames,
+  compact,
   left,
 }: {
   point: ChartPoint;
   teamNames: Readonly<Record<TeamId, string>>;
+  compact: boolean;
   left: number;
 }) {
   const { detail } = point;
   const opponent = detail?.opponentId ? teamNames[detail.opponentId] : null;
   const where = detail?.home === true ? "vs " : detail?.home === false ? "@ " : "";
   const result = detail?.result === "W" ? "Win" : detail?.result === "L" ? "Loss" : null;
+  const box =
+    "pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 text-sm shadow-lg";
+  if (compact) {
+    return (
+      <div role="status" className={`${box} w-36`} style={{ left }}>
+        <p className="font-semibold text-fog-50">
+          Game {point.game}
+          {result && <span className="font-normal text-fog-300"> · {result}</span>}
+        </p>
+        <dl className="mt-1 space-y-0.5">
+          {point.actual !== null && <Line label="Wins" value={formatNumber(point.actual, 0)} />}
+          {point.projected !== null && <Line label="Proj." value={formatNumber(point.projected)} />}
+        </dl>
+      </div>
+    );
+  }
   return (
     <div
       role="status"
-      className="pointer-events-none absolute top-0 z-10 w-44 -translate-x-1/2 rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 text-sm shadow-lg"
+      className={`${box} w-44`}
       style={{ left }}
     >
       <p className="font-semibold text-fog-50">

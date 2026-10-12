@@ -22,6 +22,7 @@ export function SeasonProgressPanel({
   showProjected,
   teamNames,
   note,
+  compactTooltip = false,
   className = "",
 }: {
   /** Never rejects: `readGameLog` reports a failed feed as a read with no log. */
@@ -32,6 +33,8 @@ export function SeasonProgressPanel({
   teamNames: Readonly<Record<TeamId, string>>;
   /** Shown first under the chart, e.g. where the game history comes from. */
   note?: string;
+  /** Demo league: the chart tooltip shows only the key figures. */
+  compactTooltip?: boolean;
   className?: string;
 }) {
   return (
@@ -43,6 +46,7 @@ export function SeasonProgressPanel({
         showProjected={showProjected}
         teamNames={teamNames}
         note={note}
+        compactTooltip={compactTooltip}
         className={className}
       />
     </Suspense>
@@ -73,6 +77,7 @@ function SeasonProgress({
   showProjected,
   teamNames,
   note,
+  compactTooltip = false,
   className = "",
 }: {
   gameLog: Promise<GameLogRead>;
@@ -81,6 +86,8 @@ function SeasonProgress({
   showProjected: boolean;
   teamNames: Readonly<Record<TeamId, string>>;
   note?: string;
+  /** Demo league: the chart tooltip shows only the key figures. */
+  compactTooltip?: boolean;
   className?: string;
 }) {
   const gameLog = use(gameLogPromise);
@@ -129,7 +136,7 @@ function SeasonProgress({
         </div>
       ) : model.hasData ? (
         <>
-          <SeasonProgressChart model={model} teamNames={teamNames} />
+          <SeasonProgressChart model={model} teamNames={teamNames} compact={compactTooltip} />
           <Legend actual={model.hasActual} pace={lockedLine !== null} projected={model.showsProjected} />
         </>
       ) : (

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { TourTargetId } from "@/lib/tour/targets";
 
 export function Panel({
   title,
@@ -6,6 +7,7 @@ export function Panel({
   actions,
   className = "",
   bodyClassName = "",
+  tour,
   children,
 }: {
   title?: ReactNode;
@@ -13,10 +15,12 @@ export function Panel({
   actions?: ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** Names this panel for a guided tour (data-tour). */
+  tour?: TourTargetId;
   children: ReactNode;
 }) {
   return (
-    <section className={`min-w-0 rounded-xl border border-ink-700 bg-ink-850/90 ${className}`}>
+    <section data-tour={tour} className={`min-w-0 rounded-xl border border-ink-700 bg-ink-850/90 ${className}`}>
       {(title || actions) && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-700 px-4 py-3 sm:px-5">
           {title && (

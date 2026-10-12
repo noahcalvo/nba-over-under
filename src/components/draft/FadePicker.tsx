@@ -11,6 +11,7 @@ import { fadeTargets } from "@/lib/fades";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import type { TeamLookup } from "@/lib/standings";
+import { tourTarget } from "@/lib/tour/targets";
 import type { DraftPick, League } from "@/lib/types";
 
 /** Opponent picks the acting seat can fade, grouped by the manager who drafted them. */
@@ -38,6 +39,7 @@ export function FadeTargets({
   return (
     <Panel
       title="Choose a fade"
+      tour="fade-targets"
       icon={<Crosshair aria-hidden className="size-5 text-fog-300" />}
       actions={
         seats.length > 1 ? (
@@ -77,6 +79,7 @@ export function FadeTargets({
                   return (
                     <li key={pick.pickNumber}>
                       <button
+                        {...tourTarget("fade-target")}
                         type="button"
                         aria-pressed={isSelected}
                         aria-label={`Fade ${team.city} ${team.name} ${pick.side} ${formatNumber(team.line)}, pick ${pick.pickNumber} by ${managerLabel(owner)}`}
@@ -156,7 +159,7 @@ export function FadeConfirm({
           </p>
         </div>
       </div>
-      <Button size="lg" onClick={onConfirm} disabled={pending}>
+      <Button {...tourTarget("confirm-fade")} size="lg" onClick={onConfirm} disabled={pending}>
         <Lock aria-hidden className="size-4" />
         Confirm fade
       </Button>

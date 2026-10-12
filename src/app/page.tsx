@@ -28,12 +28,14 @@ export default function Home() {
       </Suspense>
       <Panel title="Just looking?" bodyClassName="p-4 sm:p-5">
         <Link
-          href={`/l/${DEMO_LEAGUE_ID}`}
+          href={`/l/${DEMO_LEAGUE_ID}/draft`}
           className="inline-flex items-center gap-2 font-semibold text-link hover:text-fog-50"
         >
-          Open the demo league <ArrowRight aria-hidden className="size-4" />
+          Try the demo <ArrowRight aria-hidden className="size-4" />
         </Link>
-        <p className="mt-1 text-sm text-fog-400">A finished draft and a half-played season, read-only.</p>
+        <p className="mt-1 text-sm text-fog-400">
+          A guided draft: make a pick and a fade yourself, and we simulate the other managers. Nothing is saved.
+        </p>
       </Panel>
     </main>
   );

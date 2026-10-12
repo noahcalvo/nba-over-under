@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { SignedValue } from "@/components/ui/SignedValue";
-import { formatSigned } from "@/lib/format";
+import { formatSigned, NOT_AVAILABLE } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import type { Standings } from "@/lib/standings";
 import type { Manager } from "@/lib/types";
@@ -24,10 +24,13 @@ export function StandingsPanel({
   onSelect: (managerId: string) => void;
 }) {
   const projected = standings.basis === "projected";
+  // Before any game nothing is scored: no points and no order yet, rather than zeros ranked by seat.
+  const ranked = standings.anyScored;
   const badge = projected ? "Projected" : standings.complete ? "Final" : "Partial results";
   return (
     <Panel
       title="League standings"
+      tour="standings"
       icon={<ChartColumn aria-hidden className="size-5 text-fog-300" />}
       actions={<Badge tone={!projected && standings.complete ? "accent" : "neutral"}>{badge}</Badge>}
     >
@@ -50,16 +53,20 @@ export function StandingsPanel({
                   selected ? "border-accent/60 bg-accent/10" : "border-transparent hover:bg-ink-800"
                 }`}
               >
-                <span className="font-display text-lg font-bold text-fog-300">{row.rank}</span>
+                <span className="font-display text-lg font-bold text-fog-300">{ranked ? row.rank : "–"}</span>
                 <span className="flex min-w-0 items-center gap-3">
                   <ManagerAvatar manager={manager} size="sm" />
                   <span className="truncate font-medium">{managerLabel(manager)}</span>
                   {row.managerId === viewerId && <Badge tone="accent">You</Badge>}
                 </span>
-                <span className="text-right">
-                  <SignedValue value={row.totalPoints} className="block font-display text-xl font-bold" />
-                  <span className="block text-xs text-fog-400">Margin {formatSigned(row.totalMargin)}</span>
-                </span>
+                {ranked ? (
+                  <span className="text-right">
+                    <SignedValue value={row.totalPoints} className="block font-display text-xl font-bold" />
+                    <span className="block text-xs text-fog-400">Margin {formatSigned(row.totalMargin)}</span>
+                  </span>
+                ) : (
+                  <span className="text-right text-sm text-fog-400">{NOT_AVAILABLE}</span>
+                )}
               </button>
             </li>
           );

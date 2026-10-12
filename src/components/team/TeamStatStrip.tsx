@@ -2,7 +2,8 @@ import { SCORING } from "@/config/scoring";
 import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
 import { gamesRemaining, winsNeededForOver } from "@/lib/game-log/progress";
 import type { TeamRecord } from "@/lib/records/types";
-import { gamesPlayed, projectWins } from "@/lib/scoring";
+import { gamesPlayed, isSettled, projectWins } from "@/lib/scoring";
+import { tourTarget } from "@/lib/tour/targets";
 
 interface Stat {
   label: string;
@@ -45,7 +46,14 @@ export function TeamStatStrip({
       ? { label: "Locked line", value: "—", sub: "Set at draft start" }
       : { label: "Locked line", value: formatNumber(lockedLine), sub: "Frozen at draft" },
   ];
-  if (showProjected) {
+  if (isSettled(record)) {
+    // A finished season has final wins, not a projection.
+    stats.push({
+      label: "Final wins",
+      value: formatNumber(record.wins, 0),
+      sub: lockedLine === null ? undefined : versusLine(record.wins - lockedLine),
+    });
+  } else if (showProjected) {
     stats.push({
       label: "Projected wins",
       value: projected === null ? NOT_AVAILABLE : formatNumber(projected),
@@ -57,7 +65,7 @@ export function TeamStatStrip({
     stats.push({ label: "Wins needed for Over", value: String(needed), sub: remainingText(needed, gamesRemaining(record)) });
   }
   return (
-    <section aria-label="Season summary" className="rounded-xl border border-ink-700 bg-ink-850/90">
+    <section aria-label="Season summary" {...tourTarget("team-stats")} className="rounded-xl border border-ink-700 bg-ink-850/90">
       <dl className={`grid grid-cols-2 gap-y-5 py-5 ${COLUMNS[stats.length]}`}>
         {stats.map((stat) => (
           <div key={stat.label} className="flex min-w-0 flex-col items-center px-3 text-center sm:border-l sm:border-ink-700 sm:first:border-l-0">

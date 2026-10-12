@@ -51,7 +51,13 @@ export function SidebarNav({ leagueId }: { leagueId: string }) {
       render={(item, trailing) => {
         const active = isActive(item, pathname);
         return (
-          <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={itemClass(active)}>
+          <Link
+            key={item.href}
+            href={item.href}
+            data-tour={item.tour}
+            aria-current={active ? "page" : undefined}
+            className={itemClass(active)}
+          >
             <ItemContent item={item} trailing={trailing} />
           </Link>
         );

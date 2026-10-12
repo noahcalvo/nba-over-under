@@ -23,6 +23,7 @@ export function FadeStatusPanel({
   const locked = league.fades.length;
   return (
     <Panel
+      tour="fade-status"
       title="Fades"
       icon={<Crosshair aria-hidden className="size-5 text-fog-300" />}
       actions={

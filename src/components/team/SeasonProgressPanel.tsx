@@ -8,6 +8,7 @@ import { buildChartModel } from "@/lib/game-log/chart-model";
 import type { GameLogRead } from "@/lib/game-log/types";
 import type { TeamRecord } from "@/lib/records/types";
 import { gamesPlayed } from "@/lib/scoring";
+import { tourTarget } from "@/lib/tour/targets";
 import type { TeamId } from "@/lib/types";
 import { SeasonProgressChart } from "./SeasonProgressChart";
 
@@ -20,6 +21,7 @@ export function SeasonProgressPanel({
   lockedLine,
   showProjected,
   teamNames,
+  note,
   className = "",
 }: {
   /** Never rejects: `readGameLog` reports a failed feed as a read with no log. */
@@ -28,6 +30,8 @@ export function SeasonProgressPanel({
   lockedLine: number | null;
   showProjected: boolean;
   teamNames: Readonly<Record<TeamId, string>>;
+  /** Shown first under the chart, e.g. where the game history comes from. */
+  note?: string;
   className?: string;
 }) {
   return (
@@ -38,6 +42,7 @@ export function SeasonProgressPanel({
         lockedLine={lockedLine}
         showProjected={showProjected}
         teamNames={teamNames}
+        note={note}
         className={className}
       />
     </Suspense>
@@ -67,6 +72,7 @@ function SeasonProgress({
   lockedLine,
   showProjected,
   teamNames,
+  note,
   className = "",
 }: {
   gameLog: Promise<GameLogRead>;
@@ -74,6 +80,7 @@ function SeasonProgress({
   lockedLine: number | null;
   showProjected: boolean;
   teamNames: Readonly<Record<TeamId, string>>;
+  note?: string;
   className?: string;
 }) {
   const gameLog = use(gameLogPromise);
@@ -84,7 +91,7 @@ function SeasonProgress({
     [gameLog.log, record, lockedLine, mode, showProjected],
   );
   const played = gamesPlayed(record);
-  const notes: string[] = [];
+  const notes: string[] = note ? [note] : [];
   if (gameLog.log && model.history === "partial") notes.push(`Game log covers ${model.historyGames} of ${played} games.`);
   if (gameLog.log && model.history === "mismatch") notes.push("Game log doesn't match the stored record yet.");
   if (lockedLine === null) notes.push("The locked-line pace appears once the draft starts.");
@@ -92,6 +99,7 @@ function SeasonProgress({
   return (
     <section
       aria-labelledby="progress-heading"
+      {...tourTarget("season-progress")}
       className={`${SECTION_CLASS} ${className}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

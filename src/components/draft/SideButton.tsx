@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
+import { tourTarget } from "@/lib/tour/targets";
 import type { DraftPick, Manager, Side, Team } from "@/lib/types";
 
 const STYLES: Record<Side, { idle: string; selected: string }> = {
@@ -52,6 +53,7 @@ export function SideButton({
   }
   return (
     <button
+      {...tourTarget("side-button")}
       type="button"
       aria-pressed={selected}
       aria-label={`${side} ${formatNumber(team.line)}, ${team.city} ${team.name}`}

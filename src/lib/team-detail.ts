@@ -43,7 +43,8 @@ export interface TeamPageData {
   teamOptions: TeamOption[];
   /** Streamed: both promises resolve after the page first renders and never reject. */
   gameLog: Promise<GameLogRead>;
-  market: Promise<MarketLine>;
+  /** Null hides the sportsbook panel (the guided demo has no sportsbook). */
+  market: Promise<MarketLine> | null;
 }
 
 export interface FadeOnPick {

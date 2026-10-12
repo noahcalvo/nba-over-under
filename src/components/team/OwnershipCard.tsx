@@ -5,6 +5,7 @@ import { SignedValue } from "@/components/ui/SignedValue";
 import { managerLabel } from "@/lib/league/managers";
 import type { TeamRecord } from "@/lib/records/types";
 import { fadeDisplay, pickPoints, pickStatus, type FadeOnPick, type SideOwnership } from "@/lib/team-detail";
+import type { TourTargetId } from "@/lib/tour/targets";
 import type { Side } from "@/lib/types";
 
 const SIDE_STYLE: Record<Side, { label: string; frame: string; heading: string }> = {
@@ -16,16 +17,19 @@ export function OwnershipCard({
   ownership,
   record,
   showProjected,
+  tour,
 }: {
   ownership: SideOwnership;
   record: TeamRecord;
   showProjected: boolean;
+  /** Names this card for a guided tour (data-tour). */
+  tour?: TourTargetId;
 }) {
   const style = SIDE_STYLE[ownership.side];
   const points = pickPoints(ownership, showProjected);
   const status = pickStatus(ownership, record, showProjected);
   return (
-    <fieldset className={`min-w-0 rounded-xl border-2 px-4 pb-4 sm:px-6 sm:pb-6 ${style.frame}`}>
+    <fieldset data-tour={tour} className={`min-w-0 rounded-xl border-2 px-4 pb-4 sm:px-6 sm:pb-6 ${style.frame}`}>
       <legend className={`ml-2 px-3 font-display text-3xl font-bold uppercase leading-none sm:text-4xl ${style.heading}`}>
         {style.label}
       </legend>

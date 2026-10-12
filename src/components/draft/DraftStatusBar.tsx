@@ -1,11 +1,13 @@
 import { Check, Crosshair, Pause, Play } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { completedRounds, currentPickNumber, draftTotalPicks, managerUpNext, roundOf } from "@/lib/draft";
 import { findManager, managerLabel, openSeats } from "@/lib/league/managers";
 import type { TurnSummary } from "@/lib/league/turn";
+import { tourTarget } from "@/lib/tour/targets";
 import type { League, Manager } from "@/lib/types";
 import { CopyLink } from "@/components/access/CopyLink";
 
@@ -17,6 +19,7 @@ export function DraftStatusBar({
   pending,
   onPause,
   onResume,
+  completeAction,
 }: {
   league: League;
   /** Commissioner only. */
@@ -26,6 +29,8 @@ export function DraftStatusBar({
   pending: boolean;
   onPause: () => void;
   onResume: () => void;
+  /** Replaces the "League overview" link once the draft is complete. */
+  completeAction?: ReactNode;
 }) {
   const { draft, managers } = league;
   const total = draftTotalPicks(draft);
@@ -40,6 +45,7 @@ export function DraftStatusBar({
 
   return (
     <section
+      {...tourTarget("draft-status")}
       aria-live="polite"
       className="flex flex-wrap items-center gap-4 rounded-xl border border-ink-700 bg-ink-850/90 px-4 py-4 sm:px-6"
     >
@@ -78,9 +84,11 @@ export function DraftStatusBar({
           <CopyLink path={invitePath} label="Invite link" compact />
         )}
         {turn.kind === "complete" ? (
-          <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
-            League overview
-          </Link>
+          (completeAction ?? (
+            <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
+              League overview
+            </Link>
+          ))
         ) : turn.kind === "fades" ? (
           <Badge tone="accent">Fades</Badge>
         ) : canControl ? (

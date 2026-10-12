@@ -7,6 +7,13 @@ import { TeamLink } from "@/components/ui/TeamLink";
 import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
 import type { Basis, CallEvaluation } from "@/lib/scoring";
 import type { ScoredCall } from "@/lib/standings";
+import { tourTarget } from "@/lib/tour/targets";
+
+/** Tour names for the highlighted pick's row and team name; nothing for the others. */
+function highlight(call: ScoredCall, highlightPick: number | undefined) {
+  const on = call.pick.pickNumber === highlightPick;
+  return { row: on ? tourTarget("highlight-pick") : {}, name: on ? tourTarget("highlight-pick-team") : {} };
+}
 
 function WinPace({ call }: { call: ScoredCall }) {
   const { evaluation, team, pick } = call;
@@ -33,7 +40,15 @@ function Result({ evaluation }: { evaluation: CallEvaluation }) {
   return evaluation.correct ? <Badge tone="accent">Correct</Badge> : <Badge tone="danger">Missed</Badge>;
 }
 
-export function PicksTable({ calls, basis }: { calls: ScoredCall[]; basis: Basis }) {
+export function PicksTable({
+  calls,
+  basis,
+  highlightPick,
+}: {
+  calls: ScoredCall[];
+  basis: Basis;
+  highlightPick?: number;
+}) {
   const projected = basis === "projected";
   return (
     <table className="hidden w-full text-sm @2xl:table">
@@ -61,14 +76,15 @@ export function PicksTable({ calls, basis }: { calls: ScoredCall[]; basis: Basis
       <tbody>
         {calls.map((call) => {
           const { pick, team, evaluation } = call;
+          const tour = highlight(call, highlightPick);
           return (
-            <tr key={pick.pickNumber} className="border-b border-ink-700/70 last:border-0">
+            <tr key={pick.pickNumber} {...tour.row} className="border-b border-ink-700/70 last:border-0">
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
                   <TeamLink teamId={team.id} decorative>
                     <TeamLogo team={team} size={32} />
                   </TeamLink>
-                  <span className="font-medium">
+                  <span {...tour.name} className="font-medium">
                     <TeamLink teamId={team.id}>
                       {team.city} {team.name}
                     </TeamLink>
@@ -113,23 +129,34 @@ export function PicksTable({ calls, basis }: { calls: ScoredCall[]; basis: Basis
   );
 }
 
-export function PickCards({ calls, basis }: { calls: ScoredCall[]; basis: Basis }) {
+export function PickCards({
+  calls,
+  basis,
+  highlightPick,
+}: {
+  calls: ScoredCall[];
+  basis: Basis;
+  highlightPick?: number;
+}) {
   const projected = basis === "projected";
   return (
     <ul className="divide-y divide-ink-700 @2xl:hidden">
       {calls.map((call) => {
         const { pick, team, evaluation } = call;
+        const tour = highlight(call, highlightPick);
         return (
-          <li key={pick.pickNumber} className="px-4 py-4">
+          <li key={pick.pickNumber} {...tour.row} className="px-4 py-4">
             <div className="flex items-center gap-3">
               <TeamLink teamId={team.id} decorative>
                 <TeamLogo team={team} size={36} />
               </TeamLink>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">
-                  <TeamLink teamId={team.id}>
-                    {team.city} {team.name}
-                  </TeamLink>
+                  <span {...tour.name}>
+                    <TeamLink teamId={team.id}>
+                      {team.city} {team.name}
+                    </TeamLink>
+                  </span>
                 </p>
                 <p className="text-xs text-fog-400">
                   Pick {pick.pickNumber} · {formatRecord(team.wins, team.losses)}

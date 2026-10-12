@@ -6,9 +6,10 @@ import { DRAFT_POLL_INTERVAL_MS } from "@/config/league";
 import type { DraftCommand } from "@/lib/fades";
 import type { LeagueConfig } from "@/lib/league/config";
 import type { LeagueView } from "@/lib/types";
+import type { DraftRoomDriver } from "./DraftRoomView";
 
 /** Holds the live league view: polls for other managers' picks and fades (until the draft is complete) and sends this viewer's actions. */
-export function useLeagueDraft(initial: LeagueView) {
+export function useLeagueDraft(initial: LeagueView): DraftRoomDriver {
   const router = useRouter();
   const [view, setView] = useState(initial);
   const [error, setError] = useState<string | null>(null);

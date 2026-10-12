@@ -7,6 +7,7 @@ import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
 import { completedRounds, currentPickNumber, draftTotalPicks, pickNumberFor } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
@@ -24,6 +25,7 @@ export function DraftBoard({ league, teams }: { league: League; teams: TeamLooku
   const seats = draft.seatOrder.map((id) => findManager(managers, id)!);
   const rounds = Array.from({ length: draft.rounds }, (_, index) => index + 1);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = usePrefersReducedMotion();
 
   // Keep the current pick in view by scrolling the board's own container, never the page.
   useEffect(() => {
@@ -34,12 +36,13 @@ export function DraftBoard({ league, teams }: { league: League; teams: TeamLooku
     scroller.scrollTo({
       top: Math.max(0, cell.offsetTop - scroller.clientHeight / 2 + cell.offsetHeight / 2),
       left: Math.max(0, cell.offsetLeft - scroller.clientWidth / 2 + cell.offsetWidth / 2),
-      behavior: "smooth",
+      behavior: reduceMotion ? "auto" : "smooth",
     });
-  }, [current]);
+  }, [current, reduceMotion]);
 
   return (
     <Panel
+      tour="draft-board"
       title={
         <>
           Draft board

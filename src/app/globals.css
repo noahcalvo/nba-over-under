@@ -45,6 +45,12 @@
   color-scheme: dark;
 }
 
+/* No rubber-banding: tour highlights are positioned in the viewport and would drift from the page. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--color-ink-950);
   color: var(--color-fog-50);

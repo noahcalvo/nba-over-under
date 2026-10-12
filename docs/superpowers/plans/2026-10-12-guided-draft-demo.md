@@ -54,7 +54,8 @@ Problems with reusing the normal controls, and the fix chosen for each:
 | Early end could cut the demo short | Impossible at 4 × 11: before a manager's 11th pick at most 10 teams are theirs, so at most 10 open sides are blocked for them, while at least 60 − 43 = 17 sides are open. Asserted for every opening in tests anyway. |
 
 Other decisions:
-- **Route:** `/l/demo/tour/draft` (`src/app/l/[leagueId]/tour/draft/page.tsx`, 404 for any league but `demo`), inside the normal league shell; the future walkthrough gets `/l/demo/tour/scoring` (a `NotBuiltYet` stub now). Entry points: the home page's "Just looking?" panel and a "Try a guided draft" button in the demo Draft room header. Exit goes to `/l/demo`.
+- **Route: the guided draft replaces the demo Draft room.** `/l/demo/draft` renders the guided draft instead of the code-built finished draft (the draft page branches on the demo id before loading anything). It keeps the normal league shell, with "Draft room" highlighted in the nav. The home page's "Just looking?" panel links straight to it ("Try the demo"), replacing "Open the demo league". Step 8's action goes to `/l/demo/scoring`, a `NotBuiltYet` stub reserved for the scoring walkthrough. Exit (✕) goes to the home page.
+- **The rest of the old demo stays for now.** `/l/demo` Overview, Rosters, team pages and Settings still show the code-built league (`buildDemoLeague`) until the scoring walkthrough replaces them with the user's own draft; nothing links to them from the home page any more.
 - **Progression is derived, not scripted:** the step is a pure function of the league state plus `{ welcomed, snakeExplained }` and two booleans (has a selection, has a fade target). Clearing a selection naturally returns to step 2; a confirmed pick (state) is what moves 3 → 4.
 - **Simulation strategy:** "best edge": a side's edge is last season's wins against the line, signed for the side; the simulated manager takes the eligible side with the largest edge (ties: team id, then Over), and fades the opponent pick with the smallest edge (ties: lowest pick number). Every simulated command goes through `decideDraftAction` with the acting manager as actor.
 - **Persistence:** a replayable snapshot (`{ v, progress, picks, fades }`) in `sessionStorage` (`courtline.tutorial.v1`). Restoring replays every command through the rules, so a tampered or stale snapshot is dropped, never trusted. Restart clears it. This is also the scoring walkthrough's handoff (`tutorialResult`).
@@ -63,7 +64,7 @@ Other decisions:
 
 ## Scoring walkthrough handoff (design only, not built here)
 
-- Read the snapshot with `readTutorialSnapshot()` → `restoreTutorial()` → `tutorialResult(league)`: `{ league, teams, viewerId: "m1", openingPick, fade }`. `null` until the draft is complete (send the user back to `/l/demo/tour/draft`).
+- Read the snapshot with `readTutorialSnapshot()` → `restoreTutorial()` → `tutorialResult(league)`: `{ league, teams, viewerId: "m1", openingPick, fade }`. `null` until the draft is complete (send the user back to `/l/demo/draft`).
 - Score with `src/lib/scoring.ts` / `src/lib/standings.ts` against `teams` from `tutorialTeams()` (mock lines `STATIC_LINES` frozen as the league's lines; mock records from `TEAM_INFO`, already consistent with `src/data/game-logs.ts`). Label every page "Demo data" (the existing `tag` pattern).
 - To show right/wrong picks, ±0.1 margins and a fade hit/miss, the walkthrough will need its own demo *final* records (e.g. a pure `tutorialSeasonOutcome(league)` that sets chosen teams' wins to land above or below the line). Demonstrating a push is out of scope.
 - Overview, Rosters and the team page are server components reading `findLeague`. Reusing them with a client-held league needs either a client data path for those components or a short-lived server representation. Decide in the walkthrough's own spec. Note `TeamLink` builds `/l/{leagueId}/teams/…` from the URL, which would point at the static demo league.
@@ -109,9 +110,9 @@ Other decisions:
 | `src/components/tutorial/storage.ts` | create | `sessionStorage` read/write/clear of the snapshot |
 | `src/components/tutorial/use-tutorial-session.ts` | create | In-memory league, driver, simulation, restart |
 | `src/components/tutorial/DraftTour.tsx` | create | The guided page: `DraftRoomView` + `TourOverlay` |
-| `src/app/l/[leagueId]/tour/draft/page.tsx` | create | Demo-only route |
-| `src/app/l/[leagueId]/tour/scoring/page.tsx` | create | `NotBuiltYet` stub |
-| `src/app/page.tsx` | modify | Entry link |
+| `src/app/l/[leagueId]/draft/page.tsx` | modify | The demo league's draft room is the guided draft |
+| `src/app/l/[leagueId]/scoring/page.tsx` | create | `NotBuiltYet` stub for the scoring walkthrough (demo only) |
+| `src/app/page.tsx` | modify | "Try the demo" replaces "Open the demo league" |
 | `eslint.config.mjs` | modify | Isolation rule |
 | `CLAUDE.md` | modify | Architecture and domain notes |
 
@@ -1575,7 +1576,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `tourTarget`, `TourTargetId` (Task 3).
 - Produces:
   - `interface DraftRoomDriver { view: LeagueView; error: string | null; pending: boolean; dispatch(command: DraftCommand): Promise<boolean>; saveLineOverrides(overrides: Record<string, number>): Promise<boolean>; saveConfig(config: LeagueConfig): Promise<boolean>; dismissError(): void }`
-  - `DraftRoomView({ driver, access, headerTag?, headerActions?, draftControls? = true, completeAction?, onSelectionChange?, onFadeTargetChange? })`
+  - `DraftRoomView({ driver, access, headerTag?, draftControls? = true, completeAction?, onSelectionChange?, onFadeTargetChange? })`
   - `usePrefersReducedMotion(): boolean`
   - `data-tour` ids in the DOM: `draft-status` (status bar), `available-picks`, `side-button` (each Over/Under button), `selection-panel`, `confirm-pick` (preview and bar buttons), `selection-bar`, `draft-board`, `fade-targets`, `fade-target` (each target button), `fade-confirm`, `confirm-fade` (preview and bar buttons), `fade-bar`, `fade-status`.
 
@@ -1609,7 +1610,6 @@ export function DraftRoomView({
   driver,
   access,
   headerTag,
-  headerActions,
   draftControls = true,
   completeAction,
   onSelectionChange,
@@ -1619,7 +1619,6 @@ export function DraftRoomView({
   access: LeagueAccess;
   /** Replaces the "Demo draft" tag. */
   headerTag?: string;
-  headerActions?: ReactNode;
   /** False hides start, pause and resume even from the commissioner (the guided demo drives the draft itself). */
   draftControls?: boolean;
   /** Replaces the status bar's "League overview" link once the draft is complete. */
@@ -1641,7 +1640,7 @@ export function DraftRoomView({
   useEffect(() => onFadeTargetChange?.(fadeTargetNumber), [fadeTargetNumber, onFadeTargetChange]);
 ```
 
-6. `PageHeader`: `tag={headerTag ?? (league.isDemo ? "Demo draft" : undefined)}` and `actions={headerActions}`.
+6. `PageHeader`: `tag={headerTag ?? (league.isDemo ? "Demo draft" : undefined)}`.
 7. `DraftStatusBar`: add `completeAction={completeAction}`.
 8. Fade side panel: `<Panel title={fadingFor === viewerId ? "Your fade" : "Fade"} tour="fade-confirm" …>`; selection side panel: `<Panel title={viewerId ? "Your selection" : "Selection"} tour="selection-panel" …>`.
 9. The fade `SelectionBar`: add `tourBar="fade-bar" tourConfirm="confirm-fade"`; the pick `SelectionBar`: add `tourBar="selection-bar" tourConfirm="confirm-pick"`.
@@ -2114,12 +2113,12 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `src/components/tutorial/storage.ts`, `use-tutorial-session.ts`, `DraftTour.tsx`
-- Create: `src/app/l/[leagueId]/tour/draft/page.tsx`, `src/app/l/[leagueId]/tour/scoring/page.tsx`
-- Modify: `src/components/draft/DraftRoom.tsx` (entry button), `src/app/page.tsx` (entry link)
+- Modify: `src/app/l/[leagueId]/draft/page.tsx` (demo branch), `src/app/page.tsx` (entry link)
+- Create: `src/app/l/[leagueId]/scoring/page.tsx`
 
 **Interfaces:**
 - Consumes: everything above; `DEMO_LEAGUE_ID`; `NO_ACCESS` (`src/lib/access/links.ts`); `ERROR_MESSAGES`; `roundOf`, `draftTotalPicks`; `DraftFallback`.
-- Produces: routes `/l/demo/tour/draft`, `/l/demo/tour/scoring`; `readTutorialSnapshot(): unknown` for the future walkthrough.
+- Produces: `/l/demo/draft` is the guided draft; `/l/demo/scoring` stub; `readTutorialSnapshot(): unknown` for the future walkthrough.
 
 - [ ] **Step 1: Storage**
 
@@ -2283,8 +2282,8 @@ import { TUTORIAL_STEP_COUNT, TUTORIAL_STEPS, tutorialStep, type TutorialStepId 
 import type { League } from "@/lib/types";
 import { useTutorialSession } from "./use-tutorial-session";
 
-const EXIT_HREF = `/l/${DEMO_LEAGUE_ID}`;
-const SCORING_HREF = `/l/${DEMO_LEAGUE_ID}/tour/scoring`;
+const EXIT_HREF = "/";
+const SCORING_HREF = `/l/${DEMO_LEAGUE_ID}/scoring`;
 
 const subscribeNever = () => () => {};
 
@@ -2325,7 +2324,7 @@ function DraftTourSession() {
         key={generation}
         driver={driver}
         access={NO_ACCESS}
-        headerTag="Guided demo"
+        headerTag="Demo draft"
         draftControls={false}
         completeAction={
           <Link href={SCORING_HREF} className={buttonClasses()}>
@@ -2387,32 +2386,24 @@ function SimulationProgress({ label, onSkip }: { label: string; onSkip: () => vo
 
 - [ ] **Step 4: Routes**
 
-`src/app/l/[leagueId]/tour/draft/page.tsx`:
+`src/app/l/[leagueId]/draft/page.tsx`: the demo league's draft room is the guided draft. Replace `DraftContent` and add the imports:
 
 ```tsx
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import { DraftFallback } from "@/components/draft/DraftFallback";
 import { DraftTour } from "@/components/tutorial/DraftTour";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
+```
 
-/** The guided draft. Only the demo league has one; it never reads or writes a stored league. */
-export default function DraftTourPage({ params }: PageProps<"/l/[leagueId]/tour/draft">) {
-  return (
-    <Suspense fallback={<DraftFallback />}>
-      <DraftTourContent params={params} />
-    </Suspense>
-  );
-}
-
-async function DraftTourContent({ params }: { params: PageProps<"/l/[leagueId]/tour/draft">["params"] }) {
+```tsx
+async function DraftContent({ params }: { params: PageProps<"/l/[leagueId]/draft">["params"] }) {
   const { leagueId } = await params;
-  if (leagueId !== DEMO_LEAGUE_ID) notFound();
-  return <DraftTour />;
+  // The demo's draft room is the guided draft: an in-memory league in the browser, never the code-built demo league.
+  if (leagueId === DEMO_LEAGUE_ID) return <DraftTour />;
+  const view = await toLeagueView(await getLeagueOrNotFound(leagueId));
+  return <DraftRoom initial={view} access={await getLeagueAccess(view.league, view.viewerId)} />;
 }
 ```
 
-`src/app/l/[leagueId]/tour/scoring/page.tsx`:
+`src/app/l/[leagueId]/scoring/page.tsx`:
 
 ```tsx
 import Link from "next/link";
@@ -2421,16 +2412,16 @@ import { Suspense } from "react";
 import { NotBuiltYet } from "@/components/ui/NotBuiltYet";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 
-/** Placeholder for the scoring walkthrough that continues the guided draft (it will read the demo's snapshot). */
-export default function ScoringTourPage({ params }: PageProps<"/l/[leagueId]/tour/scoring">) {
+/** Placeholder for the scoring walkthrough that follows the demo draft (it will read the demo's snapshot). Demo only. */
+export default function ScoringWalkthroughPage({ params }: PageProps<"/l/[leagueId]/scoring">) {
   return (
     <Suspense fallback={null}>
-      <ScoringTourContent params={params} />
+      <ScoringWalkthroughContent params={params} />
     </Suspense>
   );
 }
 
-async function ScoringTourContent({ params }: { params: PageProps<"/l/[leagueId]/tour/scoring">["params"] }) {
+async function ScoringWalkthroughContent({ params }: { params: PageProps<"/l/[leagueId]/scoring">["params"] }) {
   const { leagueId } = await params;
   if (leagueId !== DEMO_LEAGUE_ID) notFound();
   return (
@@ -2439,57 +2430,28 @@ async function ScoringTourContent({ params }: { params: PageProps<"/l/[leagueId]
         title="Scoring walkthrough"
         description="Next: see how your pick and your fade earn points as a season plays out."
       />
-      <Link href={`/l/${DEMO_LEAGUE_ID}/tour/draft`} className="font-semibold text-link hover:text-fog-50">
-        Back to the guided draft
+      <Link href={`/l/${DEMO_LEAGUE_ID}/draft`} className="font-semibold text-link hover:text-fog-50">
+        Back to the demo draft
       </Link>
     </div>
   );
 }
 ```
 
-- [ ] **Step 5: Entry points**
+- [ ] **Step 5: Entry point**
 
-`src/components/draft/DraftRoom.tsx`: pass a header action for the demo league:
-
-```tsx
-"use client";
-
-import Link from "next/link";
-import { buttonClasses } from "@/components/ui/Button";
-import type { LeagueAccess } from "@/lib/access/links";
-import type { LeagueView } from "@/lib/types";
-import { DraftRoomView } from "./DraftRoomView";
-import { useLeagueDraft } from "./use-league-draft";
-
-/** A stored league's draft room (or the read-only demo): the server holds the state; useLeagueDraft polls and sends. */
-export function DraftRoom({ initial, access }: { initial: LeagueView; access: LeagueAccess }) {
-  const { league } = initial;
-  return (
-    <DraftRoomView
-      driver={useLeagueDraft(initial)}
-      access={access}
-      headerActions={
-        league.isDemo ? (
-          <Link href={`/l/${league.id}/tour/draft`} className={buttonClasses("secondary", "sm")}>
-            Try a guided draft
-          </Link>
-        ) : undefined
-      }
-    />
-  );
-}
-```
-
-`src/app/page.tsx`, in the "Just looking?" panel, before the existing demo link:
+`src/app/page.tsx`: the "Just looking?" panel's link and caption become:
 
 ```tsx
         <Link
-          href={`/l/${DEMO_LEAGUE_ID}/tour/draft`}
+          href={`/l/${DEMO_LEAGUE_ID}/draft`}
           className="inline-flex items-center gap-2 font-semibold text-link hover:text-fog-50"
         >
-          Try a guided draft <ArrowRight aria-hidden className="size-4" />
+          Try the demo <ArrowRight aria-hidden className="size-4" />
         </Link>
-        <p className="mb-4 mt-1 text-sm text-fog-400">Make a pick and a fade yourself; we simulate everyone else. Nothing is saved.</p>
+        <p className="mt-1 text-sm text-fog-400">
+          A guided draft: make a pick and a fade yourself, and we simulate the other managers. Nothing is saved.
+        </p>
 ```
 
 - [ ] **Step 6: Static checks**
@@ -2499,20 +2461,20 @@ Expected: pass.
 
 - [ ] **Step 7: Browser verification at 1440px**
 
-`preview_start {name: "dev"}`, open `/l/demo/tour/draft`, and confirm with `read_page`, `javascript_tool` and screenshots:
+`preview_start {name: "dev"}`, open `/` and follow "Try the demo" to `/l/demo/draft` ("Draft room" highlighted in the nav), and confirm with `read_page`, `javascript_tool` and screenshots:
 1. Step 1: callout "Step 1 of 8" near the turn-status banner ("Your turn · You", Round 1 · Pick 1 of 44), board empty, everything else dimmed, no Pause button. Clicking a sidebar nav link does nothing (URL unchanged). Continue.
 2. Step 2: Available picks lit; the arrow bounces over an Over/Under button; the "How lines work" details open without advancing. Search "pistons", choose UNDER → step 3. Clear selection → back to step 2. Choose Phoenix OVER → Confirm pick → step 4; the board shows pick 1 Phoenix OVER under "You".
 3. Step 4 → "Watch the draft": picks appear one by one; the callout reads "Pick n of 44 · Round r, left to right / right to left" and flips direction each round; the board's current cell moves in snake order. Press "Skip to the end": the fade step appears.
 4. Step 6: choose a target from Avery; step 7 shows "You fades … · Avery, pick n"; change to a Jordan pick; Confirm fade → step 7 "The other fades" counts 2, 3, 4 locked → step 8: status bar "Draft complete" with "See how scoring works".
 5. Determinism and skip: in the JS tool, read `sessionStorage.getItem("courtline.tutorial.v1")` and note `picks`. Restart (↺), pick Phoenix OVER again, watch without skipping to the end; the stored `picks` are identical.
 6. Reload mid-simulation: the demo resumes at the same pick. Restart: back to step 1 with an empty board.
-7. `/l/abc123/tour/draft` 404s.
+7. Exit (✕) returns to the home page. `/l/demo/scoring` shows the stub; `/l/abc123/scoring` 404s; a stored league's `/l/{id}/draft` is the normal room.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/components/tutorial "src/app/l/[leagueId]/tour" src/components/draft/DraftRoom.tsx src/app/page.tsx
-git commit -m "feat: guided draft demo at /l/demo/tour/draft
+git add src/components/tutorial "src/app/l/[leagueId]/draft/page.tsx" "src/app/l/[leagueId]/scoring" src/app/page.tsx
+git commit -m "feat: the demo draft room is now a guided draft
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
@@ -2559,12 +2521,12 @@ Run: `npm run lint` → passes. Prove the rule bites: temporarily add `import "@
 - Architecture → `src/lib/`: add "guided demo (`tutorial/`: in-memory league commands, deterministic simulation, steps, snapshot) and tour layout (`tour/`: target ids, geometry, callout placement)".
 - Architecture → `src/data/`: add `tutorial-league.ts` (the guided demo's fixture: live 4 × 11, empty board).
 - Architecture → components: "`tour/` reusable guided-tour overlay; `tutorial/` the guided draft. `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds it `useLeagueDraft`."
-- Domain rules, new bullet: "Guided demo (`/l/demo/tour/draft`): an in-memory league (`tutorial`, never stored, `isDemo: false` so the rules run) in a real `DraftRoomView`; every command, simulated or not, goes through `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state (`tutorialStep`). Tag tour targets with `tourTarget(id)` from `src/lib/tour/targets.ts`, never by class or text. State lives in `sessionStorage` (`courtline.tutorial.v1`) as a replayable snapshot; the scoring walkthrough (`/l/demo/tour/scoring`, not built yet) reads it via `tutorialResult`. ESLint forbids server, database and `fetch` use in the demo folders."
+- Domain rules, new bullet: "Guided demo (`/l/demo/draft`, replacing the code-built demo's draft room): an in-memory league (`tutorial`, never stored, `isDemo: false` so the rules run) in a real `DraftRoomView`; every command, simulated or not, goes through `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state (`tutorialStep`). Tag tour targets with `tourTarget(id)` from `src/lib/tour/targets.ts`, never by class or text. State lives in `sessionStorage` (`courtline.tutorial.v1`) as a replayable snapshot; the scoring walkthrough (`/l/demo/scoring`, not built yet) reads it via `tutorialResult`. ESLint forbids server, database and `fetch` use in the demo folders."
 
 - [ ] **Step 3: Full checks**
 
 Run: `npm test && npm run lint && npm run typecheck && npm run build`
-Expected: all pass; the build lists `/l/[leagueId]/tour/draft` and `/l/[leagueId]/tour/scoring`.
+Expected: all pass; the build lists `/l/[leagueId]/scoring`.
 
 - [ ] **Step 4: Browser checklist (dev server, controller runs it)**
 
@@ -2597,7 +2559,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 | Criterion | Proof |
 | --- | --- |
-| Normal-looking Draft room in demo mode | Task 5 (same `DraftRoomView`), Task 7 step 7.1 |
+| Normal-looking Draft room in demo mode | Task 5 (same `DraftRoomView`), served at `/l/demo/draft` itself; Task 7 step 7.1 |
 | Step 1 spotlights the status banner | `TUTORIAL_STEPS.welcome`, Task 7 step 7.1 |
 | ANY eligible team and side | `simulation.test.ts` (all 60 openings), Task 8 "Any choice" |
 | Review and confirm through the existing UI | `SelectionPreview` / `SelectionBar` unchanged, Task 7 step 7.2 |

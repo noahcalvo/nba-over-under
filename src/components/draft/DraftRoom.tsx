@@ -27,10 +27,11 @@ import { SelectionPreview } from "./SelectionPreview";
 import { useLeagueDraft } from "./use-league-draft";
 
 export function DraftRoom({ initial, access }: { initial: LeagueView; access: LeagueAccess }) {
-  const { view, error, pending, dispatch, saveLineOverrides, dismissError } = useLeagueDraft(initial);
+  const { view, error, pending, dispatch, saveLineOverrides, saveConfig, dismissError } = useLeagueDraft(initial);
   const { league, viewerId } = view;
   const { draft } = league;
   const teamsById = useMemo(() => indexTeams(view.teams), [view.teams]);
+  const [configDirty, setConfigDirty] = useState(false);
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
   const [linesDirty, setLinesDirty] = useState(false);
@@ -45,13 +46,15 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
   const reviewed = reviewedKey === linesKey;
   const startBlocker = !review
     ? null
-    : review.missing.length > 0
-      ? `Enter lines for the ${review.missing.length} team${review.missing.length === 1 ? "" : "s"} still missing one.`
-      : linesDirty
-        ? "Save or discard your line changes first."
-        : !reviewed
-          ? "Check the lines below, then tick the box."
-          : null;
+    : configDirty
+      ? "Save or discard your league size change first."
+      : review.missing.length > 0
+        ? `Enter lines for the ${review.missing.length} team${review.missing.length === 1 ? "" : "s"} still missing one.`
+        : linesDirty
+          ? "Save or discard your line changes first."
+          : !reviewed
+            ? "Check the lines below, then tick the box."
+            : null;
 
   // A selection stops being active, and says why, when someone else drafts that side (seen via polling) or when the
   // manager now on the clock holds the team's other side (the list disables it for them too).
@@ -129,6 +132,8 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
             reviewed={reviewed}
             onReviewedChange={(checked) => setReviewedKey(checked ? linesKey : null)}
             teamCount={review?.rows.length ?? view.teams.length}
+            onSaveConfig={saveConfig}
+            onConfigDirtyChange={setConfigDirty}
           />
           {review && (
             <LineReviewPanel

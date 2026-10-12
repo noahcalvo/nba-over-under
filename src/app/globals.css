@@ -26,6 +26,14 @@
   --color-seat-2: #12a15b;
   --color-seat-3: #1f8fe5;
   --color-seat-4: #6b35c9;
+  --color-seat-5: #d9480f;
+  --color-seat-6: #c2255c;
+  --color-seat-7: #0b7285;
+  --color-seat-8: #8f6a00;
+  --color-seat-9: #495057;
+  --color-seat-10: #9c36b5;
+  --color-seat-11: #5c940d;
+  --color-seat-12: #8a5a44;
 }
 
 @theme inline {

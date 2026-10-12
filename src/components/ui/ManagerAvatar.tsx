@@ -1,7 +1,20 @@
 import { managerInitials } from "@/lib/league/managers";
 import type { Manager } from "@/lib/types";
 
-const SEAT_BG = ["bg-seat-1", "bg-seat-2", "bg-seat-3", "bg-seat-4"];
+const SEAT_BG = [
+  "bg-seat-1",
+  "bg-seat-2",
+  "bg-seat-3",
+  "bg-seat-4",
+  "bg-seat-5",
+  "bg-seat-6",
+  "bg-seat-7",
+  "bg-seat-8",
+  "bg-seat-9",
+  "bg-seat-10",
+  "bg-seat-11",
+  "bg-seat-12",
+];
 const SIZES = { sm: "size-7 text-xs", md: "size-9 text-sm", lg: "size-12 text-lg" };
 
 export function ManagerAvatar({

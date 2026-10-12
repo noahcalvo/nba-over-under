@@ -6,7 +6,9 @@ import { Panel } from "@/components/ui/Panel";
 import { draftTotalPicks } from "@/lib/draft";
 import { managerLabel, openSeats } from "@/lib/league/managers";
 import type { LeagueAccess } from "@/lib/access/links";
+import type { LeagueConfig } from "@/lib/league/config";
 import type { League } from "@/lib/types";
+import { LeagueSizeForm } from "./LeagueSizeForm";
 
 export function DraftLobby({
   league,
@@ -19,6 +21,8 @@ export function DraftLobby({
   reviewed,
   onReviewedChange,
   teamCount,
+  onSaveConfig,
+  onConfigDirtyChange,
 }: {
   league: League;
   access: LeagueAccess;
@@ -30,6 +34,8 @@ export function DraftLobby({
   reviewed: boolean;
   onReviewedChange: (reviewed: boolean) => void;
   teamCount: number;
+  onSaveConfig: (config: LeagueConfig) => Promise<boolean>;
+  onConfigDirtyChange: (dirty: boolean) => void;
 }) {
   return (
     <Panel
@@ -41,7 +47,16 @@ export function DraftLobby({
         {league.managers.length} managers · {league.draft.rounds} rounds · snake order · {draftTotalPicks(league.draft)}{" "}
         picks
       </p>
-      <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+      {canControl && (
+        <LeagueSizeForm
+          key={`${league.managers.length}x${league.draft.rounds}`}
+          league={league}
+          pending={pending}
+          onSave={onSaveConfig}
+          onDirtyChange={onConfigDirtyChange}
+        />
+      )}
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {league.managers.map((manager) => (
           <li key={manager.id} className="flex items-center gap-3 rounded-lg border border-ink-700 bg-ink-900 px-3 py-3">
             <ManagerAvatar manager={manager} />

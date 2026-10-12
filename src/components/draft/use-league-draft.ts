@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DRAFT_POLL_INTERVAL_MS } from "@/config/league";
 import type { DraftCommand } from "@/lib/fades";
+import type { LeagueConfig } from "@/lib/league/config";
 import type { LeagueView } from "@/lib/types";
 
 /** Holds the live league view: polls for other managers' picks and fades (until the draft is complete) and sends this viewer's actions. */
@@ -75,7 +76,12 @@ export function useLeagueDraft(initial: LeagueView) {
     [send, initial.league.id],
   );
 
+  const saveConfig = useCallback(
+    (config: LeagueConfig) => send(`/api/leagues/${initial.league.id}/config`, "PUT", config),
+    [send, initial.league.id],
+  );
+
   const dismissError = useCallback(() => setError(null), []);
 
-  return { view, error, pending, dispatch, saveLineOverrides, dismissError };
+  return { view, error, pending, dispatch, saveLineOverrides, saveConfig, dismissError };
 }

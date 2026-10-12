@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, LogOut } from "lucide-react
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
 import { TOUR } from "@/config/tour";
 import { inflateRect, type Size } from "@/lib/tour/geometry";
@@ -42,7 +42,10 @@ export function TourOverlay({
   const calloutRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const maskId = useId();
+  const exitId = useId();
   const [folded, setFolded] = useState(false);
+  // Exit asks first: leaving ends the demo and its progress.
+  const [confirmingExit, setConfirmingExit] = useState(false);
   const [calloutSize, setCalloutSize] = useState<Size>(INITIAL_CALLOUT);
   const ids = useMemo<TourTargetId[]>(
     () => [...new Set([...step.spotlight, ...(step.pointAt ? [step.pointAt] : [])])],
@@ -133,15 +136,31 @@ export function TourOverlay({
           <Button variant="ghost" size="sm" onClick={() => setFolded((current) => !current)} aria-expanded={!folded} aria-label={folded ? "Show tip" : "Hide tip"}>
             {folded ? <ChevronUp aria-hidden className="size-4" /> : <ChevronDown aria-hidden className="size-4" />}
           </Button>
-          <Link
-            href={exit.href}
-            onClick={exit.onExit}
+          <button
+            type="button"
+            aria-expanded={confirmingExit}
+            onClick={() => setConfirmingExit((current) => !current)}
             className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-fog-300 hover:text-fog-50 focus-visible:outline-2 focus-visible:outline-accent"
           >
             <LogOut aria-hidden className="size-4" />
             {exit.label}
-          </Link>
+          </button>
         </div>
+        {confirmingExit && (
+          <div role="alertdialog" aria-labelledby={exitId} className="mt-3 rounded-lg border border-ink-600 bg-ink-850 p-3">
+            <p id={exitId} className="text-sm font-semibold text-fog-50">
+              Leave the demo? Your progress won&apos;t be saved.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setConfirmingExit(false)} autoFocus>
+                Stay
+              </Button>
+              <Link href={exit.href} onClick={exit.onExit} className={buttonClasses("primary", "sm")}>
+                Leave demo
+              </Link>
+            </div>
+          </div>
+        )}
         <h2 id={titleId} className="mt-1 font-display text-xl font-semibold text-fog-50">
           {step.title}
         </h2>

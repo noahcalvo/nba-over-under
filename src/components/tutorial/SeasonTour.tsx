@@ -22,7 +22,7 @@ function hrefFor(location: SeasonLocation, leagueId: string): string {
 /** The guided season's current step over the real page, or a way back to the page the step is on. */
 export function SeasonTour({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSession }) {
   const exit = { label: "Exit demo", href: EXIT_HREF, onExit: demo.exit };
-  const stepLabel = seasonStepLabel(demo.checkpoint, step.id);
+  const stepLabel = seasonStepLabel(demo.checkpoint);
 
   if (!step.onPage) {
     const page = step.page;

@@ -36,6 +36,6 @@ describe("labels", () => {
   it("names the three checkpoints and only offers the next one", () => {
     expect(Object.values(CHECKPOINT_LABELS)).toEqual(["Draft complete", "Midseason", "Final results"]);
     expect(ADVANCE_LABELS).toEqual({ draft: "Advance to Midseason", midseason: "Finish the Season", final: null });
-    expect(seasonStepLabel("midseason", "mid-points")).toBe("Midseason · 3 of 6");
+    expect(seasonStepLabel("midseason")).toBe("Midseason");
   });
 });

@@ -2,7 +2,7 @@ import { SCORING } from "@/config/scoring";
 import { formatNumber, formatSigned } from "@/lib/format";
 import type { TourStep } from "@/lib/tour/targets";
 import { advanceCheckpointGames, type SeasonCheckpoint } from "./season";
-import { SEASON_STEP_ORDER, type SeasonStepId } from "./season-steps";
+import type { SeasonStepId } from "./season-steps";
 
 // The guided season's words and spotlights. The user's own numbers (breakdowns, fade, standings) are added under the
 // text by the overlay from season-story.ts; this copy stays the same for every draft.
@@ -39,15 +39,7 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "draft-roster": {
     advance: "continue",
     title: "Your draft is complete",
-    body: "Your draft is complete! Throughout the season, your picks will gain or lose points depending on how NBA teams perform. Your fade gives you a chance to earn bonus points by betting against another manager's pick.",
-    details: {
-      summary: "What's highlighted",
-      items: [
-        "Your first pick, the one you chose yourself, heads your roster.",
-        "Your fade, also your own choice, is in the Fade picks panel.",
-        "Lines stay frozen at their draft values all season.",
-      ],
-    },
+    body: "Here's your first pick and your fade. Your picks gain or lose points as their teams play, and your fade can earn bonus points.",
     spotlight: ["highlight-pick", "fades"],
     interactive: [],
     continueLabel: "Continue",
@@ -150,8 +142,7 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   },
 };
 
-/** "Midseason · 2 of 6": the step's place within its checkpoint. */
-export function seasonStepLabel(checkpoint: SeasonCheckpoint, id: SeasonStepId): string {
-  const order = SEASON_STEP_ORDER[checkpoint];
-  return `${CHECKPOINT_LABELS[checkpoint]} · ${order.indexOf(id) + 1} of ${order.length}`;
+/** The callout's eyebrow: the checkpoint, without a step count. */
+export function seasonStepLabel(checkpoint: SeasonCheckpoint): string {
+  return CHECKPOINT_LABELS[checkpoint];
 }

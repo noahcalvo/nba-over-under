@@ -7,7 +7,7 @@ import type { DraftPick, Manager, Side, Team } from "@/lib/types";
 
 // What the guided season says about the user's own picks, fade and place, in their demo numbers. Every number comes
 // from the scoring rules (evaluateCall, evaluateFade via computeStandings); this file only puts them into words.
-// Breakdowns show points with two decimals (the team page's precision); standings sentences one (the standings panel's).
+// Points have two decimals (the team page's and Rosters' precision), so a breakdown adds up exactly as shown.
 
 export interface BreakdownRow {
   label: string;
@@ -16,7 +16,6 @@ export interface BreakdownRow {
 
 const SIDE_LABEL: Record<Side, string> = { OVER: "Over", UNDER: "Under" };
 const BREAKDOWN_DIGITS = 2;
-const STANDINGS_DIGITS = 1;
 
 function winsText(count: number, digits: number): string {
   return `${formatNumber(count, digits)} ${count === 1 ? "win" : "wins"}`;
@@ -131,7 +130,7 @@ export function standingsStory(standings: Standings, managers: readonly Manager[
     };
   }
   const final = standings.basis === "final";
-  const points = (row: StandingRow) => `${formatSigned(row.totalPoints, STANDINGS_DIGITS)}${final ? "" : " projected"} points`;
+  const points = (row: StandingRow) => `${formatSigned(row.totalPoints, BREAKDOWN_DIGITS)}${final ? "" : " projected"} points`;
   const leaderName = managerLabel(findManager(managers, leader.managerId) ?? { seat: 0, displayName: null });
   const place = `${formatOrdinal(viewer.rank)} of ${standings.rows.length}`;
   let summary: string;

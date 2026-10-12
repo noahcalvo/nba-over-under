@@ -1,43 +1,50 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { DraftRoomDriver } from "@/components/draft/DraftRoomView";
 import { buildTutorialLeague, TUTORIAL_VIEWER_ID, tutorialTeams } from "@/data/tutorial-league";
 import type { DraftCommand } from "@/lib/fades";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
+import { INITIAL_SEASON_PROGRESS } from "@/lib/tutorial/season-steps";
 import { applyTutorialCommand } from "@/lib/tutorial/session";
 import { simulateAll, simulateStep, type SimulationKind } from "@/lib/tutorial/simulation";
-import { INITIAL_SEASON_PROGRESS, type SeasonProgress } from "@/lib/tutorial/season-steps";
-import { restoreTutorial, snapshotOf } from "@/lib/tutorial/snapshot";
+import type { RestoredTutorial } from "@/lib/tutorial/snapshot";
 import { INITIAL_PROGRESS, type TutorialProgress } from "@/lib/tutorial/steps";
-import type { League, LeagueView } from "@/lib/types";
-import { clearTutorialSnapshot, readTutorialSnapshot, writeTutorialSnapshot } from "./storage";
+import type { LeagueView } from "@/lib/types";
+import { clearTutorial, getServerTutorialStore, getTutorialStore, saveTutorial, subscribeTutorial } from "./tutorial-store";
 
-interface SessionState {
-  league: League;
-  progress: TutorialProgress;
-  /** Kept as restored, so saving the draft never loses the guided season's place. */
-  season: SeasonProgress;
+function freshTutorial(): RestoredTutorial {
+  return { league: buildTutorialLeague(), progress: INITIAL_PROGRESS, season: INITIAL_SEASON_PROGRESS };
 }
 
-/** Client only (DraftTour renders this after mount): resumes this tab's demo when its snapshot replays cleanly. */
-function initialState(): SessionState {
-  const restored = typeof window === "undefined" ? null : restoreTutorial(readTutorialSnapshot());
-  return restored ?? { league: buildTutorialLeague(), progress: INITIAL_PROGRESS, season: INITIAL_SEASON_PROGRESS };
-}
-
-/** The guided demo's league, held in memory: a DraftRoomDriver whose actions run the real rules and go nowhere. */
+/**
+ * The guided demo's league, held in this tab's tutorial store: a DraftRoomDriver whose actions run the real rules and
+ * go nowhere. Client only (DraftTour renders this after mount). Until the first action the demo is a fresh league.
+ */
 export function useTutorialSession() {
-  const [state, setState] = useState(initialState);
+  const { tutorial } = useSyncExternalStore(subscribeTutorial, getTutorialStore, getServerTutorialStore);
+  const [fresh] = useState(freshTutorial);
+  const state = tutorial ?? fresh;
   const [error, setError] = useState<string | null>(null);
   const teams = useMemo(() => tutorialTeams(), []);
-  const { league, progress, season } = state;
-  // Set by exit, so a simulated step landing during the navigation away can't save the demo again.
+  const { league, progress } = state;
+  // Set by exit, so a simulated step landing during the navigation away can't save the demo again. Cleared whenever
+  // the page shows again (Next keeps left routes mounted but hidden, and re-runs their effects on return).
   const exited = useRef(false);
-
   useEffect(() => {
-    if (!exited.current) writeTutorialSnapshot(snapshotOf(league, progress, season));
-  }, [league, progress, season]);
+    exited.current = false;
+  }, []);
+
+  /** Applies a change to the latest stored demo (or a fresh one) and saves it. */
+  const update = useCallback(
+    (change: (current: RestoredTutorial) => RestoredTutorial) => {
+      if (exited.current) return;
+      const current = getTutorialStore().tutorial ?? fresh;
+      const next = change(current);
+      if (next !== current) saveTutorial(next);
+    },
+    [fresh],
+  );
 
   const view = useMemo<LeagueView>(
     () => ({ league, viewerId: TUTORIAL_VIEWER_ID, teams, lineReview: null, records: null }),
@@ -52,10 +59,10 @@ export function useTutorialSession() {
         return false;
       }
       setError(null);
-      setState((current) => ({ ...current, league: result.value }));
+      update((current) => ({ ...current, league: result.value }));
       return true;
     },
-    [league],
+    [league, update],
   );
 
   const driver = useMemo<DraftRoomDriver>(
@@ -74,24 +81,24 @@ export function useTutorialSession() {
 
   const acknowledge = useCallback(
     (flag: keyof TutorialProgress) =>
-      setState((current) => ({ ...current, progress: { ...current.progress, [flag]: true } })),
-    [],
+      update((current) => ({ ...current, progress: { ...current.progress, [flag]: true } })),
+    [update],
   );
 
   /** One simulated command, or (skip) all that remain. Both reach the same league. */
   const simulate = useCallback(
     (kind: SimulationKind, all: boolean) =>
-      setState((current) => {
+      update((current) => {
         const next = (all ? simulateAll : simulateStep)(current.league, teams, kind);
         return next === current.league ? current : { ...current, league: next };
       }),
-    [teams],
+    [teams, update],
   );
 
   /** Leaving ends the demo: the next visit starts over from step 1. */
   const exit = useCallback(() => {
     exited.current = true;
-    clearTutorialSnapshot();
+    clearTutorial();
   }, []);
 
   return { league, progress, driver, acknowledge, simulate, exit };

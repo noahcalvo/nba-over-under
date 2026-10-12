@@ -2,7 +2,7 @@ import { SCORING } from "@/config/scoring";
 import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
 import { gamesRemaining, winsNeededForOver } from "@/lib/game-log/progress";
 import type { TeamRecord } from "@/lib/records/types";
-import { gamesPlayed, projectWins } from "@/lib/scoring";
+import { gamesPlayed, isSettled, projectWins } from "@/lib/scoring";
 import { tourTarget } from "@/lib/tour/targets";
 
 interface Stat {
@@ -46,7 +46,14 @@ export function TeamStatStrip({
       ? { label: "Locked line", value: "—", sub: "Set at draft start" }
       : { label: "Locked line", value: formatNumber(lockedLine), sub: "Frozen at draft" },
   ];
-  if (showProjected) {
+  if (isSettled(record)) {
+    // A finished season has final wins, not a projection.
+    stats.push({
+      label: "Final wins",
+      value: formatNumber(record.wins, 0),
+      sub: lockedLine === null ? undefined : versusLine(record.wins - lockedLine),
+    });
+  } else if (showProjected) {
     stats.push({
       label: "Projected wins",
       value: projected === null ? NOT_AVAILABLE : formatNumber(projected),

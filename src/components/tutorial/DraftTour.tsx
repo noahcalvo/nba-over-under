@@ -13,17 +13,21 @@ import { draftTotalPicks, roundOf } from "@/lib/draft";
 import type { SideRef } from "@/lib/draft-filters";
 import { TUTORIAL_STEP_COUNT, TUTORIAL_STEPS, tutorialStep, type TutorialStepId } from "@/lib/tutorial/steps";
 import type { League } from "@/lib/types";
+import { getServerTutorialStore, getTutorialStore, subscribeTutorial } from "./tutorial-store";
 import { useTutorialSession } from "./use-tutorial-session";
 
 const EXIT_HREF = "/";
-const SCORING_HREF = `/l/${DEMO_LEAGUE_ID}/scoring`;
+/** The guided season starts on the demo league's overview. */
+const SEASON_HREF = `/l/${DEMO_LEAGUE_ID}`;
 
 const subscribeNever = () => () => {};
 
 /** The guided draft. Client only: it resumes from this tab's storage, which the server can't see. */
 export function DraftTour() {
   const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
-  return mounted ? <DraftTourSession /> : <DraftFallback />;
+  // A restart (exit, replay) remounts the room, so no selection or filter survives into the new demo.
+  const { generation } = useSyncExternalStore(subscribeTutorial, getTutorialStore, getServerTutorialStore);
+  return mounted ? <DraftTourSession key={generation} /> : <DraftFallback />;
 }
 
 function DraftTourSession() {
@@ -62,8 +66,8 @@ function DraftTourSession() {
         headerTag="Demo draft"
         draftControls={false}
         completeAction={
-          <Link href={SCORING_HREF} className={buttonClasses()}>
-            See how scoring works
+          <Link href={SEASON_HREF} className={buttonClasses()}>
+            Go to your league
           </Link>
         }
         onSelectionChange={onSelectionChange}
@@ -86,8 +90,8 @@ function DraftTourSession() {
           />
         )}
         {stepId === "complete" && (
-          <Link href={SCORING_HREF} className={buttonClasses("primary", "lg")}>
-            See how scoring works
+          <Link href={SEASON_HREF} className={buttonClasses("primary", "lg")}>
+            Go to your league
           </Link>
         )}
       </TourOverlay>

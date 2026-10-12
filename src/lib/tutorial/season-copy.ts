@@ -32,7 +32,8 @@ const scoringRules = [
   `Projected wins = wins ÷ games played × ${SCORING.seasonGames}.`,
 ] as const;
 
-const pushRule = "If a team finishes exactly on its locked line, both the pick and any fades targeting it score 0.";
+/** Shown with the final results only when the user's pick or faded pick pushed. */
+export const PUSH_RULE = "If a team finishes exactly on its locked line, both the pick and any fades targeting it score 0.";
 
 export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "draft-roster": {
@@ -136,7 +137,6 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     advance: "continue",
     title: "Your results",
     body: "Here's how your first pick and your fade finished:",
-    details: { summary: "Pushes", items: [pushRule] },
     spotlight: ["highlight-pick", "fades"],
     interactive: [],
     continueLabel: "Continue",
@@ -149,8 +149,6 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     interactive: [],
   },
 };
-
-export const PUSH_RULE = pushRule;
 
 /** "Midseason · 2 of 6": the step's place within its checkpoint. */
 export function seasonStepLabel(checkpoint: SeasonCheckpoint, id: SeasonStepId): string {

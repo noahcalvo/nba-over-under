@@ -27,7 +27,7 @@ export function SummaryStats({ row, standings, isViewer }: { row: StandingRow; s
       <StatCard
         icon={<ChartColumn className="size-8" />}
         label={projected ? "Picks on pace" : "Correct calls"}
-        value={`${row.correctCalls} / ${projected ? row.calls.length : row.scoredCalls}`}
+        value={ranked ? `${row.correctCalls} / ${projected ? row.calls.length : row.scoredCalls}` : "—"}
         sub={projected ? undefined : `${row.scoredCalls} of ${row.calls.length} settled`}
       />
       <StatCard

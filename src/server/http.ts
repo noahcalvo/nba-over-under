@@ -27,6 +27,9 @@ const STATUS: Record<ApiError, number> = {
   lines_locked: 409,
   invalid_line: 400,
   records_unavailable: 502,
+  invalid_config: 400,
+  config_locked: 409,
+  seats_claimed: 409,
 };
 
 export function errorResponse(error: ApiError): Response {

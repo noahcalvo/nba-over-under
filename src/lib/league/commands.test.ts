@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { DraftAction } from "@/lib/draft";
+import { draftTotalPicks, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import type { FadeAction } from "@/lib/fades";
 import {
   createLeague,
   decideClaim,
   decideDraftAction,
   decideInviteChange,
+  decideLeagueConfig,
   decideLineOverrides,
   decideOwnLinkReset,
   decideSeatReset,
@@ -302,5 +303,61 @@ describe("seat administration", () => {
   it("lets any seated manager reset their own link", () => {
     expect(decideOwnLinkReset(league, "m2")).toEqual({ ok: true, value: "m2" });
     expect(decideOwnLinkReset(league, null)).toEqual({ ok: false, error: "forbidden" });
+  });
+});
+
+describe("decideLeagueConfig", () => {
+  it("adds open seats and sets the rounds", () => {
+    const league = must(decideLeagueConfig(join(newLeague(), "m2", "Ben"), "m1", { managerCount: 6, rounds: 10 }));
+    expect(league.managers.map((m) => [m.id, m.seat, m.displayName])).toEqual([
+      ["m1", 0, "Ana"],
+      ["m2", 1, "Ben"],
+      ["m3", 2, null],
+      ["m4", 3, null],
+      ["m5", 4, null],
+      ["m6", 5, null],
+    ]);
+    expect(league.draft).toMatchObject({ rounds: 10, seatOrder: ["m1", "m2", "m3", "m4", "m5", "m6"], picks: [] });
+    expect(draftTotalPicks(league.draft)).toBe(60);
+  });
+
+  it("removes open seats from the end but never a claimed one", () => {
+    const league = join(newLeague(), "m3", "Cal");
+    expect(decideLeagueConfig(league, "m1", { managerCount: 2, rounds: 11 })).toEqual({ ok: false, error: "seats_claimed" });
+    const smaller = must(decideLeagueConfig(league, "m1", { managerCount: 3, rounds: 20 }));
+    expect(smaller.managers.map((m) => m.id)).toEqual(["m1", "m2", "m3"]);
+    expect(smaller.draft).toMatchObject({ rounds: 20, seatOrder: ["m1", "m2", "m3"] });
+  });
+
+  it("refuses invalid sizes, other managers, the demo league and a started draft", () => {
+    const league = join(newLeague(), "m2", "Ben");
+    expect(decideLeagueConfig(league, "m1", { managerCount: 7, rounds: 9 })).toEqual({ ok: false, error: "invalid_config" });
+    expect(decideLeagueConfig(league, "m1", { managerCount: 13, rounds: 1 })).toEqual({ ok: false, error: "invalid_config" });
+    expect(decideLeagueConfig(league, "m2", { managerCount: 6, rounds: 10 })).toEqual({ ok: false, error: "forbidden" });
+    expect(decideLeagueConfig(league, null, { managerCount: 6, rounds: 10 })).toEqual({ ok: false, error: "forbidden" });
+    expect(decideLeagueConfig({ ...league, isDemo: true }, "m1", { managerCount: 6, rounds: 10 })).toEqual({
+      ok: false,
+      error: "demo_league",
+    });
+    const started = must(act(league, "m1", { type: "start" }));
+    expect(decideLeagueConfig(started, "m1", { managerCount: 6, rounds: 10 })).toEqual({ ok: false, error: "config_locked" });
+  });
+
+  it("starts the draft with the configured seats", () => {
+    const league = must(decideLeagueConfig(newLeague(), "m1", { managerCount: 7, rounds: 8 }));
+    const started = must(act(league, "m1", { type: "start" }));
+    expect(started.draft.status).toBe("live");
+    expect(draftTotalPicks(started.draft)).toBe(56);
+    expect(managerOnTheClock(started.draft)).toBe("m1");
+  });
+
+  it("refuses to start a league whose stored size is invalid", () => {
+    const league = newLeague();
+    const broken = { ...league, draft: { ...league.draft, rounds: 16 } };
+    expect(act(broken, "m1", { type: "start" })).toEqual({ ok: false, error: "invalid_config" });
+  });
+
+  it("keeps new leagues at the default 4 × 11", () => {
+    expect(newLeague().draft).toMatchObject({ rounds: 11, seatOrder: ["m1", "m2", "m3", "m4"] });
   });
 });

@@ -4,6 +4,7 @@ import { TEAM_INFO } from "@/data/teams";
 import type { LinkKind } from "@/lib/access/links";
 import { applyDraftAction, createDraftState, currentPickNumber } from "@/lib/draft";
 import { applyFade, type DraftCommand, type FadeAction } from "@/lib/fades";
+import { isValidLeagueConfig, minManagerCount, resizeSeats, type LeagueConfig } from "@/lib/league/config";
 import { fail, succeed, type Result } from "@/lib/league/errors";
 import { findManager } from "@/lib/league/managers";
 import { canControlDraft, canFadeFor, canManageSeats, canPickNow, canResetSeat } from "@/lib/league/permissions";
@@ -32,7 +33,7 @@ export function randomLeagueId(): string {
   return Array.from(bytes, (byte) => LEAGUE_ID_ALPHABET[byte % LEAGUE_ID_ALPHABET.length]).join("");
 }
 
-/** A fresh 4-seat league with the creator in seat 1 as commissioner. */
+/** A fresh league at the default size (LEAGUE_DEFAULTS) with the creator in seat 1 as commissioner. */
 export function createLeague(input: { leagueName?: unknown; displayName: unknown }, id: string): Result<League> {
   const name = normalizeName(input.displayName, DISPLAY_NAME_MAX);
   if (!name) return fail("invalid_name");
@@ -88,6 +89,9 @@ export function decideDraftAction(
   const result = applyDraftAction(league.draft, action, teamIds);
   if (!result.ok) return fail(result.error);
   if (action.type !== "start") return succeed({ ...league, draft: result.state });
+  if (!isValidLeagueConfig({ managerCount: league.managers.length, rounds: league.draft.rounds })) {
+    return fail("invalid_config");
+  }
   const review = buildLineReview(
     TEAM_INFO.filter((team) => teamIds.has(team.id)),
     { lines: sourceLines, error: null },
@@ -118,6 +122,24 @@ export function decideLineOverrides(
   if (!canControlDraft(league, actorId)) return fail("forbidden");
   if (league.draft.status !== "not_started") return fail("lines_locked");
   return succeed({ ...league, lineOverrides: overrides });
+}
+
+/**
+ * Changes the league size before the draft: seats are added open at the end or removed from the end (open seats only),
+ * and the rounds are set. Commissioner only. Parse the request with parseLeagueConfig first.
+ */
+export function decideLeagueConfig(league: League, actorId: string | null, config: LeagueConfig): Result<League> {
+  if (league.isDemo) return fail("demo_league");
+  if (!canControlDraft(league, actorId)) return fail("forbidden");
+  if (league.draft.status !== "not_started") return fail("config_locked");
+  if (!isValidLeagueConfig(config)) return fail("invalid_config");
+  if (config.managerCount < minManagerCount(league.managers)) return fail("seats_claimed");
+  const managers = resizeSeats(league.managers, config.managerCount);
+  return succeed({
+    ...league,
+    managers,
+    draft: { ...league.draft, rounds: config.rounds, seatOrder: managers.map((manager) => manager.id) },
+  });
 }
 
 export interface ClaimInput {

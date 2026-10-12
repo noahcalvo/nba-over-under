@@ -1,3 +1,5 @@
+import { LEAGUE_LIMITS } from "@/config/league";
+import { TOTAL_SIDES } from "@/data/teams";
 import type { DraftError } from "@/lib/draft";
 import type { FadeError } from "@/lib/fades";
 
@@ -16,6 +18,9 @@ export type DomainError =
   | "lines_locked"
   | "invalid_line"
   | "records_unavailable"
+  | "invalid_config"
+  | "config_locked"
+  | "seats_claimed"
   | DraftError
   | FadeError;
 
@@ -45,6 +50,9 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   lines_locked: "Lines are locked once the draft starts.",
   invalid_line: "Lines must be between 0.5 and 81.5, in steps of 0.5.",
   records_unavailable: "Team records couldn't be refreshed. Try again in a minute.",
+  invalid_config: `Leagues have ${LEAGUE_LIMITS.minManagers}–${LEAGUE_LIMITS.maxManagers} managers, and managers × rounds can't exceed the ${TOTAL_SIDES} sides.`,
+  config_locked: "League size is locked once the draft starts.",
+  seats_claimed: "Claimed seats can't be removed. Only open seats at the end of the order can go.",
   not_live: "The draft isn't live.",
   side_taken: "That side was just drafted.",
   unknown_team: "Unknown team.",

@@ -36,15 +36,16 @@ Next API.
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
   11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
   `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
-  `TUTORIAL` and `TOUR` (`tour.ts`: guided demo size and pacing, overlay spacing).
+  `TUTORIAL`, `TUTORIAL_SEASON` and `TOUR` (`tour.ts`: guided demo size and pacing, simulated season, overlay spacing).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
   schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
   team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest market line), feed errors
   (`feed-error.ts`), league size rules (`league/config.ts`), scripted test drafts (`draft-scenarios.ts`, tests only),
-  environment checks (`env.ts`), guided demo (`tutorial/`: in-memory league commands, deterministic simulation, steps,
-  snapshot) and tour layout (`tour/`: target ids, geometry, callout placement).
+  environment checks (`env.ts`), seeded randomness (`random.ts`), guided demo (`tutorial/`: in-memory league commands,
+  deterministic draft simulation, steps, snapshot; the season: `season.ts` simulation, `season-steps.ts` derivation,
+  `season-story.ts` the user's numbers, `season-copy.ts` words) and tour layout (`tour/`: target ids, geometry, callout placement).
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
   mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) `demo-league.ts` and
   `tutorial-league.ts` (the guided demo's fixture: live 4 × 11, empty board). Never add per-page fixtures.
@@ -57,7 +58,7 @@ Next API.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area. `tour/` reusable
-  guided-tour overlay; `tutorial/` the guided draft. `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds
+  guided-tour overlay; `tutorial/` the guided draft and season (`tutorial-store.ts` is the one shared demo state). `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds
   it `useLeagueDraft`.
 
 ## Domain rules
@@ -67,7 +68,8 @@ Next API.
   team has played 82 games).
 - Push: a margin of exactly 0 (final wins or pace equal the line) earns 0 for the pick and for a fade on it
   (`CallEvaluation.push`).
-- Zero games played → "Not available". Unsettled pick on the final basis → "Pending".
+- Zero games played → "Not available". Unsettled pick on the final basis → "Pending". Before any game the standings and
+  summary show "–" and "Not available", never zeros ranked by seat. A settled team page shows "Final wins".
 - Draft: snake order; each team's Over and Under are separate sides (60). The commissioner sets 2–12 managers and
   1–⌊60 ÷ managers⌋ rounds before the start (`PUT /api/leagues/{id}/config`, `decideLeagueConfig`; seats are added or
   removed at the end, never a claimed one); default 4 × 11 = 44 picks.
@@ -105,10 +107,18 @@ Next API.
   stored, `isDemo: false` so the rules run) in a real `DraftRoomView`; every command, simulated or not, goes through
   `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state (`tutorialStep`). Tag tour targets
   with `tourTarget(id)` from `src/lib/tour/targets.ts`, never by class or text. State lives in `sessionStorage`
-  (`courtline.tutorial.v1`) as a replayable snapshot; the scoring walkthrough (`/l/demo/scoring`, not built yet) reads
-  it via `tutorialResult`. ESLint forbids server, database and `fetch` use in the demo folders. Only the demo's draft
-  exists: its Overview, Rosters and team pages show `DemoChapterPlaceholder` (nav: Soon) until the scoring chapter
-  rebuilds them around the user's demo draft.
+  (`courtline.tutorial.v1`) as a replayable snapshot (draft commands, draft progress, season progress), read and
+  written only through `tutorial-store.ts` (`useSyncExternalStore`), never per-page state or effects: Next keeps left
+  routes mounted but hidden (`<Activity>`) and restores their state, so a per-page copy goes stale. ESLint forbids
+  server, database and `fetch` use in the demo folders.
+- Guided season (`/l/demo`, `/l/demo/rosters`, `/l/demo/teams/{id}`; `DemoSeason`): the real Overview, Rosters and team
+  page fed the completed demo draft (shown as id `demo`, `isDemo: true`), or "Finish the demo draft first". Three
+  checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`. One synthetic
+  82-game W/L sequence per team, seeded by the draft's picks (`simulateSeason`; strength = line + normal spread, never
+  favouring anyone); a checkpoint is a prefix of it. The team page gets that log (no dates or opponents, upcoming games
+  unplayed), no sportsbook panel, and a "Simulated demo season" note. The step is `seasonStep(progress, page)`: the
+  required team-name click is recognised by the team page opening, the way back by the overview. Scores only through
+  `computeStandings` / `evaluateCall`.
 - Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
   league invite and resets seats.
 

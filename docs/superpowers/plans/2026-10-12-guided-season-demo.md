@@ -1,7 +1,7 @@
 # Guided Season & Scoring Demo (Phase 2) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (or superpowers:subagent-driven-development) to
-> implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** After the guided draft (Phase 1, `docs/superpowers/plans/2026-10-12-guided-draft-demo.md`), the user follows
 their own demo league through a simulated NBA season in three manual checkpoints (Draft complete → Midseason → Final
@@ -76,6 +76,21 @@ is recognised by the route it opens, not by a click handler.
 - The seeded generator in `src/data/game-logs.ts` (mulberry32 + FNV hash) moves to `src/lib/random.ts` so the season
   simulation and the mock game logs share it.
 
+## Found during execution
+
+- **Next 16 keeps left routes mounted** (Cache Components: React `<Activity mode="hidden">`), restores their `useState`
+  on return and re-runs their effects. A per-page copy of the demo therefore went stale: back on the overview after the
+  team page, it showed the old step and its save effect wrote the old snapshot back (the same hazard existed for the
+  Phase 1 draft room after a replay). **Fix:** `src/components/tutorial/tutorial-store.ts`, one module store over
+  `sessionStorage` (memory fallback) read with `useSyncExternalStore` by the draft and season hooks; writes happen only
+  in action handlers; a restart counter keys both pages so a replay never revives an old selection. `storage.ts` is
+  folded into it.
+- A finished season's team page said "Projected wins"; `TeamStatStrip` now says "Final wins" once 82 games are played.
+- On phones the final "Your results" callout covered its spotlight; it now shows only the final points (scoring was
+  explained at Midseason) and the push sentence only when a push happened.
+- The placeholder for an unfinished demo is `FinishDemoDraft` (replaces `DemoChapterPlaceholder`); the `/l/demo/scoring`
+  stub is gone and Phase 1's last step links to `/l/demo` ("Go to your league").
+
 ## Season simulation (Task 1)
 
 - Seed: the completed draft's picks (`ATL O,MIN U,…` in pick order) plus each team id. Same draft → same season, on
@@ -147,9 +162,9 @@ is recognised by the route it opens, not by a click handler.
 
 ### Task 1: Shared seeded random + deterministic season (`src/lib/random.ts`, `src/lib/tutorial/season.ts`)
 
-- [ ] Tests first (`random.test.ts`): same seed → same sequence; values in [0, 1); `normalSample` mean ≈ 0, sd ≈ 1 over
+- [x] Tests first (`random.test.ts`): same seed → same sequence; values in [0, 1); `normalSample` mean ≈ 0, sd ≈ 1 over
   10k draws. `game-logs.test.ts` keeps passing unchanged (same generator).
-- [ ] Tests (`season.test.ts`), on a draft completed by the Phase 1 simulation:
+- [x] Tests (`season.test.ts`), on a draft completed by the Phase 1 simulation:
   - every one of the 30 teams has exactly 82 results; same draft → identical season; a different draft → different
   - `recordAfter(results, 41)` equals the counts of the first 41; wins + losses = games; Game 41 wins ≤ Game 82 wins and
     Game 82 − Game 41 wins ≤ 41
@@ -160,58 +175,58 @@ is recognised by the route it opens, not by a click handler.
     opponent, venue null; `buildChartModel` on it reports history `complete`
   - nothing favours the user: `simulateSeason(teams, seed)` reads only the seed and each team's id and line (same seed,
     teams with different records, `prevWins` or owners → the same season)
-- [ ] Implement; move mulberry32/FNV from `src/data/game-logs.ts` into `src/lib/random.ts`.
-- [ ] Commit `feat: deterministic demo season from the completed demo draft`.
+- [x] Implement; move mulberry32/FNV from `src/data/game-logs.ts` into `src/lib/random.ts`.
+- [x] Commit `feat: deterministic demo season from the completed demo draft`.
 
 ### Task 2: Season progress and step derivation (`season-steps.ts`)
 
-- [ ] Tests: the full walk (draft-roster → … → final-finish → null) with `markSeen`/`advanceCheckpoint` and locations;
+- [x] Tests: the full walk (draft-roster → … → final-finish → null) with `markSeen`/`advanceCheckpoint` and locations;
   `mid-pick` until the opening team's page opens; another team's page → still the opening-team step with
   `onPage: false`; back on the overview before `mid-points` → `mid-pick`; after `mid-points`, team page → `mid-back`,
   overview → `mid-standings`; rosters page → `onPage: false`; `advanceCheckpoint` stops at final; parse rejects bad
   checkpoints/ids and keeps known ids only.
-- [ ] Implement; commit `feat: guided season steps derived from checkpoint, seen steps and page`.
+- [x] Implement; commit `feat: guided season steps derived from checkpoint, seen steps and page`.
 
 ### Task 3: The user's numbers (`season-story.ts`) and step copy (`season-copy.ts`)
 
-- [ ] Tests for `pickBreakdown`: Over above the line at midseason (positive, "+1 base", "+0.1 × margin"), Over below
+- [x] Tests for `pickBreakdown`: Over above the line at midseason (positive, "+1 base", "+0.1 × margin"), Over below
   (negative), Under above/below, final settled, push on an integer line (0 points, push sentence), zero games ("Not
   available"); values equal `evaluateCall` exactly. `fadeBreakdown`: target on track to miss → +2, to hit → 0, push → 0,
   final wording. `standingsSummary`: winner = rank 1 from `computeStandings`, user's place, final vs projected wording.
-- [ ] Tests for `SEASON_STEPS`: every step id has copy; action steps have no Continue; informational steps do; scoring
+- [x] Tests for `SEASON_STEPS`: every step id has copy; action steps have no Continue; informational steps do; scoring
   numbers come from `SCORING`.
-- [ ] Implement; commit `feat: season walkthrough copy built from the user's own scores`.
+- [x] Implement; commit `feat: season walkthrough copy built from the user's own scores`.
 
 ### Task 4: Snapshot carries season progress
 
-- [ ] Tests: round trip keeps `season`; a v1 snapshot without `season` restores with the initial progress; a malformed
+- [x] Tests: round trip keeps `season`; a v1 snapshot without `season` restores with the initial progress; a malformed
   `season` falls back to initial; an incomplete draft always restores the initial season.
-- [ ] Implement in `snapshot.ts`; `use-tutorial-session` keeps the restored `season` when it writes; commit.
+- [x] Implement in `snapshot.ts`; `use-tutorial-session` keeps the restored `season` when it writes; commit.
 
 ### Task 5: Existing pages accept demo data (props and tour ids)
 
-- [ ] `LeagueOverview`: `initialBasis?`, `highlightPick?` → `PicksPanel` → `PicksTable` / `PickCards` tag that row
+- [x] `LeagueOverview`: `initialBasis?`, `highlightPick?` → `PicksPanel` → `PicksTable` / `PickCards` tag that row
   `highlight-pick` and its name link `highlight-pick-team`; `StandingsPanel` `standings`, `FadesPanel` `fades`.
-- [ ] `StandingsPanel` / `SummaryStats`: "–" rank and "Not available" points when `!standings.anyScored`.
-- [ ] `TeamDetail`: `market: Promise<MarketLine> | null`, `historyNote?`, `highlightSide?`; tags `team-stats`,
+- [x] `StandingsPanel` / `SummaryStats`: "–" rank and "Not available" points when `!standings.anyScored`.
+- [x] `TeamDetail`: `market: Promise<MarketLine> | null`, `historyNote?`, `highlightSide?`; tags `team-stats`,
   `season-progress`, `my-side`; `TeamHeader` breadcrumb and nav Overview items tagged `nav-overview`.
-- [ ] `nav-items`: demo Overview and Rosters ready (update its test).
-- [ ] Typecheck, lint, tests; commit `feat: overview and team pages take demo data and name their tour areas`.
+- [x] `nav-items`: demo Overview and Rosters ready (update its test).
+- [x] Typecheck, lint, tests; commit `feat: overview and team pages take demo data and name their tour areas`.
 
 ### Task 6: Demo season pages
 
-- [ ] `use-demo-season`: client-only restore; `null` → `DemoChapterPlaceholder` ("Finish the demo draft first");
+- [x] `use-demo-season`: client-only restore; `null` → `DemoChapterPlaceholder` ("Finish the demo draft first");
   memoised season, teams at the checkpoint, display league; `markSeen`, `advance`, `replay` (clear, push
   `/l/demo/draft`), `exit` (clear); writes the snapshot on change unless exited.
-- [ ] `SeasonControl` (`season-control`, action `season-advance`), `SeasonTour` (TourOverlay per step, resume callout
+- [x] `SeasonControl` (`season-control`, action `season-advance`), `SeasonTour` (TourOverlay per step, resume callout
   off-page, breakdown children, final actions), `DemoSeason` (overview / rosters / team).
-- [ ] App pages: demo branches render `DemoSeason`; unknown demo team id → `notFound()`; delete the scoring stub;
+- [x] App pages: demo branches render `DemoSeason`; unknown demo team id → `notFound()`; delete the scoring stub;
   Phase 1's finish links go to `/l/demo`.
-- [ ] Commit `feat: guided season on the demo's overview, rosters and team pages`.
+- [x] Commit `feat: guided season on the demo's overview, rosters and team pages`.
 
 ### Task 7: Verify in the browser, docs
 
-- [ ] Full run at 1440×900 and 375×812 against `npm run dev` with `RECORD_SOURCE=static LINE_SOURCE=static`: draft →
+- [x] Full run at 1440×900 and 375×812 against `npm run dev` with `RECORD_SOURCE=static LINE_SOURCE=static`: draft →
   every season step; Last 8 / Full season; reload on each page keeps the step; no page-level horizontal scroll; no
   `/api/` request during the demo; Replay returns to step 1 of the draft; Create League opens the home page form.
-- [ ] `CLAUDE.md` updates; `npm test && npm run lint && npm run typecheck && npm run build`; commit and push.
+- [x] `CLAUDE.md` updates; `npm test && npm run lint && npm run typecheck && npm run build`; commit and push.

@@ -27,8 +27,19 @@ describe("SEASON_STEPS", () => {
     expect(SEASON_STEPS["mid-advance"].body).toContain("remaining 41 games");
   });
 
-  it("keeps the tour short: at most six steps per checkpoint", () => {
-    for (const checkpoint of SEASON_CHECKPOINTS) expect(SEASON_STEP_ORDER[checkpoint].length).toBeLessThanOrEqual(6);
+  it("introduces the season awards at every checkpoint, with the configured points", () => {
+    expect(SEASON_STEPS["draft-awards"].body).toContain("Best Pick (+2");
+    expect(SEASON_STEPS["draft-awards"].body).toContain("Worst Pick (−2");
+    expect(SEASON_STEPS["draft-awards"].body).toContain("no leaders yet");
+    expect(SEASON_STEPS["mid-awards"].body).toMatch(/can still change/);
+    for (const id of ["draft-awards", "mid-awards", "final-awards"] as const) {
+      expect(SEASON_STEPS[id].spotlight[0]).toBe("season-awards");
+      expect(SEASON_STEPS[id].advance).toBe("continue");
+    }
+  });
+
+  it("keeps the tour short: at most seven steps per checkpoint", () => {
+    for (const checkpoint of SEASON_CHECKPOINTS) expect(SEASON_STEP_ORDER[checkpoint].length).toBeLessThanOrEqual(7);
   });
 });
 

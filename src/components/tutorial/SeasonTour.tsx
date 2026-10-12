@@ -4,12 +4,22 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { TourOverlay } from "@/components/tour/TourOverlay";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { awardsOff } from "@/lib/awards";
 import { indexTeams } from "@/lib/lines";
 import { computeStandings, type Standings } from "@/lib/standings";
 import type { TourStep } from "@/lib/tour/targets";
 import { PUSH_RULE, SEASON_STEPS, seasonStepLabel } from "@/lib/tutorial/season-copy";
+import { checkpointGames, teamsAt } from "@/lib/tutorial/season";
 import type { SeasonLocation, SeasonStepState } from "@/lib/tutorial/season-steps";
-import { fadeStory, pickStory, standingsStory, type BreakdownRow } from "@/lib/tutorial/season-story";
+import {
+  awardChangeStory,
+  awardImpactStory,
+  awardsStory,
+  fadeStory,
+  pickStory,
+  standingsStory,
+  type BreakdownRow,
+} from "@/lib/tutorial/season-story";
 import type { DemoSeasonSession } from "./use-demo-season";
 
 const EXIT_HREF = "/";
@@ -60,7 +70,24 @@ export function SeasonTour({ step, demo }: { step: SeasonStepState; demo: DemoSe
 /** The user's own numbers under the step's text. */
 function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSession }): ReactNode {
   const basis = demo.checkpoint === "final" ? "final" : "projected";
-  const standings: Standings = computeStandings(demo.league, indexTeams(demo.teams), basis);
+  const teamsById = indexTeams(demo.teams);
+  const standings: Standings = computeStandings(demo.league, teamsById, basis);
+  const { managers } = demo.league;
+  /** The award sentences, the awards' effect on the standings and the user's breakdown (picks, fade, awards, total). */
+  const awardDetails = (extra: readonly string[] = []) => (
+    <>
+      <Lines lines={[...awardsStory(standings.awards, managers, demo.viewerId), ...extra]} />
+      <Story
+        summary={awardImpactStory(
+          standings,
+          computeStandings(demo.league, teamsById, basis, awardsOff()),
+          managers,
+          demo.viewerId,
+        )}
+        rows={standingsStory(standings, managers, demo.viewerId).rows}
+      />
+    </>
+  );
   const viewerRow = standings.rows.find((row) => row.managerId === demo.viewerId)!;
   const openingTeam = demo.teams.find((team) => team.id === demo.openingPick.teamId)!;
 
@@ -77,6 +104,14 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
           <p className="text-sm text-fog-300">{fadeStory(viewerRow, demo.league.managers)?.summary}</p>
         </>
       );
+    }
+    case "mid-awards":
+      return awardDetails();
+    case "final-awards": {
+      // The same season cut at Midseason: what the projections said then.
+      const midTeams = indexTeams(teamsAt(demo.teams, demo.season, checkpointGames("midseason")));
+      const midseason = computeStandings(demo.league, midTeams, "projected").awards;
+      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId));
     }
     case "final-standings":
       return <Story summary={standingsStory(standings, demo.league.managers, demo.viewerId).summary} rows={[]} />;
@@ -110,6 +145,18 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
     default:
       return null;
   }
+}
+
+function Lines({ lines }: { lines: readonly string[] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {lines.map((line) => (
+        <p key={line} className="text-sm text-fog-300">
+          {line}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 function Story({ summary, rows }: { summary: string; rows: readonly BreakdownRow[] }) {

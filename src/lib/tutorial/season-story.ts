@@ -1,4 +1,5 @@
 import { SCORING, type ScoringConfig } from "@/config/scoring";
+import { AWARD_LABELS, awardChanges, awardPendingText, type AwardKind, type PickAward, type SeasonAwards } from "@/lib/awards";
 import { formatNumber, formatOrdinal, formatRecord, formatSigned } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { evaluateCall, gamesPlayed, type Basis, type CallEvaluation, type FadeEvaluation } from "@/lib/scoring";
@@ -153,9 +154,94 @@ export function standingsStory(standings: Standings, managers: readonly Manager[
     rows: [
       { label: `Your ${viewer.calls.length} picks`, value: formatSigned(viewer.callPoints, BREAKDOWN_DIGITS) },
       { label: "Your fade", value: formatSigned(viewer.fadePoints, 0) },
+      ...(standings.awards.status === "pending"
+        ? []
+        : [{ label: "Season awards", value: formatSigned(viewer.awardPoints, 0) }]),
       { label: `${prefix} total`, value: formatSigned(viewer.totalPoints, BREAKDOWN_DIGITS) },
     ],
     leader,
     viewer,
   };
+}
+
+const AWARD_KINDS: readonly AwardKind[] = ["best", "worst"];
+
+function ownerName(managers: readonly Manager[], managerId: string, viewerId: string): string {
+  if (managerId === viewerId) return "you";
+  const owner = findManager(managers, managerId);
+  return owner ? managerLabel(owner) : "another manager";
+}
+
+/** "Kobe Bryant's Boston Celtics Over 52.5" or "your …". */
+function awardPickLabel(award: PickAward, managers: readonly Manager[], viewerId: string): string {
+  const { team, pick } = award.call;
+  const owner = ownerName(managers, pick.managerId, viewerId);
+  return `${owner === "you" ? "your" : `${owner}'s`} ${team.city} ${team.name} ${pickLabel(pick.side, team.line)}`;
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** One sentence per award: the leading picks, their own scores and who gets the points. */
+export function awardsStory(awards: SeasonAwards, managers: readonly Manager[], viewerId: string): string[] {
+  if (awards.status === "pending") return [`No award leaders yet: ${awardPendingText(awards.pendingReason ?? "draft")}`];
+  const projected = awards.status === "projected";
+  return AWARD_KINDS.map((kind) => {
+    const winners = awards[kind];
+    const picks = winners
+      .map((award) => `${awardPickLabel(award, managers, viewerId)} (${formatSigned(award.call.evaluation.points ?? 0, BREAKDOWN_DIGITS)})`)
+      .join(" and ");
+    const owners = [...new Set(winners.map((award) => ownerName(managers, award.call.pick.managerId, viewerId)))];
+    const points = formatSigned(winners[0].points, 0);
+    const tie = winners.length > 1 ? "Tied, so each earns the award. " : "";
+    const each = owners.length > 1 ? "each " : "";
+    const verb = projected ? `would ${each}get` : owners.length > 1 || owners[0] === "you" ? `${each}get` : "gets";
+    return `${AWARD_LABELS[kind]}${projected ? " (projected)" : ""}: ${picks}. ${tie}${owners.map(capitalize).join(" and ")} ${verb} ${points}.`;
+  });
+}
+
+/** Whether the award points changed the top of the standings, and the viewer's place, against the same standings without them. */
+export function awardImpactStory(
+  withAwards: Standings,
+  withoutAwards: Standings,
+  managers: readonly Manager[],
+  viewerId: string,
+): string {
+  if (withAwards.awards.status === "pending") return "No award points yet.";
+  const final = withAwards.basis === "final";
+  const leader = withAwards.rows[0].managerId;
+  const leaderWithout = withoutAwards.rows[0].managerId;
+  let story =
+    leader === leaderWithout
+      ? `The awards didn't change who ${final ? "wins the league" : "leads"}.`
+      : `The awards ${final ? "decided the title" : "change the lead"}: without them, ${ownerName(managers, leaderWithout, viewerId)} would ${final ? "have won" : "lead"}.`;
+  const rankWith = withAwards.rows.find((row) => row.managerId === viewerId)?.rank;
+  const rankWithout = withoutAwards.rows.find((row) => row.managerId === viewerId)?.rank;
+  if (rankWith && rankWithout && rankWith !== rankWithout) {
+    story += ` They ${final ? "moved" : "move"} you from ${formatOrdinal(rankWithout)} to ${formatOrdinal(rankWith)}.`;
+  }
+  return story;
+}
+
+/** How the final winners compare with Midseason's projected leaders, one sentence per award. */
+export function awardChangeStory(
+  midseason: SeasonAwards,
+  final: SeasonAwards,
+  managers: readonly Manager[],
+  viewerId: string,
+): string[] {
+  const changes = awardChanges(midseason, final);
+  const names = (list: PickAward[]) => list.map((award) => awardPickLabel(award, managers, viewerId)).join(" and ");
+  return AWARD_KINDS.flatMap((kind) => {
+    const label = AWARD_LABELS[kind];
+    switch (changes[kind]) {
+      case "new":
+        return [];
+      case "held":
+        return [`Midseason's projected ${label}, ${names(midseason[kind])}, held on.`];
+      case "changed":
+        return [`At Midseason the projected ${label} was ${names(midseason[kind])}; the final records changed it.`];
+    }
+  });
 }

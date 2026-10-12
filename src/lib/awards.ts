@@ -111,3 +111,8 @@ export function awardPendingText(reason: AwardPendingReason, config: ScoringConf
       return `Final awards are decided once every drafted team has played all ${config.seasonGames} games.`;
   }
 }
+
+/** The same scoring with both awards worth nothing: standings as they would be without the awards. */
+export function awardsOff(config: ScoringConfig = SCORING): ScoringConfig {
+  return { ...config, bestPickAward: 0, worstPickAward: 0 };
+}

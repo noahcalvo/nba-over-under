@@ -29,7 +29,7 @@ const complete = simulateAll(faded, teams, "fades");
 const seen: TutorialProgress = { welcomed: true, snakeExplained: true, fadesWatched: false };
 
 describe("season progress in the snapshot", () => {
-  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "draft-standings", "mid-chart"] };
+  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "draft-standings", "draft-awards", "mid-chart"] };
   const watched = { ...seen, fadesWatched: true };
   const roundTrip = (snapshot: unknown) => restoreTutorial(JSON.parse(JSON.stringify(snapshot)));
 

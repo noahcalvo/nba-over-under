@@ -4,6 +4,15 @@ import type { TourStep } from "@/lib/tour/targets";
 import { advanceCheckpointGames, type SeasonCheckpoint } from "./season";
 import type { SeasonStepId } from "./season-steps";
 
+const BEST = formatSigned(SCORING.bestPickAward, 0);
+const WORST = formatSigned(SCORING.worstPickAward, 0);
+
+const awardRules = [
+  "Pick scores are compared before any award points, across every manager's picks.",
+  "Ties: every tied pick earns the full award, and one manager can win both.",
+  "Fades don't count toward the awards.",
+] as const;
+
 // The guided season's words and spotlights. The user's own numbers (breakdowns, fade, standings) are added under the
 // text by the overlay from season-story.ts; this copy stays the same for every draft.
 
@@ -49,6 +58,14 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     title: "The standings",
     body: "Managers compete to earn the most total points: every pick on their roster plus their fade. No games have been played yet, so nobody has points and there's no ranking.",
     spotlight: ["standings"],
+    interactive: [],
+    continueLabel: "Continue",
+  },
+  "draft-awards": {
+    advance: "continue",
+    title: "Season awards",
+    body: `Two awards go to single picks: Best Pick (${BEST} to its owner) for the league's highest pick score and Worst Pick (${WORST}) for the lowest. No games have been played, so there are no leaders yet.`,
+    spotlight: ["season-awards"],
     interactive: [],
     continueLabel: "Continue",
   },
@@ -104,8 +121,17 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "mid-standings": {
     advance: "continue",
     title: "Projected standings",
-    body: `Standings add up the projected points of every pick on a roster plus that manager's projected fade. A fade earns ${formatSigned(SCORING.fadeHit, 0)} if the pick it targets misses and ${formatNumber(SCORING.fadeMiss, 0)} if it hits, with no margin points. These results can still change before the season ends.`,
+    body: `Standings add up the projected points of every pick on a roster, that manager's projected fade and any season awards. A fade earns ${formatSigned(SCORING.fadeHit, 0)} if the pick it targets misses and ${formatNumber(SCORING.fadeMiss, 0)} if it hits, with no margin points. These results can still change before the season ends.`,
     spotlight: ["standings", "fades"],
+    interactive: [],
+    continueLabel: "Continue",
+  },
+  "mid-awards": {
+    advance: "continue",
+    title: "Projected awards",
+    body: `These picks have the league's best and worst projected scores right now. Their owners' projected totals already include ${BEST} and ${WORST}, but the leaders are provisional and can still change before the season ends.`,
+    details: { summary: "Award rules", items: awardRules },
+    spotlight: ["season-awards", "standings"],
     interactive: [],
     continueLabel: "Continue",
   },
@@ -122,6 +148,14 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     title: "Final standings",
     body: "The season is over! All 82 games have been played, and your picks have received their final scores. The manager with the most points wins the league!",
     spotlight: ["standings"],
+    interactive: [],
+    continueLabel: "Continue",
+  },
+  "final-awards": {
+    advance: "continue",
+    title: "The season awards",
+    body: "Final records decide the awards. The winners, their owners and what the award points did to the final standings:",
+    spotlight: ["season-awards", "standings"],
     interactive: [],
     continueLabel: "Continue",
   },

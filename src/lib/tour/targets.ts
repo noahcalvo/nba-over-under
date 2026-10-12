@@ -15,6 +15,17 @@ export const TOUR_TARGET_IDS = [
   "fade-bar",
   "confirm-fade",
   "fade-status",
+  // The guided season: the demo's checkpoint control and the overview and team page areas it explains.
+  "season-control",
+  "season-advance",
+  "highlight-pick",
+  "highlight-pick-team",
+  "standings",
+  "fades",
+  "season-progress",
+  "team-stats",
+  "my-side",
+  "nav-overview",
 ] as const;
 
 export type TourTargetId = (typeof TOUR_TARGET_IDS)[number];

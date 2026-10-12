@@ -1,7 +1,7 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { fail, type DomainError, type Result } from "@/lib/league/errors";
-import type { League, Manager } from "@/lib/types";
+import type { DraftPick, League, Manager } from "@/lib/types";
 import type { Db, Tx } from "./client";
 import { fades, leagues, managers, picks, sessionSeats } from "./schema";
 import { seatInLeague } from "./sessions";
@@ -27,6 +27,10 @@ function loadParts(db: Db, leagueId: string): Promise<LeagueParts> {
   ]);
 }
 
+function toDraftPick(pick: typeof picks.$inferSelect): DraftPick {
+  return { pickNumber: pick.pickNumber, managerId: pick.managerId, teamId: pick.teamId, side: pick.side };
+}
+
 async function assemble(db: Db, row: LeagueRow, parts?: LeagueParts): Promise<League> {
   const [managerRows, pickRows, fadeRows] = parts ?? (await loadParts(db, row.id));
   const roster: Manager[] = managerRows.map((manager) => ({
@@ -46,14 +50,9 @@ async function assemble(db: Db, row: LeagueRow, parts?: LeagueParts): Promise<Le
       status: row.draftStatus,
       rounds: row.rounds,
       seatOrder: roster.map((manager) => manager.id),
-      picks: pickRows.map((pick) => ({
-        pickNumber: pick.pickNumber,
-        managerId: pick.managerId,
-        teamId: pick.teamId,
-        side: pick.side,
-      })),
-      voidedPicks: [],
-      blockedPick: null,
+      picks: pickRows.filter((pick) => !pick.voided).map(toDraftPick),
+      voidedPicks: pickRows.filter((pick) => pick.voided).map(toDraftPick),
+      blockedPick: row.blockedPick,
     },
     fades: fadeRows.map((fade) => ({
       id: `fade-${fade.managerId}`,
@@ -112,12 +111,46 @@ export async function insertLeague(tx: Tx, league: League): Promise<boolean> {
   return true;
 }
 
-/** Writes what changed between two versions of a locked league (new picks and fades, names, status, lines) and bumps version. */
+/** Writes what changed between two versions of a locked league (seats, rounds, new and voided picks, fades, names, status, lines) and bumps version. */
 export async function saveLeague(tx: Tx, before: League, after: League): Promise<League> {
-  const newPicks = after.draft.picks.slice(before.draft.picks.length);
-  if (newPicks.length > 0) {
-    await tx.insert(picks).values(newPicks.map((pick) => ({ leagueId: after.id, ...pick })));
+  // Seats change only before the draft (decideLeagueConfig): removed seats are open, so nothing else points at them.
+  const removed = before.managers.filter((manager) => !after.managers.some((kept) => kept.id === manager.id));
+  if (removed.length > 0) {
+    await tx.delete(managers).where(
+      and(
+        eq(managers.leagueId, after.id),
+        inArray(
+          managers.id,
+          removed.map((manager) => manager.id),
+        ),
+      ),
+    );
   }
+  const added = after.managers.filter((manager) => !before.managers.some((old) => old.id === manager.id));
+  if (added.length > 0) {
+    await tx.insert(managers).values(
+      added.map((manager) => ({ leagueId: after.id, id: manager.id, seat: manager.seat, displayName: manager.displayName })),
+    );
+  }
+
+  // Picks: insert new ones (a pick that ends the draft early can be voided as it is stored), then void stored ones.
+  const stored = new Set([...before.draft.picks, ...before.draft.voidedPicks].map((pick) => pick.pickNumber));
+  const wasVoided = new Set(before.draft.voidedPicks.map((pick) => pick.pickNumber));
+  const voided = new Set(after.draft.voidedPicks.map((pick) => pick.pickNumber));
+  const newPicks = [...after.draft.picks, ...after.draft.voidedPicks].filter((pick) => !stored.has(pick.pickNumber));
+  if (newPicks.length > 0) {
+    await tx
+      .insert(picks)
+      .values(newPicks.map((pick) => ({ leagueId: after.id, ...pick, voided: voided.has(pick.pickNumber) })));
+  }
+  const newlyVoided = [...voided].filter((pickNumber) => stored.has(pickNumber) && !wasVoided.has(pickNumber));
+  if (newlyVoided.length > 0) {
+    await tx
+      .update(picks)
+      .set({ voided: true })
+      .where(and(eq(picks.leagueId, after.id), inArray(picks.pickNumber, newlyVoided)));
+  }
+
   const newFades = after.fades.filter((fade) => !before.fades.some((old) => old.managerId === fade.managerId));
   if (newFades.length > 0) {
     await tx.insert(fades).values(
@@ -126,7 +159,7 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
   }
   for (const manager of after.managers) {
     const previous = before.managers.find((candidate) => candidate.id === manager.id);
-    if (previous?.displayName === manager.displayName) continue;
+    if (!previous || previous.displayName === manager.displayName) continue;
     await tx
       .update(managers)
       .set({ displayName: manager.displayName })
@@ -137,6 +170,8 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
     .update(leagues)
     .set({
       draftStatus: after.draft.status,
+      rounds: after.draft.rounds,
+      blockedPick: after.draft.blockedPick,
       lines: after.lines?.values ?? null,
       linesSource: after.lines?.source ?? null,
       linesAsOf: after.lines ? new Date(after.lines.asOf) : null,

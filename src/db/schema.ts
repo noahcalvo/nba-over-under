@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   foreignKey,
   index,
@@ -25,6 +26,8 @@ export const leagues = pgTable(
     seasonLabel: text("season_label").notNull(),
     commissionerId: text("commissioner_id").notNull(),
     rounds: smallint("rounds").notNull(),
+    /** The pick nobody could make when regular drafting ended early. Null unless it did. */
+    blockedPick: smallint("blocked_pick"),
     draftStatus: text("draft_status", { enum: ["not_started", "live", "paused", "fades", "complete"] }).notNull(),
     /** teamId → line, frozen when the draft starts. */
     lines: jsonb("lines").$type<Record<string, number>>(),
@@ -69,6 +72,8 @@ export const picks = pgTable(
     managerId: text("manager_id").notNull(),
     teamId: text("team_id").notNull(),
     side: text("side", { enum: ["OVER", "UNDER"] }).notNull(),
+    /** Voided when an early end cut its round short: kept for the draft history, never counted. */
+    voided: boolean("voided").notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [

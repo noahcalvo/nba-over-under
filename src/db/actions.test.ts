@@ -13,13 +13,14 @@ import {
   revokeLeagueInvite,
   rotateLeagueInvite,
   runDraftAction,
+  setLeagueConfig,
   setLineOverrides,
 } from "@/db/actions";
 import type { Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import { loadSeasonRecords } from "@/db/records";
 import { findLink, listActiveLinks } from "@/db/links";
-import { accessLinks, fades } from "@/db/schema";
+import { accessLinks, fades, picks } from "@/db/schema";
 import { createSession, findSession, seatInLeague } from "@/db/sessions";
 import { createTestDb } from "@/db/test-db";
 import type { LinkKind } from "@/lib/access/links";
@@ -28,7 +29,8 @@ import { indexTeams, withLines } from "@/lib/lines";
 import { seasonEndYear } from "@/lib/records/season";
 import type { RecordSource } from "@/lib/records/types";
 import { computeStandings } from "@/lib/standings";
-import type { Side } from "@/lib/types";
+import { blockedDraft, confirmsOf, plainDraft } from "@/lib/draft-scenarios";
+import type { DraftState, Side } from "@/lib/types";
 
 const LEAGUE = "lg0001";
 
@@ -470,5 +472,104 @@ describe("fades before the fade stage", () => {
     await confirm(ana, 1, "MIN", "OVER");
     await confirm(ana, 2, "OKC", "OVER");
     expect(await fade(ana, "m1", 2)).toEqual({ ok: false, error: "not_fading" });
+  });
+});
+
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+describe("league size", () => {
+  it("grows the league before the draft, and the new seats can be claimed", async () => {
+    expect((await setLeagueConfig(db, LEAGUE, ana, { managerCount: 6, rounds: 10 })).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.managers.map((m) => m.id)).toEqual(["m1", "m2", "m3", "m4", "m5", "m6"]);
+    expect(league.draft).toMatchObject({ rounds: 10, seatOrder: ["m1", "m2", "m3", "m4", "m5", "m6"] });
+    expect(league.version).toBe(2);
+    expect((await joinAs(ben, "m6", "Ben")).ok).toBe(true);
+    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m6");
+  });
+
+  it("shrinks by removing open seats only; claimed seats and their sessions stay", async () => {
+    await joinAs(ben, "m3", "Ben");
+    expect(await setLeagueConfig(db, LEAGUE, ana, { managerCount: 2, rounds: 11 })).toEqual({ ok: false, error: "seats_claimed" });
+    expect((await setLeagueConfig(db, LEAGUE, ana, { managerCount: 3, rounds: 20 })).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.managers.map((m) => [m.id, m.displayName])).toEqual([["m1", "Ana"], ["m2", null], ["m3", "Ben"]]);
+    expect(league.draft.rounds).toBe(20);
+    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m3");
+    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m1");
+  });
+
+  it("refuses other managers, invalid sizes and changes after the start, writing nothing", async () => {
+    await joinAs(ben, "m2", "Ben");
+    expect(await setLeagueConfig(db, LEAGUE, ben, { managerCount: 6, rounds: 10 })).toEqual({ ok: false, error: "forbidden" });
+    expect(await setLeagueConfig(db, LEAGUE, ana, { managerCount: 7, rounds: 9 })).toEqual({ ok: false, error: "invalid_config" });
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    expect(await setLeagueConfig(db, LEAGUE, ana, { managerCount: 6, rounds: 10 })).toEqual({ ok: false, error: "config_locked" });
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.managers).toHaveLength(4);
+    expect(league.draft.rounds).toBe(11);
+  });
+});
+
+describe("early end", () => {
+  /** Sizes the league, starts it and replays a scripted draft's confirms; the commissioner picks for every open seat. */
+  async function replay(state: DraftState, count = confirmsOf(state).length) {
+    await setLeagueConfig(db, LEAGUE, ana, { managerCount: state.seatOrder.length, rounds: state.rounds });
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    for (const { pickNumber, teamId, side } of confirmsOf(state).slice(0, count)) {
+      const result = await confirm(ana, pickNumber, teamId, side);
+      if (!result.ok) throw new Error(`pick ${pickNumber}: ${result.error}`);
+    }
+  }
+
+  it("6 × 10: voids the cut-short round in the same write as the pick that ended it", async () => {
+    const script = confirmsOf(blockedDraft(6, 10, 58));
+    await replay(blockedDraft(6, 10, 58), script.length - 1);
+    const before = (await loadLeague(db, LEAGUE))!;
+    expect(before.draft).toMatchObject({ status: "live", blockedPick: null, voidedPicks: [] });
+
+    const last = script.at(-1)!;
+    expect((await confirm(ana, last.pickNumber, last.teamId, last.side)).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.version).toBe(before.version + 1);
+    expect(league.draft).toMatchObject({ status: "fades", blockedPick: 58, rounds: 10 });
+    expect(league.draft.picks.map((p) => p.pickNumber)).toEqual(range(1, 54));
+    expect(league.draft.voidedPicks.map((p) => p.pickNumber)).toEqual([55, 56, 57]);
+
+    const rows = await db.select().from(picks).where(eq(picks.leagueId, LEAGUE));
+    expect(rows).toHaveLength(57);
+    expect(rows.filter((row) => row.voided).map((row) => row.pickNumber).sort((a, b) => a - b)).toEqual([55, 56, 57]);
+    expect(await confirm(ana, 58, "MIN", "OVER")).toEqual({ ok: false, error: "not_live" });
+  });
+
+  it("excludes voided picks from fades and standings, and completes after every manager's fade", async () => {
+    await replay(blockedDraft(6, 10, 58));
+    expect(await fade(ana, "m1", 56)).toEqual({ ok: false, error: "voided_pick" });
+    for (const managerId of ["m1", "m2", "m3", "m4", "m5", "m6"]) {
+      const result = await fade(ana, managerId, managerId === "m1" ? 2 : 1);
+      expect(result.ok).toBe(true);
+    }
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.status).toBe("complete");
+    expect(league.fades).toHaveLength(6);
+    const standings = computeStandings(league, indexTeams(withLines(TEAM_INFO, league.lines!)), "projected");
+    const counted = standings.rows.flatMap((row) => row.calls.map((call) => call.pick.pickNumber));
+    expect(Math.max(...counted)).toBe(54);
+    expect(counted).toHaveLength(54);
+  });
+
+  it("7 × 8: keeps 7 rounds", async () => {
+    await replay(blockedDraft(7, 8, 54));
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft).toMatchObject({ status: "fades", blockedPick: 54 });
+    expect(league.draft.picks).toHaveLength(49);
+    expect(league.draft.voidedPicks.map((p) => p.pickNumber)).toEqual([50, 51, 52, 53]);
+  });
+
+  it("7 × 8 with nobody blocked keeps every pick", async () => {
+    await replay(plainDraft(7, 8));
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft).toMatchObject({ status: "fades", blockedPick: null, voidedPicks: [] });
+    expect(league.draft.picks).toHaveLength(56);
   });
 });

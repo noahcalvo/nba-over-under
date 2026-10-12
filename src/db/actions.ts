@@ -9,6 +9,7 @@ import {
   decideClaim,
   decideDraftAction,
   decideInviteChange,
+  decideLeagueConfig,
   decideLineOverrides,
   decideOwnLinkReset,
   decideSeatReset,
@@ -16,6 +17,7 @@ import {
   type ClaimInput,
 } from "@/lib/league/commands";
 import { fail, succeed, type Result } from "@/lib/league/errors";
+import type { LeagueConfig } from "@/lib/league/config";
 import { canRefreshRecords } from "@/lib/league/permissions";
 import { seasonEndYear } from "@/lib/records/season";
 import type { RecordSource, RecordStatus } from "@/lib/records/types";
@@ -88,6 +90,20 @@ export function setLineOverrides(
 ): Promise<Result<DraftOutcome>> {
   return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
     const decided = decideLineOverrides(league, actorId, overrides);
+    if (!decided.ok) return fail(decided.error);
+    return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
+  });
+}
+
+/** Commissioner: change the league size before the draft. Parse the body with parseLeagueConfig before calling. */
+export function setLeagueConfig(
+  db: Db,
+  leagueId: string,
+  sessionId: string | null,
+  config: LeagueConfig,
+): Promise<Result<DraftOutcome>> {
+  return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
+    const decided = decideLeagueConfig(league, actorId, config);
     if (!decided.ok) return fail(decided.error);
     return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
   });

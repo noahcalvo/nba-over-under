@@ -42,7 +42,6 @@ export function CreateLeagueForm() {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          League name <span className="font-normal text-fog-400">Optional</span>
           <input
             value={leagueName}
             onChange={(event) => setLeagueName(event.target.value)}

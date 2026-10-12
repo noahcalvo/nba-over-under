@@ -50,6 +50,7 @@ export function EarlyEndPanel({ league, teams, summary }: { league: League; team
             return (
               <li
                 key={`${teamId}-${side}`}
+                title={`${team.city} ${team.name} ${side}`}
                 className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900 px-2.5 py-1.5 text-sm"
               >
                 <TeamLogo team={team} size={20} />

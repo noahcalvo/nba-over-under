@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import { LEAGUE_DEFAULTS } from "@/config/league";
 
 const inputClasses =
   "h-11 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 text-fog-50 placeholder:text-fog-400 focus:border-accent focus:outline-none";
@@ -71,7 +72,9 @@ export function CreateLeagueForm() {
         {pending ? "Creating…" : "Create league"}
       </Button>
       <p className="text-sm text-fog-400">
-        You&apos;ll be Manager 1 and the commissioner. Leagues start at 4 managers and 11 rounds; change the size in the draft room before the draft starts, then share the invite link.
+        You&apos;ll be Manager 1 and the commissioner. Leagues start at {LEAGUE_DEFAULTS.managerCount} managers and{" "}
+        {LEAGUE_DEFAULTS.rounds} rounds; change the size in the draft room before the draft starts, then share the
+        invite link.
       </p>
     </form>
   );

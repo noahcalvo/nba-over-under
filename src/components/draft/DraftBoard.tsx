@@ -175,7 +175,11 @@ function BoardCell({
       <span className="w-5 shrink-0 text-xs tabular-nums text-fog-400">{pickNumber}</span>
       <span
         className={`flex-1 text-center ${
-          state === "current" ? "font-semibold text-accent" : state === "blocked" ? "font-semibold text-negative" : "text-fog-300"
+          state === "current"
+            ? "font-semibold text-accent"
+            : state === "blocked"
+              ? "font-semibold text-negative"
+              : "text-fog-300"
         }`}
       >
         {label}

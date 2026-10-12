@@ -149,7 +149,8 @@ export type DraftResult = { ok: true; state: DraftState } | { ok: false; error: 
 /**
  * Applies one draft action. Who is allowed to act is decided by the caller (see league/permissions);
  * this only enforces draft rules: status transitions, the expected pick number, side availability, one side per team
- * per manager, and snake order. The last pick opens the fade stage (see fades.ts); so does a pick after which the next manager has no eligible side (see endEarly).
+ * per manager, and snake order. The last pick opens the fade stage (see fades.ts); so does a pick after which the
+ * next manager has no eligible side (see endEarly).
  */
 export function applyDraftAction(state: DraftState, action: DraftAction, teamIds: ReadonlySet<TeamId>): DraftResult {
   switch (action.type) {

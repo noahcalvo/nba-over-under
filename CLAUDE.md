@@ -34,8 +34,8 @@ Next API.
 
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
-  11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data), `LINES` (book, drafted season, feed cache timings),
-  `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
+  11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
+  `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN

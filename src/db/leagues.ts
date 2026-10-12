@@ -144,6 +144,7 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
       .values(newPicks.map((pick) => ({ leagueId: after.id, ...pick, voided: voided.has(pick.pickNumber) })));
   }
   const newlyVoided = [...voided].filter((pickNumber) => stored.has(pickNumber) && !wasVoided.has(pickNumber));
+  // Voids are one-way: a voided pick never becomes kept again, and picks are never deleted.
   if (newlyVoided.length > 0) {
     await tx
       .update(picks)

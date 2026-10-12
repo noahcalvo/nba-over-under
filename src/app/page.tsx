@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { Logo } from "@/components/shell/Logo";
 import { Panel } from "@/components/ui/Panel";
+import { LEAGUE_LIMITS } from "@/config/league";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { managerLabel } from "@/lib/league/managers";
 import { listViewerLeagues } from "@/server/league";
@@ -15,7 +16,8 @@ export default function Home() {
       <section>
         <h1 className="font-display text-4xl font-bold sm:text-5xl">Draft the season.</h1>
         <p className="mt-2 max-w-xl text-fog-300">
-          Two to twelve managers snake-draft Overs and Unders on every NBA win total, then score on how the season plays out.
+          {LEAGUE_LIMITS.minManagers}–{LEAGUE_LIMITS.maxManagers} managers snake-draft Overs and Unders on every NBA win
+          total, then score on how the season plays out.
         </p>
       </section>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">

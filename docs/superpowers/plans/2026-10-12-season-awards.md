@@ -50,6 +50,18 @@ The award points live in `SCORING` (`src/config/scoring.ts`), not in league sett
   becomes seven.
 - Superpowers skills are not installed in this environment: the plan is executed inline, test-first, task by task.
 
+## Found during execution
+
+- Both sides of one team are often drafted, and their scores mirror each other, so Best Pick and Worst Pick are often
+  the Over and Under of the same team (the demo's default draft shows it). That is the scoring, not a bug; nothing is
+  special-cased.
+- The summary card's sub line truncates; award points got their own line there.
+- `next start` refuses to boot without `DATABASE_URL`/`LINK_SECRET`; the browser walk used
+  `RECORD_SOURCE=static LINE_SOURCE=static next dev` with a stored demo snapshot per checkpoint (1440px and 375px, no
+  horizontal scroll, steps survive reloads and route changes, no page errors).
+- PGlite tests (`src/db/client.test.ts`) can time out at 5 s when the whole suite runs on a busy machine; they pass on
+  their own and are unrelated.
+
 ## Tour steps added
 
 | Checkpoint | Step | Spotlight | Says |
@@ -78,25 +90,25 @@ The award points live in `SCORING` (`src/config/scoring.ts`), not in league sett
 ## Tasks
 
 ### Task 1: Award decision (`src/config/scoring.ts`, `src/lib/awards.ts`)
-- [ ] Failing tests: unique winners; ties; same manager both; push as a candidate; missing records → pending
+- [x] Failing tests: unique winners; ties; same manager both; push as a candidate; missing records → pending
   (`no_games`); incomplete season → pending (`unsettled`); draft not finished → pending; fades ignored; voided picks
   never considered; unknown manager excluded; a single pick wins both.
-- [ ] Implement `decideAwards(calls, basis, draftStatus, managerIds, config)`, `awardsFor(awards, managerId)`.
+- [x] Implement `decideAwards(calls, basis, draftStatus, managerIds, config)`, `awardsFor(awards, managerId)`.
 
 ### Task 2: Standings include awards (`src/lib/standings.ts`)
-- [ ] Failing tests: totals = calls + fades + awards (no double counting), ranks move with awards, projected vs final
+- [x] Failing tests: totals = calls + fades + awards (no double counting), ranks move with awards, projected vs final
   awards on the same league, partial final standings carry no award points, early-end draft only awards kept picks.
-- [ ] Update existing expectations that now include award points.
+- [x] Update existing expectations that now include award points.
 
 ### Task 3: Overview, rosters and settings UI
-- [ ] `SeasonAwardsPanel` (tour id `season-awards`) in the overview's right column under the standings.
-- [ ] Award breakdown in `StandingsPanel` rows, `SummaryStats`, `RosterColumn`; "Points include fades and awards".
-- [ ] Season awards group in `ScoringRulesPanel`.
+- [x] `SeasonAwardsPanel` (tour id `season-awards`) in the overview's right column under the standings.
+- [x] Award breakdown in `StandingsPanel` rows, `SummaryStats`, `RosterColumn`; "Points include fades and awards".
+- [x] Season awards group in `ScoringRulesPanel`.
 
 ### Task 4: Guided demo
-- [ ] Steps `draft-awards`, `mid-awards`, `final-awards`; copy; `awardsStory`, `awardChanges`; standings breakdown row.
-- [ ] Tests: demo awards at 0 / 41 / 82 games, deterministic, step walk, stored progress with the new ids.
+- [x] Steps `draft-awards`, `mid-awards`, `final-awards`; copy; `awardsStory`, `awardChanges`; standings breakdown row.
+- [x] Tests: demo awards at 0 / 41 / 82 games, deterministic, step walk, stored progress with the new ids.
 
 ### Task 5: Verify
-- [ ] `npm test && npm run lint && npm run typecheck && npm run build`; walk the demo in a browser at 375px and 1440px.
-- [ ] CLAUDE.md.
+- [x] `npm test && npm run lint && npm run typecheck && npm run build`; walk the demo in a browser at 375px and 1440px.
+- [x] CLAUDE.md.

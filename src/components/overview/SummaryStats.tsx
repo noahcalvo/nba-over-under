@@ -22,7 +22,13 @@ export function SummaryStats({ row, standings, isViewer }: { row: StandingRow; s
         icon={<ChartLine className="size-8" />}
         label={projected ? "Projected points" : "Final points"}
         value={<SignedValue value={ranked ? row.totalPoints : null} empty={NOT_AVAILABLE} />}
-        sub={ranked ? `Margin ${formatSigned(row.totalMargin)} · Fades ${formatSigned(row.fadePoints)}` : undefined}
+        sub={
+          ranked
+            ? `Margin ${formatSigned(row.totalMargin)} · Fades ${formatSigned(row.fadePoints)}${
+                standings.awards.status === "pending" ? "" : ` · Awards ${formatSigned(row.awardPoints, 0)}`
+              }`
+            : undefined
+        }
       />
       <StatCard
         icon={<ChartColumn className="size-8" />}

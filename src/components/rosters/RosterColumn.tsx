@@ -41,6 +41,11 @@ export function RosterColumn({
               suffix="pts"
               className="block font-display text-2xl font-bold leading-tight"
             />
+            {standing.awards.length > 0 && (
+              <p className="text-xs text-fog-400">
+                incl. awards <SignedValue value={standing.awardPoints} digits={0} />
+              </p>
+            )}
           </div>
         )}
       </header>

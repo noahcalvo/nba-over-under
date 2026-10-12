@@ -97,3 +97,17 @@ export function awardChanges(before: SeasonAwards, after: SeasonAwards): Record<
   };
   return { best: change(before.best, after.best), worst: change(before.worst, after.worst) };
 }
+
+export const AWARD_LABELS: Record<AwardKind, string> = { best: "Best Pick", worst: "Worst Pick" };
+
+/** Why there are no award leaders yet, in a sentence. */
+export function awardPendingText(reason: AwardPendingReason, config: ScoringConfig = SCORING): string {
+  switch (reason) {
+    case "draft":
+      return "Awarded once the draft's picks are final.";
+    case "no_games":
+      return "Projected leaders appear once every drafted team has played.";
+    case "unsettled":
+      return `Final awards are decided once every drafted team has played all ${config.seasonGames} games.`;
+  }
+}

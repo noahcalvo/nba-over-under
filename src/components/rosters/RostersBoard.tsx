@@ -46,7 +46,7 @@ export function RostersBoard({ league, teams }: { league: League; teams: Team[] 
               {showProjected && (
                 <p className="flex items-center gap-1.5 text-sm text-fog-300">
                   <Info aria-hidden className="size-4" />
-                  Points include fades
+                  Points include fades and awards
                 </p>
               )}
             </div>

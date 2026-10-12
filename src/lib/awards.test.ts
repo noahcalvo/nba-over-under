@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SCORING } from "@/config/scoring";
-import { awardChanges, awardsFor, decideAwards } from "@/lib/awards";
+import { awardChanges, awardPendingText, awardsFor, decideAwards } from "@/lib/awards";
 import { evaluateCall, type Basis } from "@/lib/scoring";
 import type { ScoredCall } from "@/lib/standings";
 import type { DraftStatus, Side, Team } from "@/lib/types";
@@ -116,5 +116,13 @@ describe("awardChanges", () => {
     ]);
     expect(awardChanges(before, later)).toEqual({ best: "changed", worst: "held" });
     expect(awardChanges(decide([], "projected"), later)).toEqual({ best: "new", worst: "new" });
+  });
+});
+
+describe("awardPendingText", () => {
+  it("explains each pending reason without naming a winner", () => {
+    expect(awardPendingText("draft")).toBe("Awarded once the draft's picks are final.");
+    expect(awardPendingText("no_games")).toContain("every drafted team has played");
+    expect(awardPendingText("unsettled")).toContain("all 82 games");
   });
 });

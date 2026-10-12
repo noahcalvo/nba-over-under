@@ -78,8 +78,8 @@ export function PicksPanel({
         </div>
       ) : (
         <>
-          <PicksTable calls={calls} basis={basis} highlightPick={highlightPick} />
-          <PickCards calls={calls} basis={basis} highlightPick={highlightPick} />
+          <PicksTable calls={calls} basis={basis} awards={row.awards} highlightPick={highlightPick} />
+          <PickCards calls={calls} basis={basis} awards={row.awards} highlightPick={highlightPick} />
         </>
       )}
 

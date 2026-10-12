@@ -3,6 +3,13 @@ export const LEAGUE_DEFAULTS = {
   rounds: 11,
 } as const;
 
+/** League sizes the commissioner can choose before the draft. Rounds run from minRounds to ⌊60 sides ÷ managers⌋. */
+export const LEAGUE_LIMITS = {
+  minManagers: 2,
+  maxManagers: 12,
+  minRounds: 1,
+} as const;
+
 export const SEASON = {
   label: "2025–26",
   previousLabel: "2024–25",

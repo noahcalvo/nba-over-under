@@ -30,7 +30,7 @@ Experience (in order): 1 welcome · 2 understand Over/Under · 3 confirm your ow
 - Fades: same eligibility as real leagues, no artificial order dependency in the logic; every manager ends with a legal locked fade and the draft completes normally.
 - Overlay: reusable (not per-step markup); dims outside the spotlight; whole-section spotlights; targets inside scroll containers; callout stays in the viewport and off the controls; subtle animated arrow; blocks unrelated actions during gated steps; exit any time; keyboard and reduced motion; Continue on informational steps; action steps advance on successful application actions, never on clicks or timers; stays positioned through content changes, scrolls and resizes; stable semantic target ids, not fragile selectors.
 - Data: no real league mutation, nothing persisted server-side; reuse UI and domain rules; restartable to the initial state; user pick and fade preserved throughout.
-- Scoring walkthrough: not built here. Design the handoff so it can show the user's actual pick and direction, ±1 base, ±0.1 per win of margin, fade +2 / 0, pushes at 0, projected vs final, through the real Overview / Rosters / team pages, with demo data clearly labeled and consistent with `src/lib/scoring.ts`.
+- Scoring walkthrough: not built here. Design the handoff so it can show the user's actual pick and direction, ±1 base, ±0.1 per win of margin, fade +2 / 0, projected vs final, through the real Overview / Rosters / team pages, with demo data clearly labeled and consistent with `src/lib/scoring.ts`.
 - Must not regress live drafts or fades.
 
 ## Findings and decisions (read before Task 1)
@@ -65,7 +65,7 @@ Other decisions:
 
 - Read the snapshot with `readTutorialSnapshot()` → `restoreTutorial()` → `tutorialResult(league)`: `{ league, teams, viewerId: "m1", openingPick, fade }`. `null` until the draft is complete (send the user back to `/l/demo/tour/draft`).
 - Score with `src/lib/scoring.ts` / `src/lib/standings.ts` against `teams` from `tutorialTeams()` (mock lines `STATIC_LINES` frozen as the league's lines; mock records from `TEAM_INFO`, already consistent with `src/data/game-logs.ts`). Label every page "Demo data" (the existing `tag` pattern).
-- To show right/wrong picks, ±0.1 margins, a fade hit/miss and a push, the walkthrough will need its own demo *final* records (e.g. a pure `tutorialSeasonOutcome(league)` that sets chosen teams' wins to land above, below and exactly on the line). Pushes need an integer line; mock lines are all x.5, so that walkthrough must use a hypothetical integer line, clearly labeled.
+- To show right/wrong picks, ±0.1 margins and a fade hit/miss, the walkthrough will need its own demo *final* records (e.g. a pure `tutorialSeasonOutcome(league)` that sets chosen teams' wins to land above or below the line). Demonstrating a push is out of scope.
 - Overview, Rosters and the team page are server components reading `findLeague`. Reusing them with a client-held league needs either a client data path for those components or a short-lived server representation. Decide in the walkthrough's own spec. Note `TeamLink` builds `/l/{leagueId}/teams/…` from the URL, which would point at the static demo league.
 
 ## Global Constraints

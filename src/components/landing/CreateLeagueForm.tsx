@@ -71,7 +71,7 @@ export function CreateLeagueForm() {
         {pending ? "Creating…" : "Create league"}
       </Button>
       <p className="text-sm text-fog-400">
-        You&apos;ll be Manager 1 and the commissioner. Share the invite link from the draft room with three friends.
+        You&apos;ll be Manager 1 and the commissioner. Leagues start at 4 managers and 11 rounds; change the size in the draft room before the draft starts, then share the invite link.
       </p>
     </form>
   );

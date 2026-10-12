@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Alert } from "@/components/ui/Alert";
 import { Panel } from "@/components/ui/Panel";
 import type { LeagueAccess } from "@/lib/access/links";
-import { currentPickNumber, findPickForSide, holdsTeam, managerOnTheClock, type DraftAction } from "@/lib/draft";
+import { currentPickNumber, earlyEnd, findPickForSide, holdsTeam, managerOnTheClock, type DraftAction } from "@/lib/draft";
 import { DEFAULT_FILTERS, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { openFadeSeats } from "@/lib/fades";
 import { findManager, managerLabel } from "@/lib/league/managers";
@@ -18,6 +18,7 @@ import { AvailablePicks } from "./AvailablePicks";
 import { DraftBoard } from "./DraftBoard";
 import { DraftLobby } from "./DraftLobby";
 import { DraftStatusBar } from "./DraftStatusBar";
+import { EarlyEndPanel } from "./EarlyEndPanel";
 import { FadeConfirm, FadeTargets } from "./FadePicker";
 import { FadeStatusPanel } from "./FadeStatusPanel";
 import { LineReviewPanel } from "./LineReviewPanel";
@@ -31,6 +32,7 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
   const { league, viewerId } = view;
   const { draft } = league;
   const teamsById = useMemo(() => indexTeams(view.teams), [view.teams]);
+  const ended = earlyEnd(draft, view.teams.map((team) => team.id));
   const [configDirty, setConfigDirty] = useState(false);
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
@@ -157,6 +159,7 @@ export function DraftRoom({ initial, access }: { initial: LeagueView; access: Le
           onResume={() => run({ type: "resume" })}
         />
       )}
+      {ended && <EarlyEndPanel league={league} teams={teamsById} summary={ended} />}
       <DraftBoard league={league} teams={teamsById} />
       {draft.status === "fades" ? (
         fadingFor === null ? (

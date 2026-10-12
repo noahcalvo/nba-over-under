@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
-import { currentPickNumber, draftTotalPicks, managerUpNext, roundOf } from "@/lib/draft";
+import { completedRounds, currentPickNumber, draftTotalPicks, managerUpNext, roundOf } from "@/lib/draft";
 import { findManager, managerLabel, openSeats } from "@/lib/league/managers";
 import type { TurnSummary } from "@/lib/league/turn";
 import type { League, Manager } from "@/lib/types";
@@ -33,6 +33,10 @@ export function DraftStatusBar({
   const manager = findManager(managers, turn.managerId);
   const upNext = findManager(managers, managerUpNext(draft));
   const paused = draft.status === "paused";
+  const picksIn =
+    draft.blockedPick === null
+      ? `All ${total} picks are in`
+      : `Draft ended early after round ${completedRounds(draft)} of ${draft.rounds} · ${draft.picks.length} picks kept`;
 
   return (
     <section
@@ -57,10 +61,10 @@ export function DraftStatusBar({
           </p>
           <p className="text-sm text-fog-300">
             {turn.kind === "fades"
-              ? `All ${total} picks are in · ${league.fades.length} of ${managers.length} fades locked`
+              ? `${picksIn} · ${league.fades.length} of ${managers.length} fades locked`
               : pickNumber === null
-                ? `All ${total} picks${league.fades.length > 0 ? ` and ${league.fades.length} fades` : ""} are in.`
-                : `Round ${roundOf(pickNumber, draft.seatOrder.length)} · Pick ${pickNumber} of ${total}`}
+                ? `${picksIn}${league.fades.length > 0 ? ` · ${league.fades.length} fades locked` : ""}.`
+                : `Round ${roundOf(pickNumber, draft.seatOrder.length)} of ${draft.rounds} · Pick ${pickNumber} of ${total}`}
           </p>
         </div>
       </div>

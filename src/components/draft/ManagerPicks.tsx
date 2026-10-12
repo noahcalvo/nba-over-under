@@ -1,6 +1,6 @@
 import { SidePill } from "@/components/ui/SidePill";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { picksForManager } from "@/lib/draft";
+import { completedRounds, picksForManager } from "@/lib/draft";
 import { formatNumber } from "@/lib/format";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import type { TeamLookup } from "@/lib/standings";
@@ -26,7 +26,9 @@ export function ManagerPicks({
           {isViewer ? "Your picks" : `${managerLabel(manager)}'s picks`}
         </h3>
         <span className="text-sm text-fog-300">
-          {picks.length} / {league.draft.rounds} drafted
+          {league.draft.blockedPick === null
+            ? `${picks.length} / ${league.draft.rounds} drafted`
+            : `${picks.length} kept · ${completedRounds(league.draft)} of ${league.draft.rounds} rounds`}
         </span>
       </div>
       {picks.length === 0 ? (

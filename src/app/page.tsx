@@ -15,7 +15,7 @@ export default function Home() {
       <section>
         <h1 className="font-display text-4xl font-bold sm:text-5xl">Draft the season.</h1>
         <p className="mt-2 max-w-xl text-fog-300">
-          Four managers snake-draft Overs and Unders on every NBA win total, then score on how the season plays out.
+          Two to twelve managers snake-draft Overs and Unders on every NBA win total, then score on how the season plays out.
         </p>
       </section>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">

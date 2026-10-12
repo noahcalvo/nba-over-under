@@ -37,7 +37,7 @@ export function buildDemoLeague(): League {
     commissionerId: "m1",
     version: 1,
     managers: DEMO_SEATS.map((id, seat) => ({ id, seat, displayName: null })),
-    draft: { status: "complete", rounds: LEAGUE_DEFAULTS.rounds, seatOrder: [...DEMO_SEATS], picks },
+    draft: { status: "complete", rounds: LEAGUE_DEFAULTS.rounds, seatOrder: [...DEMO_SEATS], picks, voidedPicks: [], blockedPick: null },
     lineOverrides: {},
     fades: [
       { id: "f1", managerId: "m1", targetPickNumber: 2 },

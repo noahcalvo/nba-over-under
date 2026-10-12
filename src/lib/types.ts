@@ -62,11 +62,19 @@ export type DraftStatus = "not_started" | "live" | "paused" | "fades" | "complet
 
 export interface DraftState {
   status: DraftStatus;
+  /** Configured rounds. After an early end fewer are completed; see completedRounds in draft.ts. */
   rounds: number;
   /** Manager ids in seat order. */
   seatOrder: string[];
-  /** Picks in pick-number order. */
+  /** Picks that count, in pick-number order. Rosters, scoring and fades read only these. */
   picks: DraftPick[];
+  /** Picks from the round an early end cut short, in pick-number order. Draft history only: their sides are unclaimed. */
+  voidedPicks: DraftPick[];
+  /**
+   * The pick the manager on the clock couldn't make (every open side was the other side of a team they hold), which
+   * ended regular drafting early. Null unless the draft ended early.
+   */
+  blockedPick: number | null;
 }
 
 export interface Fade {

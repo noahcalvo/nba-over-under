@@ -22,6 +22,8 @@ function league(status: DraftStatus, pickCount = 0): DraftAccess {
       status,
       rounds: 2,
       seatOrder: SEATS,
+      voidedPicks: [],
+      blockedPick: null,
       picks: Array.from({ length: pickCount }, (_, i) => ({
         pickNumber: i + 1,
         managerId: SEATS[seatForPick(i + 1, 4)],

@@ -32,6 +32,8 @@ function input(
       status,
       rounds: 2,
       seatOrder: ["m1", "m2"],
+      voidedPicks: [],
+      blockedPick: null,
       picks: picks.map(([managerId, teamId, side], index) => ({ pickNumber: index + 1, managerId, teamId, side })),
     },
     fades: fades.map(([managerId, targetPickNumber], index) => ({ id: `f${index + 1}`, managerId, targetPickNumber })),

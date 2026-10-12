@@ -22,6 +22,8 @@ function stage(status: DraftStatus = "fades", fades: Fade[] = []): FadeStage & {
       status,
       rounds: 2,
       seatOrder: SEATS,
+      voidedPicks: [],
+      blockedPick: null,
       picks: TEAMS.map((teamId, i) => ({
         pickNumber: i + 1,
         managerId: SEATS[seatForPick(i + 1, 4)],

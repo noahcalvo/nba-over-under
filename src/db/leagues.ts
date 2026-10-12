@@ -52,6 +52,8 @@ async function assemble(db: Db, row: LeagueRow, parts?: LeagueParts): Promise<Le
         teamId: pick.teamId,
         side: pick.side,
       })),
+      voidedPicks: [],
+      blockedPick: null,
     },
     fades: fadeRows.map((fade) => ({
       id: `fade-${fade.managerId}`,

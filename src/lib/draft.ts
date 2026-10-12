@@ -1,5 +1,7 @@
 import type { DraftPick, DraftState, Side, TeamId } from "@/lib/types";
 
+const ALL_SIDES: readonly Side[] = ["OVER", "UNDER"];
+
 export function totalPicks(managerCount: number, rounds: number): number {
   return managerCount * rounds;
 }
@@ -22,15 +24,16 @@ export function pickNumberFor(round: number, seat: number, managerCount: number)
 }
 
 export function createDraftState(seatOrder: string[], rounds: number): DraftState {
-  return { status: "not_started", rounds, seatOrder, picks: [] };
+  return { status: "not_started", rounds, seatOrder, picks: [], voidedPicks: [], blockedPick: null };
 }
 
 export function draftTotalPicks(state: DraftState): number {
   return totalPicks(state.seatOrder.length, state.rounds);
 }
 
-/** The pick being made now, or null once every pick is in. */
+/** The pick being made now, or null once regular drafting is over (every pick in, or ended early). */
 export function currentPickNumber(state: DraftState): number | null {
+  if (state.status === "fades" || state.status === "complete") return null;
   const next = state.picks.length + 1;
   return next > draftTotalPicks(state) ? null : next;
 }
@@ -63,6 +66,68 @@ export function holdsTeam(state: DraftState, managerId: string, teamId: TeamId):
   return state.picks.some((pick) => pick.managerId === managerId && pick.teamId === teamId);
 }
 
+/** Rounds every manager finished. After an early end, the rounds whose picks were kept. */
+export function completedRounds(state: DraftState): number {
+  return Math.floor(state.picks.length / state.seatOrder.length);
+}
+
+/** True when the manager may take at least one open side: a side nobody holds, on a team they don't hold. */
+export function hasEligibleSide(state: DraftState, managerId: string, teamIds: ReadonlySet<TeamId>): boolean {
+  for (const teamId of teamIds) {
+    if (holdsTeam(state, managerId, teamId)) continue;
+    if (ALL_SIDES.some((side) => !findPickForSide(state, teamId, side))) return true;
+  }
+  return false;
+}
+
+/**
+ * Ends regular drafting because the manager on the clock at blockedPick has no eligible side. Only fully completed
+ * rounds are kept; the cut-short round's picks are voided (their sides are unclaimed again) and the fade stage opens.
+ */
+function endEarly(state: DraftState, blockedPick: number): DraftState {
+  const managerCount = state.seatOrder.length;
+  const kept = Math.floor((blockedPick - 1) / managerCount) * managerCount;
+  return {
+    ...state,
+    status: "fades",
+    picks: state.picks.slice(0, kept),
+    voidedPicks: state.picks.slice(kept),
+    blockedPick,
+  };
+}
+
+/** Why and where regular drafting stopped early, for the draft room. */
+export interface EarlyEnd {
+  blockedPick: number;
+  /** The manager who had no eligible side at blockedPick. */
+  blockedManagerId: string;
+  /** The round regular drafting stopped in. */
+  blockedRound: number;
+  configuredRounds: number;
+  completedRounds: number;
+  /** The cut-short round's picks; empty when it stopped on a round's first pick. */
+  voidedPicks: DraftPick[];
+  /** Every side nobody holds, voided ones included, in team order with the Over first. */
+  unclaimedSides: Array<{ teamId: TeamId; side: Side }>;
+}
+
+/** Null unless the draft ended early. teamIds gives the order of unclaimedSides. */
+export function earlyEnd(state: DraftState, teamIds: readonly TeamId[]): EarlyEnd | null {
+  if (state.blockedPick === null) return null;
+  const managerCount = state.seatOrder.length;
+  return {
+    blockedPick: state.blockedPick,
+    blockedManagerId: state.seatOrder[seatForPick(state.blockedPick, managerCount)],
+    blockedRound: roundOf(state.blockedPick, managerCount),
+    configuredRounds: state.rounds,
+    completedRounds: completedRounds(state),
+    voidedPicks: state.voidedPicks,
+    unclaimedSides: teamIds.flatMap((teamId) =>
+      ALL_SIDES.filter((side) => !findPickForSide(state, teamId, side)).map((side) => ({ teamId, side })),
+    ),
+  };
+}
+
 export type DraftAction =
   /** `lines` are the lines the commissioner reviewed; the start fails with lines_changed if they no longer match. */
   | { type: "start"; lines?: Readonly<Record<TeamId, number>> }
@@ -84,7 +149,7 @@ export type DraftResult = { ok: true; state: DraftState } | { ok: false; error: 
 /**
  * Applies one draft action. Who is allowed to act is decided by the caller (see league/permissions);
  * this only enforces draft rules: status transitions, the expected pick number, side availability, one side per team
- * per manager, and snake order. The last pick opens the fade stage (see fades.ts).
+ * per manager, and snake order. The last pick opens the fade stage (see fades.ts); so does a pick after which the next manager has no eligible side (see endEarly).
  */
 export function applyDraftAction(state: DraftState, action: DraftAction, teamIds: ReadonlySet<TeamId>): DraftResult {
   switch (action.type) {
@@ -104,7 +169,11 @@ export function applyDraftAction(state: DraftState, action: DraftAction, teamIds
       if (managerId === null) return fail("not_live");
       if (holdsTeam(state, managerId, action.teamId)) return fail("team_already_held");
       const picks = [...state.picks, { pickNumber, managerId, teamId: action.teamId, side: action.side }];
-      return ok({ ...state, picks, status: picks.length === draftTotalPicks(state) ? "fades" : "live" });
+      const next: DraftState = { ...state, picks };
+      if (picks.length === draftTotalPicks(state)) return ok({ ...next, status: "fades" });
+      // Never end early while the next manager has a side to take; when they have none, nobody drafts again.
+      const nextManagerId = managerForPick(next, pickNumber + 1)!;
+      return ok(hasEligibleSide(next, nextManagerId, teamIds) ? next : endEarly(next, pickNumber + 1));
     }
   }
 }

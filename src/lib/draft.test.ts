@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { TEAM_IDS as ALL_TEAM_IDS } from "@/data/teams";
 import {
   applyDraftAction,
+  completedRounds,
   createDraftState,
   currentPickNumber,
+  earlyEnd,
   findPickForSide,
+  hasEligibleSide,
   holdsTeam,
   managerOnTheClock,
   managerUpNext,
@@ -14,6 +18,8 @@ import {
   totalPicks,
   type DraftAction,
 } from "@/lib/draft";
+import { blockedDraft, confirmNext, plainDraft, seatIds, SIDE_ORDER, startedDraft } from "@/lib/draft-scenarios";
+import { maxRounds } from "@/lib/league/config";
 import type { DraftState, Side } from "@/lib/types";
 
 const SEATS = ["m1", "m2", "m3", "m4"];
@@ -62,7 +68,7 @@ describe("snake order", () => {
 describe("draft state", () => {
   it("starts not started with seat 1 first", () => {
     const state = createDraftState(SEATS, 11);
-    expect(state).toEqual({ status: "not_started", rounds: 11, seatOrder: SEATS, picks: [] });
+    expect(state).toEqual({ status: "not_started", rounds: 11, seatOrder: SEATS, picks: [], voidedPicks: [], blockedPick: null });
     expect(currentPickNumber(state)).toBe(1);
     expect(managerOnTheClock(state)).toBe("m1");
     expect(managerUpNext(state)).toBe("m2");
@@ -174,5 +180,155 @@ describe("applyDraftAction", () => {
     expect(managerUpNext(state)).toBeNull();
     expect(applyDraftAction(state, pick(state, "BOS", "OVER"), TEAM_IDS)).toEqual({ ok: false, error: "not_live" });
     expect(applyDraftAction(state, { type: "pause" }, TEAM_IDS)).toEqual({ ok: false, error: "invalid_transition" });
+  });
+});
+
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+describe("league sizes", () => {
+  it("snakes for any number of managers", () => {
+    expect(range(1, 12).map((p) => seatForPick(p, 6))).toEqual([0, 1, 2, 3, 4, 5, 5, 4, 3, 2, 1, 0]);
+    expect(range(1, 14).map((p) => seatForPick(p, 7))).toEqual([0, 1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1, 0]);
+    expect(totalPicks(6, 10)).toBe(60);
+    expect(totalPicks(7, 8)).toBe(56);
+  });
+
+  it.each([
+    [6, 10],
+    [7, 8],
+    [4, 11],
+    [2, 30],
+    [12, 5],
+    [3, 1],
+  ])("%i managers × %i rounds finishes normally when nobody is blocked", (managerCount, rounds) => {
+    const state = plainDraft(managerCount, rounds);
+    expect(state).toMatchObject({ status: "fades", blockedPick: null, voidedPicks: [] });
+    expect(state.picks).toHaveLength(managerCount * rounds);
+    expect(completedRounds(state)).toBe(rounds);
+    expect(currentPickNumber(state)).toBeNull();
+    expect(earlyEnd(state, [...ALL_TEAM_IDS])).toBeNull();
+    for (const managerId of seatIds(managerCount)) expect(picksForManager(state, managerId)).toHaveLength(rounds);
+  });
+
+  it("finishes normally when the configured final pick takes the last open side", () => {
+    // 6 × 10 uses all 60 sides: after pick 60 nobody could pick again, but the draft is simply done.
+    const state = plainDraft(6, 10);
+    expect(state.picks).toHaveLength(60);
+    expect(state).toMatchObject({ status: "fades", blockedPick: null });
+  });
+});
+
+describe("early end", () => {
+  /** Sides that were open at the block (unclaimed and not voided): the ones the blocked manager couldn't take. */
+  function openAtBlock(state: ReturnType<typeof blockedDraft>) {
+    const voided = new Set(state.voidedPicks.map((pick) => `${pick.teamId} ${pick.side}`));
+    return earlyEnd(state, [...ALL_TEAM_IDS])!.unclaimedSides.filter(
+      (side) => !voided.has(`${side.teamId} ${side.side}`),
+    );
+  }
+
+  it("6 × 10 blocked partway through round 10: keeps 9 rounds, voids the round's picks", () => {
+    const state = blockedDraft(6, 10, 58);
+    expect(state).toMatchObject({ status: "fades", blockedPick: 58, rounds: 10 });
+    expect(state.picks.map((pick) => pick.pickNumber)).toEqual(range(1, 54));
+    expect(state.voidedPicks.map((pick) => pick.pickNumber)).toEqual([55, 56, 57]);
+    expect(completedRounds(state)).toBe(9);
+    expect(currentPickNumber(state)).toBeNull();
+    expect(managerOnTheClock(state)).toBeNull();
+    expect(managerUpNext(state)).toBeNull();
+
+    const summary = earlyEnd(state, [...ALL_TEAM_IDS])!;
+    expect(summary).toMatchObject({
+      blockedPick: 58,
+      blockedManagerId: "m3",
+      blockedRound: 10,
+      configuredRounds: 10,
+      completedRounds: 9,
+    });
+    expect(summary.voidedPicks).toEqual(state.voidedPicks);
+    expect(summary.unclaimedSides).toHaveLength(60 - 54);
+    for (const pick of state.voidedPicks) {
+      expect(summary.unclaimedSides).toContainEqual({ teamId: pick.teamId, side: pick.side });
+      expect(findPickForSide(state, pick.teamId, pick.side)).toBeUndefined();
+    }
+    const open = openAtBlock(state);
+    expect(open.length).toBeGreaterThan(0);
+    for (const side of open) expect(holdsTeam(state, "m3", side.teamId)).toBe(true);
+  });
+
+  it("6 × 10 blocked on the first pick of round 10: nothing to void", () => {
+    const state = blockedDraft(6, 10, 55);
+    expect(state.picks).toHaveLength(54);
+    expect(state.voidedPicks).toEqual([]);
+    expect(earlyEnd(state, [...ALL_TEAM_IDS])).toMatchObject({ blockedManagerId: "m6", completedRounds: 9 });
+  });
+
+  it("6 × 10 blocked at the configured final pick still ends early", () => {
+    const state = blockedDraft(6, 10, 60);
+    expect(state).toMatchObject({ status: "fades", blockedPick: 60 });
+    expect(state.voidedPicks.map((pick) => pick.pickNumber)).toEqual([55, 56, 57, 58, 59]);
+    expect(earlyEnd(state, [...ALL_TEAM_IDS])!.blockedManagerId).toBe("m1");
+  });
+
+  it("7 × 8 blocked partway through round 8: keeps 7 rounds", () => {
+    const state = blockedDraft(7, 8, 54);
+    expect(state.picks.map((pick) => pick.pickNumber)).toEqual(range(1, 49));
+    expect(state.voidedPicks.map((pick) => pick.pickNumber)).toEqual([50, 51, 52, 53]);
+    const summary = earlyEnd(state, [...ALL_TEAM_IDS])!;
+    expect(summary).toMatchObject({ blockedManagerId: "m3", blockedRound: 8, configuredRounds: 8, completedRounds: 7 });
+    expect(summary.unclaimedSides).toHaveLength(60 - 49);
+    for (const side of openAtBlock(state)) expect(holdsTeam(state, "m3", side.teamId)).toBe(true);
+  });
+
+  it("takes no more picks once regular drafting ended", () => {
+    const state = blockedDraft(6, 10, 58);
+    expect(applyDraftAction(state, { type: "confirm", teamId: "MIN", side: "OVER", pickNumber: 58 }, ALL_TEAM_IDS)).toEqual({
+      ok: false,
+      error: "not_live",
+    });
+    expect(applyDraftAction(state, { type: "pause" }, ALL_TEAM_IDS)).toEqual({ ok: false, error: "invalid_transition" });
+  });
+
+  it("never ends early while the next manager has a side, and always ends when they have none", () => {
+    // Random legal drafts for every size, from a fixed seed so failures reproduce.
+    let seed = 2026;
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let managerCount = 2; managerCount <= 12; managerCount++) {
+      for (const rounds of [maxRounds(managerCount), maxRounds(managerCount) - 1]) {
+        for (let run = 0; run < 5; run++) {
+          let state = startedDraft(managerCount, rounds);
+          while (state.status === "live") {
+            const managerId = managerOnTheClock(state)!;
+            const options = SIDE_ORDER.filter(
+              (choice) => !findPickForSide(state, choice.teamId, choice.side) && !holdsTeam(state, managerId, choice.teamId),
+            );
+            expect(options.length).toBeGreaterThan(0);
+            const choice = options[Math.floor(random() * options.length)];
+            const before = state;
+            state = confirmNext(state, choice);
+            if (state.blockedPick === null) continue;
+            // The moment of the block: every pick made, nothing voided yet.
+            const pickNumber = before.picks.length + 1;
+            const atBlock = { ...before, picks: [...before.picks, { pickNumber, managerId, ...choice }] };
+            const blocked = state.seatOrder[seatForPick(state.blockedPick, managerCount)];
+            expect(state.blockedPick).toBe(pickNumber + 1);
+            expect(hasEligibleSide(atBlock, blocked, ALL_TEAM_IDS)).toBe(false);
+            for (const side of SIDE_ORDER) {
+              const attempt = applyDraftAction(atBlock, { type: "confirm", ...side, pickNumber: pickNumber + 1 }, ALL_TEAM_IDS);
+              expect(attempt.ok).toBe(false);
+            }
+            expect(state.picks).toHaveLength(Math.floor(pickNumber / managerCount) * managerCount);
+            expect(state.picks.length + state.voidedPicks.length).toBe(pickNumber);
+            expect(completedRounds(state)).toBeGreaterThanOrEqual(1);
+          }
+          if (state.blockedPick === null) expect(state.picks).toHaveLength(managerCount * rounds);
+        }
+      }
+    }
   });
 });

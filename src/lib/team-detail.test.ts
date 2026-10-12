@@ -22,6 +22,8 @@ const draft: DraftState = {
   status: "complete",
   rounds: 11,
   seatOrder: ["m1", "m2", "m3", "m4"],
+  voidedPicks: [],
+  blockedPick: null,
   picks: [
     { pickNumber: 1, managerId: "m2", teamId: "MIN", side: "OVER" },
     { pickNumber: 9, managerId: "m1", teamId: "ORL", side: "OVER" },

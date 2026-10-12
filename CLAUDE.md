@@ -35,17 +35,19 @@ Next API.
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
   11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
-  `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes).
+  `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
+  `TUTORIAL` and `TOUR` (`tour.ts`: guided demo size and pacing, overlay spacing).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
   schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
   team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest market line), feed errors
   (`feed-error.ts`), league size rules (`league/config.ts`), scripted test drafts (`draft-scenarios.ts`, tests only),
-  environment checks (`env.ts`).
+  environment checks (`env.ts`), guided demo (`tutorial/`: in-memory league commands, deterministic simulation, steps,
+  snapshot) and tour layout (`tour/`: target ids, geometry, callout placement).
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
-  mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) and `demo-league.ts`. Never
-  add per-page fixtures.
+  mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) `demo-league.ts` and
+  `tutorial-league.ts` (the guided demo's fixture: live 4 × 11, empty board). Never add per-page fixtures.
 - `src/db/` — Drizzle schema, repositories and `actions.ts` (every league mutation). No `server-only`, so Vitest can
   load it; only `src/server/` and `src/app/` (the route handlers) import it, never components. Migrations live in
   `drizzle/`.
@@ -54,7 +56,9 @@ Next API.
   loader (`team-page.ts`), HTTP helpers.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
-- `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area.
+- `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area. `tour/` reusable
+  guided-tour overlay; `tutorial/` the guided draft. `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds
+  it `useLeagueDraft`.
 
 ## Domain rules
 - Every score, standing and displayed total is derived from picks, fades and team records through
@@ -97,6 +101,14 @@ Next API.
   disagrees. The demo league and `RECORD_SOURCE=static` use the mock log. A failed game log or line read only empties
   its own panel. The sportsbook panel shows FanDuel's current line only for the league's season, never in scoring;
   locked-line pace and wins needed use the frozen line.
+- Guided demo (`/l/demo/draft`, replacing the code-built demo's draft room): an in-memory league (`tutorial`, never
+  stored, `isDemo: false` so the rules run) in a real `DraftRoomView`; every command, simulated or not, goes through
+  `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state (`tutorialStep`). Tag tour targets
+  with `tourTarget(id)` from `src/lib/tour/targets.ts`, never by class or text. State lives in `sessionStorage`
+  (`courtline.tutorial.v1`) as a replayable snapshot; the scoring walkthrough (`/l/demo/scoring`, not built yet) reads
+  it via `tutorialResult`. ESLint forbids server, database and `fetch` use in the demo folders. Only the demo's draft
+  exists: its Overview, Rosters and team pages show `DemoChapterPlaceholder` (nav: Soon) until the scoring chapter
+  rebuilds them around the user's demo draft.
 - Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
   league invite and resets seats.
 

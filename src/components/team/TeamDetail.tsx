@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { teamOwnership, type TeamPageData } from "@/lib/team-detail";
-import type { Team } from "@/lib/types";
+import type { Side, Team } from "@/lib/types";
 import { OwnershipCard } from "./OwnershipCard";
 import { SeasonProgressPanel } from "./SeasonProgressPanel";
 import { useShowProjected } from "./ShowProjected";
@@ -10,7 +10,21 @@ import { SportsbookPanel } from "./SportsbookPanel";
 import { TeamHeader } from "./TeamHeader";
 import { TeamStatStrip } from "./TeamStatStrip";
 
-export function TeamDetail({ league, info, lockedLine, teamOptions, market, gameLog }: TeamPageData) {
+export function TeamDetail({
+  league,
+  info,
+  lockedLine,
+  teamOptions,
+  market,
+  gameLog,
+  historyNote,
+  highlightSide,
+}: TeamPageData & {
+  /** A note under the chart about where the game history comes from. */
+  historyNote?: string;
+  /** A side to name for a guided tour (its ownership card). */
+  highlightSide?: Side;
+}) {
   const [showProjected, setShowProjected] = useShowProjected();
   const team = useMemo<Team | null>(() => (lockedLine === null ? null : { ...info, line: lockedLine }), [info, lockedLine]);
   const [over, under] = useMemo(() => teamOwnership(league, info.id, team), [league, info.id, team]);
@@ -35,13 +49,21 @@ export function TeamDetail({ league, info, lockedLine, teamOptions, market, game
           lockedLine={lockedLine}
           showProjected={showProjected}
           teamNames={teamNames}
-          className="xl:col-span-2"
+          note={historyNote}
+          className={market ? "xl:col-span-2" : "xl:col-span-3"}
         />
-        <SportsbookPanel market={market} lockedLine={lockedLine} />
+        {market && <SportsbookPanel market={market} lockedLine={lockedLine} />}
       </div>
       <div className="grid gap-6 xl:grid-cols-2">
-        <OwnershipCard ownership={over} record={info} showProjected={showProjected} />
-        <OwnershipCard ownership={under} record={info} showProjected={showProjected} />
+        {[over, under].map((ownership) => (
+          <OwnershipCard
+            key={ownership.side}
+            ownership={ownership}
+            record={info}
+            showProjected={showProjected}
+            tour={ownership.side === highlightSide ? "my-side" : undefined}
+          />
+        ))}
       </div>
     </div>
   );

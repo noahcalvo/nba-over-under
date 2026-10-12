@@ -6,6 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Switch } from "@/components/ui/Switch";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import type { TeamOption } from "@/lib/team-detail";
+import { tourTarget } from "@/lib/tour/targets";
 import type { League, TeamInfo } from "@/lib/types";
 
 export function TeamHeader({
@@ -28,7 +29,7 @@ export function TeamHeader({
       <nav aria-label="Breadcrumb" className="min-w-0 text-base">
         <ol className="flex min-w-0 items-center gap-2 text-fog-300">
           <li className="min-w-0 truncate">
-            <Link href={`/l/${league.id}`} className="text-link hover:underline">
+            <Link href={`/l/${league.id}`} {...tourTarget("nav-overview")} className="text-link hover:underline">
               {league.name}
             </Link>
           </li>

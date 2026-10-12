@@ -1,5 +1,5 @@
 import { ClipboardList, House, Settings, UserRound, type LucideIcon } from "lucide-react";
-import { DEMO_LEAGUE_ID } from "@/data/demo-league";
+import type { TourTargetId } from "@/lib/tour/targets";
 
 export interface NavItem {
   href: string;
@@ -10,15 +10,15 @@ export interface NavItem {
   ready: boolean;
   /** Match the path exactly (the overview is the league root). */
   exact: boolean;
+  /** Names the link for a guided tour (data-tour). */
+  tour?: TourTargetId;
 }
 
 export function navItems(leagueId: string): NavItem[] {
   const base = `/l/${leagueId}`;
-  // The demo has only its draft so far; Overview and Rosters come with its scoring chapter.
-  const built = leagueId !== DEMO_LEAGUE_ID;
   return [
-    { href: base, label: "League overview", shortLabel: "Overview", icon: House, ready: built, exact: true },
-    { href: `${base}/rosters`, label: "Rosters", shortLabel: "Rosters", icon: UserRound, ready: built, exact: false },
+    { href: base, label: "League overview", shortLabel: "Overview", icon: House, ready: true, exact: true, tour: "nav-overview" },
+    { href: `${base}/rosters`, label: "Rosters", shortLabel: "Rosters", icon: UserRound, ready: true, exact: false },
     { href: `${base}/settings`, label: "League settings", shortLabel: "Settings", icon: Settings, ready: true, exact: false },
     { href: `${base}/draft`, label: "Draft room", shortLabel: "Draft", icon: ClipboardList, ready: true, exact: false },
   ];

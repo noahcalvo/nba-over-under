@@ -21,14 +21,20 @@ export function LeagueOverview({
   teams,
   viewerId,
   records,
+  initialBasis = "projected",
+  highlightPick,
 }: {
   league: League;
   teams: Team[];
   viewerId: string | null;
   records: RecordStatus | null;
+  /** The scoring basis it opens on. */
+  initialBasis?: Basis;
+  /** A pick to name for a guided tour (its row and team link). */
+  highlightPick?: number;
 }) {
   const [selectedId, setSelectedId] = useState(viewerId ?? league.managers[0].id);
-  const [basis, setBasis] = useState<Basis>("projected");
+  const [basis, setBasis] = useState<Basis>(initialBasis);
 
   const teamsById = useMemo(() => indexTeams(teams), [teams]);
   const projected = useMemo(() => computeStandings(league, teamsById, "projected"), [league, teamsById]);
@@ -59,6 +65,7 @@ export function LeagueOverview({
           onBasisChange={setBasis}
           finalAvailable={final.anyScored}
           draftComplete={league.draft.status === "complete"}
+          highlightPick={highlightPick}
         />
         <div className="flex min-w-0 flex-col gap-6">
           <StandingsPanel

@@ -41,7 +41,12 @@ export function BottomNav({ leagueId }: { leagueId: string }) {
         const active = isActive(item, pathname);
         return (
           <li key={item.href}>
-            <Link href={item.href} aria-current={active ? "page" : undefined} className={itemClass(active)}>
+            <Link
+              href={item.href}
+              data-tour={item.tour}
+              aria-current={active ? "page" : undefined}
+              className={itemClass(active)}
+            >
               <ItemContent item={item} />
             </Link>
           </li>

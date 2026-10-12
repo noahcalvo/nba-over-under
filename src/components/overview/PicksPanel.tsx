@@ -27,6 +27,7 @@ export function PicksPanel({
   onBasisChange,
   finalAvailable,
   draftComplete,
+  highlightPick,
 }: {
   leagueId: string;
   managers: Manager[];
@@ -38,6 +39,8 @@ export function PicksPanel({
   onBasisChange: (basis: Basis) => void;
   finalAvailable: boolean;
   draftComplete: boolean;
+  /** A pick to name for a guided tour. */
+  highlightPick?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const calls = expanded ? row.calls : row.calls.slice(0, COLLAPSED_COUNT);
@@ -75,8 +78,8 @@ export function PicksPanel({
         </div>
       ) : (
         <>
-          <PicksTable calls={calls} basis={basis} />
-          <PickCards calls={calls} basis={basis} />
+          <PicksTable calls={calls} basis={basis} highlightPick={highlightPick} />
+          <PickCards calls={calls} basis={basis} highlightPick={highlightPick} />
         </>
       )}
 

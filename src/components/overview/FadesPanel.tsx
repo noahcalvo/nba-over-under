@@ -12,7 +12,7 @@ import type { Manager } from "@/lib/types";
 
 export function FadesPanel({ row, managers }: { row: StandingRow; managers: Manager[] }) {
   return (
-    <Panel title="Fade picks" icon={<Crosshair aria-hidden className="size-5 text-fog-300" />}>
+    <Panel title="Fade picks" tour="fades" icon={<Crosshair aria-hidden className="size-5 text-fog-300" />}>
       {row.fades.length === 0 ? (
         <p className="px-4 py-5 text-sm text-fog-400 sm:px-5">No fades for this manager.</p>
       ) : (

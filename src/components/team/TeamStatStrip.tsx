@@ -3,6 +3,7 @@ import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
 import { gamesRemaining, winsNeededForOver } from "@/lib/game-log/progress";
 import type { TeamRecord } from "@/lib/records/types";
 import { gamesPlayed, projectWins } from "@/lib/scoring";
+import { tourTarget } from "@/lib/tour/targets";
 
 interface Stat {
   label: string;
@@ -57,7 +58,7 @@ export function TeamStatStrip({
     stats.push({ label: "Wins needed for Over", value: String(needed), sub: remainingText(needed, gamesRemaining(record)) });
   }
   return (
-    <section aria-label="Season summary" className="rounded-xl border border-ink-700 bg-ink-850/90">
+    <section aria-label="Season summary" {...tourTarget("team-stats")} className="rounded-xl border border-ink-700 bg-ink-850/90">
       <dl className={`grid grid-cols-2 gap-y-5 py-5 ${COLUMNS[stats.length]}`}>
         {stats.map((stat) => (
           <div key={stat.label} className="flex min-w-0 flex-col items-center px-3 text-center sm:border-l sm:border-ink-700 sm:first:border-l-0">

@@ -7,8 +7,13 @@ describe("navItems", () => {
     expect(navItems("abc234").every((item) => item.ready)).toBe(true);
   });
 
-  it("marks the demo's Overview and Rosters as coming with the scoring chapter", () => {
-    const ready = Object.fromEntries(navItems(DEMO_LEAGUE_ID).map((item) => [item.shortLabel, item.ready]));
-    expect(ready).toEqual({ Overview: false, Rosters: false, Settings: true, Draft: true });
+  it("marks every demo page ready: the guided season shows the demo's Overview and Rosters", () => {
+    expect(navItems(DEMO_LEAGUE_ID).every((item) => item.ready)).toBe(true);
+  });
+
+  it("names the Overview link for the guided season's way back", () => {
+    expect(navItems(DEMO_LEAGUE_ID).filter((item) => item.tour === "nav-overview").map((item) => item.href)).toEqual([
+      `/l/${DEMO_LEAGUE_ID}`,
+    ]);
   });
 });

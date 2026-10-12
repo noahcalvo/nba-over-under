@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { TeamDetail } from "@/components/team/TeamDetail";
 import { TeamFallback } from "@/components/team/TeamFallback";
+import { DemoChapterPlaceholder } from "@/components/tutorial/DemoChapterPlaceholder";
+import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { getLeagueOrNotFound } from "@/server/league";
 import { loadTeamPage } from "@/server/team-page";
 
@@ -18,6 +20,7 @@ export default function TeamPage({ params }: PageProps<"/l/[leagueId]/teams/[tea
 
 async function Team({ params }: { params: PageProps<"/l/[leagueId]/teams/[teamId]">["params"] }) {
   const { leagueId, teamId } = await params;
+  if (leagueId === DEMO_LEAGUE_ID) return <DemoChapterPlaceholder title="Team page" />;
   const data = await loadTeamPage(await getLeagueOrNotFound(leagueId), teamId);
   if (!data) notFound();
   return <TeamDetail {...data} />;

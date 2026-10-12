@@ -20,3 +20,14 @@ export const TOUR = {
   /** Space between the pointer arrow and the element it points at. */
   pointerGap: 6,
 } as const;
+
+/** The guided demo's simulated season: where Midseason stops and how far teams stray from their lines. */
+export const TUTORIAL_SEASON = {
+  /** Games every team has played at the Midseason checkpoint. */
+  midseasonGames: 41,
+  /** Standard deviation, in wins over a full season, of a team's hidden strength around its line. */
+  strengthSpreadWins: 6,
+  /** A team's hidden strength never goes below or above these full-season win totals. */
+  minStrengthWins: 12,
+  maxStrengthWins: 70,
+} as const;

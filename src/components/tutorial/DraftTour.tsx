@@ -27,7 +27,7 @@ export function DraftTour() {
 }
 
 function DraftTourSession() {
-  const { league, progress, generation, driver, acknowledge, simulate, restart } = useTutorialSession();
+  const { league, progress, driver, acknowledge, simulate, exit } = useTutorialSession();
   const [hasSelection, setHasSelection] = useState(false);
   const [hasFadeTarget, setHasFadeTarget] = useState(false);
   const onSelectionChange = useCallback((selection: SideRef | null) => setHasSelection(selection !== null), []);
@@ -35,26 +35,28 @@ function DraftTourSession() {
   const stepId = tutorialStep(progress, { league, hasSelection, hasFadeTarget });
   const step = TUTORIAL_STEPS[stepId];
 
-  // Simulated steps play one command at a time; each new league version schedules the next.
+  // Simulated steps play one command at a time; each new league version schedules the next. The other fades stop
+  // simulating once the draft completes, and their step then waits for Continue.
+  const fadesDone = league.draft.status === "complete";
+  const simulating = stepId === "simulate" ? "draft" : stepId === "fade-sim" && !fadesDone ? "fades" : null;
   useEffect(() => {
-    if (step.advance !== "automatic") return;
-    const kind = stepId === "simulate" ? "draft" : "fades";
+    if (simulating === null) return;
     const timer = window.setTimeout(
-      () => simulate(kind, false),
-      kind === "draft" ? TUTORIAL.pickIntervalMs : TUTORIAL.fadeIntervalMs,
+      () => simulate(simulating, false),
+      simulating === "draft" ? TUTORIAL.pickIntervalMs : TUTORIAL.fadeIntervalMs,
     );
     return () => window.clearTimeout(timer);
-  }, [step.advance, stepId, league.version, simulate]);
+  }, [simulating, league.version, simulate]);
 
   const continueFor: Partial<Record<TutorialStepId, () => void>> = {
     welcome: () => acknowledge("welcomed"),
     snake: () => acknowledge("snakeExplained"),
+    ...(fadesDone && { "fade-sim": () => acknowledge("fadesWatched") }),
   };
 
   return (
     <>
       <DraftRoomView
-        key={generation}
         driver={driver}
         access={NO_ACCESS}
         headerTag="Demo draft"
@@ -68,12 +70,11 @@ function DraftTourSession() {
         onFadeTargetChange={onFadeTargetChange}
       />
       <TourOverlay
-        key={`${generation}-${stepId}`}
+        key={stepId}
         step={step}
         stepLabel={`Step ${step.number} of ${TUTORIAL_STEP_COUNT}`}
         onContinue={continueFor[stepId]}
-        onRestart={restart}
-        exitHref={EXIT_HREF}
+        exit={{ label: "Exit demo", href: EXIT_HREF, onExit: exit }}
       >
         {stepId === "simulate" && (
           <SimulationProgress label={draftProgress(league)} onSkip={() => simulate("draft", true)} />
@@ -81,7 +82,7 @@ function DraftTourSession() {
         {stepId === "fade-sim" && (
           <SimulationProgress
             label={`${league.fades.length} of ${league.managers.length} fades locked`}
-            onSkip={() => simulate("fades", true)}
+            onSkip={fadesDone ? undefined : () => simulate("fades", true)}
           />
         )}
         {stepId === "complete" && (
@@ -103,15 +104,18 @@ function draftProgress(league: League): string {
   return `Pick ${current} of ${total} · Round ${round}, ${round % 2 === 1 ? "left to right" : "right to left"}`;
 }
 
-function SimulationProgress({ label, onSkip }: { label: string; onSkip: () => void }) {
+/** Without onSkip (the simulation is done) only the label shows. */
+function SimulationProgress({ label, onSkip }: { label: string; onSkip?: () => void }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <p role="status" className="text-sm font-semibold text-fog-50">
         {label}
       </p>
-      <Button variant="secondary" size="sm" onClick={onSkip}>
-        Skip to the end
-      </Button>
+      {onSkip && (
+        <Button variant="secondary" size="sm" onClick={onSkip}>
+          Skip to the end
+        </Button>
+      )}
     </div>
   );
 }

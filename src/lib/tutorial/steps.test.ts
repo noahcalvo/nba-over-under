@@ -57,6 +57,11 @@ describe("tutorialStep", () => {
     expect(tutorialStep(progress, facts(league))).toBe("fade-sim");
 
     league = simulateAll(league, teams, "fades");
+    // The other fades never flash by: the step waits for Continue even after the draft completes.
+    expect(league.draft.status).toBe("complete");
+    expect(tutorialStep(progress, facts(league))).toBe("fade-sim");
+
+    progress = { ...progress, fadesWatched: true };
     expect(tutorialStep(progress, facts(league))).toBe("complete");
   });
 });
@@ -71,7 +76,7 @@ describe("TUTORIAL_STEPS", () => {
     for (const id of TUTORIAL_STEP_ORDER) {
       const step = TUTORIAL_STEPS[id];
       expect(step.spotlight.length).toBeGreaterThan(0);
-      expect(step.continueLabel !== undefined).toBe(step.advance === "continue");
+      expect(step.continueLabel !== undefined).toBe(step.advance === "continue" || step.advance === "watch");
       if (step.advance === "action") expect(step.interactive.length).toBeGreaterThan(0);
     }
   });

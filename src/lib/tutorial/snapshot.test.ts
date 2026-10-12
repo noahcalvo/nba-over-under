@@ -25,17 +25,17 @@ const faded = must(
   applyTutorialCommand(drafted, TUTORIAL_VIEWER_ID, { type: "fade", managerId: TUTORIAL_VIEWER_ID, targetPickNumber: 2 }),
 );
 const complete = simulateAll(faded, teams, "fades");
-const seen: TutorialProgress = { welcomed: true, snakeExplained: true };
+const seen: TutorialProgress = { welcomed: true, snakeExplained: true, fadesWatched: false };
 
 describe("snapshotOf / restoreTutorial", () => {
   it("restores the same league and progress at every stage, through JSON", () => {
     const stages: Array<[League, TutorialProgress]> = [
       [fresh, INITIAL_PROGRESS],
-      [opened, { welcomed: true, snakeExplained: false }],
+      [opened, { welcomed: true, snakeExplained: false, fadesWatched: false }],
       [midDraft, seen],
       [drafted, seen],
       [faded, seen],
-      [complete, seen],
+      [complete, { ...seen, fadesWatched: true }],
     ];
     for (const [league, progress] of stages) {
       const stored: unknown = JSON.parse(JSON.stringify(snapshotOf(league, progress)));
@@ -51,7 +51,8 @@ describe("snapshotOf / restoreTutorial", () => {
       "tutorial",
       {},
       { ...good, v: 2 },
-      { ...good, progress: { welcomed: "yes", snakeExplained: false } },
+      { ...good, progress: { welcomed: "yes", snakeExplained: false, fadesWatched: false } },
+      { ...good, progress: { welcomed: true, snakeExplained: true } },
       { ...good, picks: [{ teamId: "PHI", side: "SIDEWAYS" }] },
       { ...good, picks: [{ teamId: "PHI", side: "OVER" }, { teamId: "PHI", side: "OVER" }] },
       { ...good, fades: [{ managerId: "m1", targetPickNumber: 1 }] },

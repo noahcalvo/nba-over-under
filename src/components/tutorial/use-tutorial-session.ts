@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DraftRoomDriver } from "@/components/draft/DraftRoomView";
 import { buildTutorialLeague, TUTORIAL_VIEWER_ID, tutorialTeams } from "@/data/tutorial-league";
 import type { DraftCommand } from "@/lib/fades";
@@ -15,18 +15,12 @@ import { clearTutorialSnapshot, readTutorialSnapshot, writeTutorialSnapshot } fr
 interface SessionState {
   league: League;
   progress: TutorialProgress;
-  /** Bumped by a restart so the room's own state (selection, filters) starts over too. */
-  generation: number;
-}
-
-function freshState(generation: number): SessionState {
-  return { league: buildTutorialLeague(), progress: INITIAL_PROGRESS, generation };
 }
 
 /** Client only (DraftTour renders this after mount): resumes this tab's demo when its snapshot replays cleanly. */
 function initialState(): SessionState {
   const restored = typeof window === "undefined" ? null : restoreTutorial(readTutorialSnapshot());
-  return restored ? { ...restored, generation: 0 } : freshState(0);
+  return restored ?? { league: buildTutorialLeague(), progress: INITIAL_PROGRESS };
 }
 
 /** The guided demo's league, held in memory: a DraftRoomDriver whose actions run the real rules and go nowhere. */
@@ -34,9 +28,13 @@ export function useTutorialSession() {
   const [state, setState] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
   const teams = useMemo(() => tutorialTeams(), []);
-  const { league, progress, generation } = state;
+  const { league, progress } = state;
+  // Set by exit, so a simulated step landing during the navigation away can't save the demo again.
+  const exited = useRef(false);
 
-  useEffect(() => writeTutorialSnapshot(snapshotOf(league, progress)), [league, progress]);
+  useEffect(() => {
+    if (!exited.current) writeTutorialSnapshot(snapshotOf(league, progress));
+  }, [league, progress]);
 
   const view = useMemo<LeagueView>(
     () => ({ league, viewerId: TUTORIAL_VIEWER_ID, teams, lineReview: null, records: null }),
@@ -87,11 +85,11 @@ export function useTutorialSession() {
     [teams],
   );
 
-  const restart = useCallback(() => {
+  /** Leaving ends the demo: the next visit starts over from step 1. */
+  const exit = useCallback(() => {
+    exited.current = true;
     clearTutorialSnapshot();
-    setError(null);
-    setState((current) => freshState(current.generation + 1));
   }, []);
 
-  return { league, progress, generation, driver, acknowledge, simulate, restart };
+  return { league, progress, driver, acknowledge, simulate, exit };
 }

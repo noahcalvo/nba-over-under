@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -25,8 +25,7 @@ export function TourOverlay({
   step,
   stepLabel,
   onContinue,
-  onRestart,
-  exitHref,
+  exit,
   children,
 }: {
   step: TourStep;
@@ -34,8 +33,8 @@ export function TourOverlay({
   stepLabel: string;
   /** Required when the step has a continueLabel. */
   onContinue?: () => void;
-  onRestart: () => void;
-  exitHref: string;
+  /** The one way out, always shown: e.g. "Exit demo". onExit runs before navigating to href. */
+  exit: { label: string; href: string; onExit?: () => void };
   /** Step-specific controls under the text (simulation progress, finish links). */
   children?: ReactNode;
 }) {
@@ -134,11 +133,13 @@ export function TourOverlay({
           <Button variant="ghost" size="sm" onClick={() => setFolded((current) => !current)} aria-expanded={!folded} aria-label={folded ? "Show tip" : "Hide tip"}>
             {folded ? <ChevronUp aria-hidden className="size-4" /> : <ChevronDown aria-hidden className="size-4" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onRestart} aria-label="Restart demo">
-            <RotateCcw aria-hidden className="size-4" />
-          </Button>
-          <Link href={exitHref} aria-label="Exit demo" className="inline-flex size-8 items-center justify-center rounded-lg text-fog-300 hover:text-fog-50 focus-visible:outline-2 focus-visible:outline-accent">
-            <X aria-hidden className="size-4" />
+          <Link
+            href={exit.href}
+            onClick={exit.onExit}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-fog-300 hover:text-fog-50 focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <LogOut aria-hidden className="size-4" />
+            {exit.label}
           </Link>
         </div>
         <h2 id={titleId} className="mt-1 font-display text-xl font-semibold text-fog-50">

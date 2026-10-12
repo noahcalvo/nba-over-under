@@ -35,7 +35,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function restoreTutorial(raw: unknown): { league: League; progress: TutorialProgress } | null {
   if (!isRecord(raw) || raw.v !== 1 || !Array.isArray(raw.picks) || !Array.isArray(raw.fades)) return null;
   const progress = raw.progress;
-  if (!isRecord(progress) || typeof progress.welcomed !== "boolean" || typeof progress.snakeExplained !== "boolean") {
+  if (
+    !isRecord(progress) ||
+    typeof progress.welcomed !== "boolean" ||
+    typeof progress.snakeExplained !== "boolean" ||
+    typeof progress.fadesWatched !== "boolean"
+  ) {
     return null;
   }
   let league = buildTutorialLeague();
@@ -55,7 +60,14 @@ export function restoreTutorial(raw: unknown): { league: League; progress: Tutor
     if (!result.ok) return null;
     league = result.value;
   }
-  return { league, progress: { welcomed: progress.welcomed, snakeExplained: progress.snakeExplained } };
+  return {
+    league,
+    progress: {
+      welcomed: progress.welcomed,
+      snakeExplained: progress.snakeExplained,
+      fadesWatched: progress.fadesWatched,
+    },
+  };
 }
 
 /** What the scoring walkthrough starts from. */

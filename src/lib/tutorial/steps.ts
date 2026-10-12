@@ -37,16 +37,21 @@ export const TUTORIAL_STEP_COUNT = 8;
 
 export interface TutorialStep extends TourStep {
   number: number;
-  /** continue: a button; action: the user's own successful action; automatic: simulation; end: the last step. */
-  advance: "continue" | "action" | "automatic" | "end";
+  /**
+   * continue: a button; action: the user's own successful action; automatic: simulation; watch: simulation, then a
+   * button once it is done (so it never flashes by); end: the last step.
+   */
+  advance: "continue" | "action" | "automatic" | "watch" | "end";
 }
 
 export interface TutorialProgress {
   welcomed: boolean;
   snakeExplained: boolean;
+  /** Continued past the other managers' fades. */
+  fadesWatched: boolean;
 }
 
-export const INITIAL_PROGRESS: TutorialProgress = { welcomed: false, snakeExplained: false };
+export const INITIAL_PROGRESS: TutorialProgress = { welcomed: false, snakeExplained: false, fadesWatched: false };
 
 export interface TutorialFacts {
   league: League;
@@ -58,7 +63,7 @@ export interface TutorialFacts {
 
 export function tutorialStep(progress: TutorialProgress, facts: TutorialFacts): TutorialStepId {
   const { draft, fades } = facts.league;
-  if (draft.status === "complete") return "complete";
+  if (draft.status === "complete") return progress.fadesWatched ? "complete" : "fade-sim";
   if (draft.status === "fades") {
     if (fadeFor(fades, TUTORIAL_VIEWER_ID)) return "fade-sim";
     return facts.hasFadeTarget ? "confirm-fade" : "fades";
@@ -151,11 +156,12 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
   },
   "fade-sim": {
     number: 7,
-    advance: "automatic",
+    advance: "watch",
     title: "The other fades",
-    body: "Your fade is locked. The other managers are choosing theirs, in any order.",
+    body: "Your fade is locked. Watch the other managers choose theirs, in any order, then continue.",
     spotlight: ["fade-status"],
     interactive: [],
+    continueLabel: "Continue",
   },
   complete: {
     number: 8,

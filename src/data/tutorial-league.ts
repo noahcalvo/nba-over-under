@@ -13,7 +13,7 @@ export const TUTORIAL_LEAGUE_ID = "tutorial";
 export const TUTORIAL_VIEWER_ID = "m1";
 
 /** One name per seat. Every seat is claimed so nobody picks or fades for an open seat. */
-export const TUTORIAL_MANAGER_NAMES: readonly string[] = ["You", "Avery", "Jordan", "Riley"];
+export const TUTORIAL_MANAGER_NAMES: readonly string[] = ["You", "Kobe Bryant", "Michael Jordan", "Larry Bird"];
 
 /** A live 4 × 11 draft on the mock lines with an empty board. Writable (isDemo false) so the real rules run in memory. */
 export function buildTutorialLeague(): League {

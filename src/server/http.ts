@@ -20,6 +20,7 @@ const STATUS: Record<ApiError, number> = {
   not_fading: 409,
   fade_locked: 409,
   unknown_pick: 400,
+  voided_pick: 400,
   own_pick: 400,
   lines_unavailable: 503,
   lines_changed: 409,

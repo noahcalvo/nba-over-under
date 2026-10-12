@@ -54,6 +54,7 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   not_fading: "Fades open once every team pick is in.",
   fade_locked: "That fade is already locked in.",
   unknown_pick: "That pick doesn't exist.",
+  voided_pick: "That pick was voided when the draft ended early. Fade a kept pick.",
   own_pick: "Fade another manager's pick, not your own.",
   invalid_request: "Invalid request.",
 };

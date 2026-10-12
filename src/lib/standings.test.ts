@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { SCORING } from "@/config/scoring";
+import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
+import { blockedDraft, seatIds } from "@/lib/draft-scenarios";
+import { indexTeams, withLines } from "@/lib/lines";
 import { closestCalls, computeStandings, type ScoringInput } from "@/lib/standings";
 import type { DraftStatus, Manager, Side, Team, TeamId } from "@/lib/types";
 
@@ -170,5 +174,16 @@ describe("closestCalls", () => {
     const m1 = computeStandings(league, TEAMS, "projected").rows.find((row) => row.managerId === "m1")!;
     expect(closestCalls(m1).map((call) => `${call.team.id} ${call.pick.side}`)).toEqual(["P UNDER", "Q OVER"]);
     expect(closestCalls(m1, 1)).toHaveLength(1);
+  });
+});
+
+describe("after an early end", () => {
+  it("scores only kept picks", () => {
+    const draft = blockedDraft(6, 10, 58);
+    const managers = seatIds(6).map((id, seat) => ({ id, seat, displayName: null }));
+    const standings = computeStandings({ managers, draft, fades: [] }, indexTeams(withLines(TEAM_INFO, STATIC_LINES)), "projected");
+    const scoredPicks = standings.rows.flatMap((row) => row.calls.map((call) => call.pick.pickNumber));
+    expect(scoredPicks.sort((a, b) => a - b)).toEqual(Array.from({ length: 54 }, (_, i) => i + 1));
+    for (const row of standings.rows) expect(row.calls).toHaveLength(9);
   });
 });

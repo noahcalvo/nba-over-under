@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { FeedRead } from "@/lib/lines";
+import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
+import { blockedDraft, seatIds } from "@/lib/draft-scenarios";
+import { type FeedRead, indexTeams, withLines } from "@/lib/lines";
 import {
   decidedOutcome,
   fadeDisplay,
@@ -262,5 +265,18 @@ describe("teamOptions", () => {
       { id: "LAC", label: "LA Clippers" },
       { id: "LAL", label: "Los Angeles Lakers" },
     ]);
+  });
+});
+
+describe("a voided side", () => {
+  it("shows as unclaimed", () => {
+    const draft = blockedDraft(6, 10, 58);
+    const managers = seatIds(6).map((id, seat) => ({ id, seat, displayName: null }));
+    const teams = indexTeams(withLines(TEAM_INFO, STATIC_LINES));
+    const voided = draft.voidedPicks[0];
+    const sides = teamOwnership({ managers, draft, fades: [] }, voided.teamId, teams[voided.teamId]);
+    const side = sides.find((candidate) => candidate.side === voided.side)!;
+    expect(side.pick).toBeNull();
+    expect(side.manager).toBeNull();
   });
 });

@@ -17,7 +17,7 @@ export interface FadeAction {
 /** Everything the draft endpoint accepts. */
 export type DraftCommand = DraftAction | FadeAction;
 
-export type FadeError = "not_fading" | "fade_locked" | "unknown_pick" | "own_pick" | "not_found";
+export type FadeError = "not_fading" | "fade_locked" | "unknown_pick" | "voided_pick" | "own_pick" | "not_found";
 
 export type FadeResult = { ok: true; value: Pick<League, "draft" | "fades"> } | { ok: false; error: FadeError };
 
@@ -25,7 +25,7 @@ export function fadeFor(fades: readonly Fade[], managerId: string): Fade | undef
   return fades.find((fade) => fade.managerId === managerId);
 }
 
-/** The picks a manager may fade: every opponent pick, in pick order. */
+/** The picks a manager may fade: every kept opponent pick, in pick order. Voided picks are never targets. */
 export function fadeTargets(draft: DraftState, managerId: string): DraftPick[] {
   return draft.picks.filter((pick) => pick.managerId !== managerId);
 }
@@ -38,6 +38,9 @@ export function applyFade(league: FadeStage, managerId: string, targetPickNumber
   if (league.draft.status !== "fades") return { ok: false, error: "not_fading" };
   if (!league.managers.some((manager) => manager.id === managerId)) return { ok: false, error: "not_found" };
   if (fadeFor(league.fades, managerId)) return { ok: false, error: "fade_locked" };
+  if (league.draft.voidedPicks.some((pick) => pick.pickNumber === targetPickNumber)) {
+    return { ok: false, error: "voided_pick" };
+  }
   const target = league.draft.picks.find((pick) => pick.pickNumber === targetPickNumber);
   if (!target) return { ok: false, error: "unknown_pick" };
   if (target.managerId === managerId) return { ok: false, error: "own_pick" };

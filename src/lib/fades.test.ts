@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { blockedDraft, seatIds } from "@/lib/draft-scenarios";
 import { seatForPick } from "@/lib/draft";
 import { applyFade, fadeFor, fadeTargets, openFadeSeats, type FadeStage } from "@/lib/fades";
 import type { DraftStatus, Fade, Manager } from "@/lib/types";
@@ -105,5 +106,34 @@ describe("openFadeSeats", () => {
   it("is empty outside the fade stage and in the demo league", () => {
     expect(openFadeSeats(stage("live"), "m1")).toEqual([]);
     expect(openFadeSeats({ ...stage(), isDemo: true }, "m1")).toEqual([]);
+  });
+});
+
+describe("fades after an early end", () => {
+  // 6 × 10 blocked at pick 58: picks 1–54 kept, 55–57 voided.
+  const draft = blockedDraft(6, 10, 58);
+  const managers: Manager[] = seatIds(6).map((id, seat) => ({ id, seat, displayName: null }));
+  const ended: FadeStage = { managers, draft, fades: [] };
+
+  it("offers only kept opponent picks", () => {
+    const targets = fadeTargets(draft, "m1");
+    expect(targets).toHaveLength(54 - 9);
+    expect(targets.every((pick) => pick.pickNumber <= 54 && pick.managerId !== "m1")).toBe(true);
+  });
+
+  it("refuses a voided pick", () => {
+    expect(applyFade(ended, "m1", 56)).toEqual({ ok: false, error: "voided_pick" });
+  });
+
+  it("lets several managers fade the same pick, refuses your own, and completes with the last manager's fade", () => {
+    expect(applyFade(ended, "m1", 1)).toEqual({ ok: false, error: "own_pick" });
+    let stage = ended;
+    for (const managerId of seatIds(6)) {
+      const result = applyFade(stage, managerId, managerId === "m1" ? 2 : 1);
+      if (!result.ok) throw new Error(result.error);
+      stage = { ...stage, ...result.value };
+      expect(stage.draft.status).toBe(managerId === "m6" ? "complete" : "fades");
+    }
+    expect(stage.fades.filter((fade) => fade.targetPickNumber === 1)).toHaveLength(5);
   });
 });

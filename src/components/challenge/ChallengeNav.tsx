@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { challengeNavItems, isChallengeNavActive } from "./nav-items";
 
 function sidebarItemClass(active: boolean): string {
@@ -18,8 +19,23 @@ function tabClass(active: boolean): string {
   }`;
 }
 
+// usePathname() is only known at request time on routes with dynamic segments (teams/[teamId], entries/[entryId]), so the
+// navs sit in Suspense; until it resolves they draw with nothing highlighted.
+const UNKNOWN_PATH = "";
+
 export function ChallengeSidebarNav() {
-  const pathname = usePathname();
+  return (
+    <Suspense fallback={<SidebarNav pathname={UNKNOWN_PATH} />}>
+      <CurrentSidebarNav />
+    </Suspense>
+  );
+}
+
+function CurrentSidebarNav() {
+  return <SidebarNav pathname={usePathname()} />;
+}
+
+function SidebarNav({ pathname }: { pathname: string }) {
   const items = challengeNavItems();
   return (
     <nav aria-label="Challenge" className="flex flex-col gap-1">
@@ -41,7 +57,18 @@ export function ChallengeSidebarNav() {
 }
 
 export function ChallengeBottomNav() {
-  const pathname = usePathname();
+  return (
+    <Suspense fallback={<BottomNav pathname={UNKNOWN_PATH} />}>
+      <CurrentBottomNav />
+    </Suspense>
+  );
+}
+
+function CurrentBottomNav() {
+  return <BottomNav pathname={usePathname()} />;
+}
+
+function BottomNav({ pathname }: { pathname: string }) {
   const items = challengeNavItems().filter((item) => !item.sidebarOnly);
   return (
     <nav

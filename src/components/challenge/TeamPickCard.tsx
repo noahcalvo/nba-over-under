@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import type { BoardCard } from "@/lib/challenge/board";
 import { formatNumber } from "@/lib/format";
 import type { Side } from "@/lib/types";
+import { MovementBadge } from "./MovementBadge";
 
 const SIDES: ReadonlyArray<{ side: Side; label: string }> = [
   { side: "OVER", label: "Over" },
@@ -40,22 +40,6 @@ function LockedPick({ side }: { side: Side | null }) {
   );
 }
 
-/** The size of a line move, neutral in colour: a move is neither good nor bad news for the pick. */
-function MoveBadge({ move }: { move: number }) {
-  const size = formatNumber(Math.abs(move));
-  const Arrow = move > 0 ? ArrowUp : ArrowDown;
-  return (
-    <span
-      role="img"
-      aria-label={`Line moved ${move > 0 ? "up" : "down"} ${size} wins since you saved`}
-      className="inline-flex items-center gap-0.5 rounded-md border border-ink-600 bg-ink-800 px-1.5 text-xs font-semibold text-fog-50"
-    >
-      <Arrow aria-hidden className="size-3" />
-      {size}
-    </span>
-  );
-}
-
 function LineRow({ team, frozen }: { team: BoardCard; frozen: boolean }) {
   if (team.line === null) {
     return <p className="mt-2 text-fog-400">{frozen ? "No frozen line" : "No line posted"}</p>;
@@ -85,7 +69,7 @@ function LineRow({ team, frozen }: { team: BoardCard; frozen: boolean }) {
           <span className="sr-only"> now </span>
           <strong className="text-2xl text-fog-50">{line}</strong> wins
         </span>
-        <MoveBadge move={team.move} />
+        <MovementBadge move={team.move} />
       </p>
     );
   }

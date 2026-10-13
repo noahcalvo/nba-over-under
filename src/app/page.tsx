@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { Logo } from "@/components/shell/Logo";
+import { buttonClasses } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { LEAGUE_LIMITS } from "@/config/league";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
@@ -20,6 +21,20 @@ export default function Home() {
           total, then score on how the season plays out.
         </p>
       </section>
+      <Panel title="30/30 Challenge" bodyClassName="p-4 sm:p-5">
+        <p className="max-w-xl text-fog-300">
+          Pick Over or Under on all 30 win totals, lock in before opening night and climb the leaderboard. No league
+          needed.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <Link href="/challenge" className={buttonClasses("primary")}>
+            Make your picks
+          </Link>
+          <Link href="/challenge/how-it-works" className="font-semibold text-link hover:text-fog-50">
+            How it works
+          </Link>
+        </div>
+      </Panel>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">
         <CreateLeagueForm />
       </Panel>

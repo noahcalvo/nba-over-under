@@ -73,22 +73,13 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
   const teamsById = indexTeams(demo.teams);
   const standings: Standings = computeStandings(demo.league, teamsById, basis);
   const { managers } = demo.league;
-  /**
-   * The award sentences and the awards' effect on the standings; with the breakdown, the user's picks, fade, awards
-   * and total too (at Midseason the standings step just showed it).
-   */
-  const awardDetails = (extra: readonly string[], breakdown: boolean) => (
+  /** The award sentences and what the award points did to the top of the standings. */
+  const awardDetails = (extra: readonly string[]) => (
     <>
       <Lines lines={[...awardsStory(standings.awards, managers, demo.viewerId), ...extra]} />
-      <Story
-        summary={awardImpactStory(
-          standings,
-          computeStandings(demo.league, teamsById, basis, awardsOff()),
-          managers,
-          demo.viewerId,
-        )}
-        rows={breakdown ? standingsStory(standings, managers, demo.viewerId).rows : []}
-      />
+      <p className="text-sm font-semibold text-fog-50">
+        {awardImpactStory(standings, computeStandings(demo.league, teamsById, basis, awardsOff()), managers, demo.viewerId)}
+      </p>
     </>
   );
   const viewerRow = standings.rows.find((row) => row.managerId === demo.viewerId)!;
@@ -109,12 +100,12 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
       );
     }
     case "mid-awards":
-      return awardDetails([], false);
+      return awardDetails([]);
     case "final-awards": {
       // The same season cut at Midseason: what the projections said then.
       const midTeams = indexTeams(teamsAt(demo.teams, demo.season, checkpointGames("midseason")));
       const midseason = computeStandings(demo.league, midTeams, "projected").awards;
-      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId), true);
+      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId));
     }
     case "final-results": {
       const pick = pickStory(demo.openingPick, openingTeam, "final");

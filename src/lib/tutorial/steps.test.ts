@@ -89,6 +89,10 @@ describe("TUTORIAL_STEPS", () => {
     }
   });
 
+  it("keeps each draft step to its title and body, with no folded-away rules", () => {
+    for (const id of TUTORIAL_STEP_ORDER) expect(TUTORIAL_STEPS[id].details).toBeUndefined();
+  });
+
   it("explains the snake order while the rest of the draft plays", () => {
     expect(TUTORIAL_STEPS.simulate.title).toMatch(/snake/i);
     expect(TUTORIAL_STEPS.simulate.body).toMatch(/reverses every round/);

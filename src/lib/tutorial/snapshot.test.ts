@@ -27,7 +27,7 @@ const faded = must(
 const complete = simulateAll(faded, teams, "fades");
 
 describe("season progress in the snapshot", () => {
-  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "mid-chart"] };
+  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["mid-points"] };
   const roundTrip = (snapshot: unknown) => restoreTutorial(JSON.parse(JSON.stringify(snapshot)));
 
   it("keeps the season with a completed draft", () => {

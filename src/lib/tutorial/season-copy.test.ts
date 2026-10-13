@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEASON_CHECKPOINTS } from "./season";
-import { ADVANCE_LABELS, CHECKPOINT_LABELS, SEASON_STEPS, seasonStepLabel } from "./season-copy";
+import { ADVANCE_LABELS, CHECKPOINT_LABELS, PLAYING_LINES, PLAYING_LINES_PER_ADVANCE, playingLine, SEASON_STEPS, seasonStepLabel } from "./season-copy";
 import { SEASON_STEP_ORDER } from "./season-steps";
 
 describe("SEASON_STEPS", () => {
@@ -46,8 +46,13 @@ describe("SEASON_STEPS", () => {
     for (const step of Object.values(SEASON_STEPS)) expect(step.continueLabel).not.toBe("Continue");
   });
 
-  it("keeps the tour short: 2, 7 and 3 steps at the three checkpoints", () => {
-    expect(SEASON_CHECKPOINTS.map((checkpoint) => SEASON_STEP_ORDER[checkpoint].length)).toEqual([2, 7, 3]);
+  it("keeps the tour short: 1, 6 and 3 steps at the three checkpoints", () => {
+    expect(SEASON_CHECKPOINTS.map((checkpoint) => SEASON_STEP_ORDER[checkpoint].length)).toEqual([1, 6, 3]);
+  });
+
+  it("folds extra rules away only where they help: the scoring rules", () => {
+    const withDetails = Object.entries(SEASON_STEPS).filter(([, step]) => step.details);
+    expect(withDetails.map(([id]) => id)).toEqual(["mid-points"]);
   });
 });
 
@@ -56,5 +61,14 @@ describe("labels", () => {
     expect(Object.values(CHECKPOINT_LABELS)).toEqual(["Draft complete", "Midseason", "Final results"]);
     expect(ADVANCE_LABELS).toEqual({ draft: "Advance to Midseason", midseason: "Finish the Season", final: null });
     expect(seasonStepLabel("midseason")).toBe("Midseason");
+  });
+});
+
+describe("playingLine", () => {
+  it("steps through a few lines in turn from the starting one, wrapping round the list", () => {
+    const last = PLAYING_LINES.length - 1;
+    const shown = [0, 0.34, 0.67, 0.99, 1].map((fraction) => playingLine(last, fraction));
+    expect(shown).toEqual([PLAYING_LINES[last], PLAYING_LINES[0], PLAYING_LINES[1], PLAYING_LINES[1], PLAYING_LINES[1]]);
+    expect(new Set(shown).size).toBe(PLAYING_LINES_PER_ADVANCE);
   });
 });

@@ -7,10 +7,8 @@ import { nextCheckpoint, SEASON_CHECKPOINTS, type SeasonCheckpoint } from "./sea
 // lands on the right step (or on a "continue on …" callout when the user is elsewhere).
 
 export type SeasonStepId =
-  | "draft-roster"
   | "draft-advance"
   | "mid-pick"
-  | "mid-chart"
   | "mid-points"
   | "mid-back"
   | "mid-standings"
@@ -21,8 +19,8 @@ export type SeasonStepId =
   | "final-finish";
 
 export const SEASON_STEP_ORDER: Readonly<Record<SeasonCheckpoint, readonly SeasonStepId[]>> = {
-  draft: ["draft-roster", "draft-advance"],
-  midseason: ["mid-pick", "mid-chart", "mid-points", "mid-back", "mid-standings", "mid-awards", "mid-advance"],
+  draft: ["draft-advance"],
+  midseason: ["mid-pick", "mid-points", "mid-back", "mid-standings", "mid-awards", "mid-advance"],
   final: ["final-results", "final-awards", "final-finish"],
 };
 
@@ -73,9 +71,7 @@ export function seasonStep(
     case "midseason": {
       if (!seen.has("mid-points")) {
         const team: SeasonLocation = { page: "team", teamId: openingTeamId };
-        return samePlace(team, location)
-          ? step(seen.has("mid-chart") ? "mid-points" : "mid-chart", team)
-          : step("mid-pick", OVERVIEW);
+        return samePlace(team, location) ? step("mid-points", team) : step("mid-pick", OVERVIEW);
       }
       if (location.page === "team") return step("mid-back", location);
       return step(firstUnseen(["mid-standings", "mid-awards", "mid-advance"]), OVERVIEW);

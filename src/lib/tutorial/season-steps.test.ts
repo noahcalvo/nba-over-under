@@ -34,13 +34,11 @@ describe("seasonStep", () => {
       progress = markSeen(progress, expected);
     };
 
-    proceed(overview, "draft-roster");
-    visit(overview, "draft-advance"); // no awards step before any game: they arrive at Midseason
+    visit(overview, "draft-advance"); // one step before any game: awards and standings arrive at Midseason
     progress = advanceCheckpoint(progress);
 
     visit(overview, "mid-pick");
-    proceed(openingTeam, "mid-chart"); // the team page opened: the click is recognised by the route
-    proceed(openingTeam, "mid-points");
+    proceed(openingTeam, "mid-points"); // the team page opened: the click is recognised by the route
     visit(openingTeam, "mid-back");
     proceed(overview, "mid-standings"); // back on the overview
     proceed(overview, "mid-awards");
@@ -62,14 +60,11 @@ describe("seasonStep", () => {
     // Another team's page (the team selector, a typed URL) or Rosters: back to the overview to click the right team.
     expect(at(mid, otherTeam)).toMatchObject({ id: "mid-pick", onPage: false });
     expect(at(mid, rosters)).toMatchObject({ id: "mid-pick", onPage: false });
-    // Leaving the team page before the points step starts over at the click.
-    const chartSeen = markSeen(mid, "mid-chart");
-    expect(id(chartSeen, openingTeam)).toBe("mid-points");
-    expect(id(chartSeen, overview)).toBe("mid-pick");
+    expect(id(mid, openingTeam)).toBe("mid-points");
   });
 
   it("after the points step, any team page asks for the overview and the overview continues", () => {
-    const explained = markSeen(markSeen(advanceCheckpoint(INITIAL_SEASON_PROGRESS), "mid-chart"), "mid-points");
+    const explained = markSeen(advanceCheckpoint(INITIAL_SEASON_PROGRESS), "mid-points");
     expect(at(explained, openingTeam)).toMatchObject({ id: "mid-back", onPage: true });
     expect(at(explained, otherTeam)).toMatchObject({ id: "mid-back", onPage: true });
     expect(at(explained, overview)).toMatchObject({ id: "mid-standings", onPage: true });
@@ -77,13 +72,16 @@ describe("seasonStep", () => {
   });
 
   it("resumes progress stored with steps that no longer exist at the right place", () => {
-    // Draft complete's standings and awards steps were folded away: their ids are dropped and the tour carries on.
+    // Draft complete's roster, standings and awards steps were folded away: their ids are dropped.
     const draft = parseSeasonProgress({ checkpoint: "draft", seen: ["draft-roster", "draft-standings", "draft-awards"] })!;
-    expect(draft.seen).toEqual(["draft-roster"]);
+    expect(draft.seen).toEqual([]);
     expect(id(draft, overview)).toBe("draft-advance");
+    // So was the chart step: a stored chart step leaves the points step on the team page.
+    const chart = parseSeasonProgress({ checkpoint: "midseason", seen: ["mid-chart"] })!;
+    expect(id(chart, openingTeam)).toBe("mid-points");
     const mid = parseSeasonProgress({
       checkpoint: "midseason",
-      seen: ["draft-roster", "draft-standings", "mid-chart", "mid-points", "mid-standings"],
+      seen: ["draft-roster", "mid-chart", "mid-points", "mid-standings"],
     })!;
     expect(at(mid, overview)).toMatchObject({ id: "mid-awards", onPage: true });
     expect(at(markSeen(mid, "mid-awards"), overview)?.id).toBe("mid-advance");
@@ -94,7 +92,7 @@ describe("seasonStep", () => {
   });
 
   it("keeps the Draft complete and Final results steps on the overview", () => {
-    expect(at(INITIAL_SEASON_PROGRESS, openingTeam)).toMatchObject({ id: "draft-roster", onPage: false });
+    expect(at(INITIAL_SEASON_PROGRESS, openingTeam)).toMatchObject({ id: "draft-advance", onPage: false });
     const final = advanceCheckpoint(advanceCheckpoint(INITIAL_SEASON_PROGRESS));
     expect(at(final, rosters)).toMatchObject({ id: "final-results", onPage: false });
   });
@@ -114,17 +112,17 @@ describe("advanceCheckpoint / markSeen", () => {
   });
 
   it("marks a step once", () => {
-    const seen = markSeen(INITIAL_SEASON_PROGRESS, "draft-roster");
-    expect(seen.seen).toEqual(["draft-roster"]);
-    expect(markSeen(seen, "draft-roster")).toBe(seen);
+    const seen = markSeen(INITIAL_SEASON_PROGRESS, "mid-points");
+    expect(seen.seen).toEqual(["mid-points"]);
+    expect(markSeen(seen, "mid-points")).toBe(seen);
   });
 });
 
 describe("parseSeasonProgress", () => {
   it("reads stored progress and drops unknown step ids", () => {
-    expect(parseSeasonProgress({ checkpoint: "midseason", seen: ["draft-roster", "nope", "mid-chart"] })).toEqual({
+    expect(parseSeasonProgress({ checkpoint: "midseason", seen: ["mid-points", "nope", "mid-awards"] })).toEqual({
       checkpoint: "midseason",
-      seen: ["draft-roster", "mid-chart"],
+      seen: ["mid-points", "mid-awards"],
     });
   });
 

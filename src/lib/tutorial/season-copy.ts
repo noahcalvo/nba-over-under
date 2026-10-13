@@ -7,12 +7,6 @@ import type { SeasonStepId } from "./season-steps";
 const BEST = formatSigned(SCORING.bestPickAward, 0);
 const WORST = formatSigned(SCORING.worstPickAward, 0);
 
-const awardRules = [
-  "Picks are compared on their own scores, before any award points.",
-  "Every tied pick earns the full award, and one manager can win both.",
-  "Fades don't count toward the awards.",
-] as const;
-
 // The guided season's words and spotlights. The user's own numbers (breakdowns, fade, standings) are added under the
 // text by the overlay from season-story.ts; this copy stays the same for every draft.
 
@@ -29,6 +23,27 @@ export const ADVANCE_LABELS: Record<SeasonCheckpoint, string | null> = {
   final: null,
 };
 
+/** Shown, a few in turn, while an advance plays its games. */
+export const PLAYING_LINES = [
+  "Playing basketball…",
+  "Behind-the-back hesis…",
+  "Punch step-backs…",
+  "Chase-down blocks…",
+  "Lobs off the backboard…",
+  "Arguing with the refs…",
+  "Crashing the offensive glass…",
+  "Bricking free throws…",
+] as const;
+
+/** Lines shown during one advance; each gets an equal share of it. */
+export const PLAYING_LINES_PER_ADVANCE = 3;
+
+/** The line to show `fraction` of the way through an advance that started on line `start`. */
+export function playingLine(start: number, fraction: number): string {
+  const step = Math.min(Math.floor(fraction * PLAYING_LINES_PER_ADVANCE), PLAYING_LINES_PER_ADVANCE - 1);
+  return PLAYING_LINES[(start + step) % PLAYING_LINES.length];
+}
+
 export interface SeasonTourStep extends TourStep {
   /** continue: a button; action: the user's own action (a page opening, a checkpoint advance); end: the last step. */
   advance: "continue" | "action" | "end";
@@ -38,26 +53,18 @@ const scoringRules = [
   `Correct pick: ${formatSigned(SCORING.correctCall, 0)} point.`,
   `Incorrect pick: ${formatSigned(SCORING.missedCall, 0)} point.`,
   `Each win beyond the line: ${formatSigned(SCORING.marginWeight)} on the correct side, ${formatSigned(-SCORING.marginWeight)} on the incorrect side.`,
-  `Projected wins = wins ÷ games played × ${SCORING.seasonGames}.`,
+  `Only the final ${SCORING.seasonGames}-game record counts; projections move every game.`,
 ] as const;
 
 /** Shown with the final results only when the user's pick or faded pick pushed. */
 export const PUSH_RULE = "If a team finishes exactly on its locked line, both the pick and any fades targeting it score 0.";
 
 export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
-  "draft-roster": {
-    advance: "continue",
-    title: "Your roster is set",
-    body: "Here's your first pick and your fade. They score as their teams play, and the manager with the most points at the end wins the league.",
-    spotlight: ["highlight-pick", "fades"],
-    interactive: [],
-    continueLabel: "Got it",
-  },
   "draft-advance": {
     advance: "action",
     title: "Tip off the season",
-    body: `Simulate the first ${advanceCheckpointGames("draft")} games for all 30 teams. These are made-up results, not real NBA games.`,
-    spotlight: ["season-control"],
+    body: `Your picks and fade score as their teams play, and the most points wins. Play the first ${advanceCheckpointGames("draft")} games to see how you're doing.`,
+    spotlight: ["season-control", "highlight-pick"],
     interactive: ["season-control"],
     pointAt: "season-advance",
   },
@@ -69,27 +76,11 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     interactive: ["highlight-pick-team"],
     pointAt: "highlight-pick-team",
   },
-  "mid-chart": {
-    advance: "continue",
-    title: "Wins against the line",
-    body: "The solid line is the team's actual wins. The dashed line is the pace it needs to beat its line, and the projected line is where it's heading at its current rate.",
-    details: {
-      summary: "Chart controls",
-      items: [
-        "Last 8 zooms in on recent games; Full season shows all 82.",
-        "Games after the checkpoint haven't been played yet, so they have no result.",
-        "The demo's games are simulated: no dates or opponents.",
-      ],
-    },
-    spotlight: ["season-progress"],
-    interactive: ["season-progress"],
-    continueLabel: "See my points",
-  },
   "mid-points": {
     advance: "continue",
     title: "Projected points",
     body: "Your pick scores by comparing the team's projected wins with its locked line. Here's the math:",
-    details: { summary: "Scoring rules", items: [...scoringRules, "Projections change every game; only the final 82-game record counts."] },
+    details: { summary: "Scoring rules", items: scoringRules },
     spotlight: ["team-stats", "my-side"],
     interactive: [],
     continueLabel: "Got it",
@@ -114,7 +105,6 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     advance: "continue",
     title: "Season awards",
     body: `The league's best single pick earns its owner ${BEST} (Best Pick) and the worst costs its owner ${WORST} (Worst Pick). These are the leaders so far, and they can still change.`,
-    details: { summary: "Award rules", items: awardRules },
     spotlight: ["season-awards", "standings"],
     interactive: [],
     continueLabel: "Got it",
@@ -122,7 +112,7 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "mid-advance": {
     advance: "action",
     title: "Finish the season",
-    body: `Simulate the remaining ${advanceCheckpointGames("midseason")} games. Final records replace the projections.`,
+    body: `Play the remaining ${advanceCheckpointGames("midseason")} games. Final records replace the projections.`,
     spotlight: ["season-control"],
     interactive: ["season-control"],
     pointAt: "season-advance",

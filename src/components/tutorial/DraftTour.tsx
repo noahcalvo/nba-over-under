@@ -107,7 +107,7 @@ function SimulationProgress({ label, onSkip }: { label: string; onSkip: () => vo
         {label}
       </p>
       <Button variant="secondary" size="sm" onClick={onSkip}>
-        Skip to the end
+        Skip
       </Button>
     </div>
   );

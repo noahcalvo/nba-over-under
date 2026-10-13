@@ -22,6 +22,7 @@ export const TOUR_TARGET_IDS = [
   "highlight-pick-team",
   "standings",
   "fades",
+  "season-awards",
   "season-progress",
   "team-stats",
   "my-side",

@@ -33,11 +33,12 @@ Postgres (`pg` in production, PGlite for local dev and tests). Cache Components 
 Next API.
 
 ## Architecture
-- `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights), `LEAGUE_DEFAULTS` (4 managers,
+- `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights and season award points), `LEAGUE_DEFAULTS` (4 managers,
   11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
   `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
   `TUTORIAL`, `TUTORIAL_SEASON` and `TOUR` (`tour.ts`: guided demo size and pacing, simulated season, overlay spacing).
-- `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, snake draft,
+- `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season
+  awards (`awards.ts`), snake draft,
   formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
   (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
   schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
@@ -66,6 +67,14 @@ Next API.
   `src/lib/scoring.ts` and `src/lib/standings.ts`. Never hardcode a display total or re-implement scoring in a component.
 - Two bases, always shown separately: `projected` (win pace = wins ÷ games played × 82) and `final` (settled once the
   team has played 82 games).
+- Season awards (`src/lib/awards.ts`, decided inside `computeStandings`): Best Pick (`SCORING.bestPickAward`, +2) and
+  Worst Pick (`worstPickAward`, −2) go to the owners of the retained picks with the highest and lowest individual pick
+  score on the basis, compared unrounded before any award points (1e-9 tolerance for float noise). Every tied pick gets
+  the full award; one manager can win both. Voided picks, undrafted sides, picks of non-managers and fades never take
+  part, and a pick's own score never includes its award (`awardPoints` is separate; `totalPoints` = calls + fades +
+  awards). Pending (no winners, no points) until the draft reaches `fades` and every retained pick is scored on the
+  basis: projected once each drafted team has played, final once each has played 82. The overview opens on the final
+  basis once final standings are complete. Not configurable per league.
 - Push: a margin of exactly 0 (final wins or pace equal the line) earns 0 for the pick and for a fade on it
   (`CallEvaluation.push`).
 - Zero games played → "Not available". Unsettled pick on the final basis → "Pending". Before any game the standings and
@@ -113,7 +122,9 @@ Next API.
   server, database and `fetch` use in the demo folders.
 - Guided season (`/l/demo`, `/l/demo/rosters`, `/l/demo/teams/{id}`; `DemoSeason`): the real Overview, Rosters and team
   page fed the completed demo draft (shown as id `demo`, `isDemo: true`), or "Finish the demo draft first". Three
-  checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`. One synthetic
+  checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`. Each checkpoint
+  has an awards step (`draft-awards`, `mid-awards`, `final-awards`; words from `awardsStory`, `awardImpactStory`,
+  `awardChangeStory`). One synthetic
   82-game W/L sequence per team, seeded by the draft's picks (`simulateSeason`; strength = line + normal spread, never
   favouring anyone); a checkpoint is a prefix of it. The team page gets that log (no dates or opponents, upcoming games
   unplayed), no sportsbook panel, and a "Simulated demo season" note. The step is `seasonStep(progress, page)`: the

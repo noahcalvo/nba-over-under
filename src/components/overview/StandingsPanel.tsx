@@ -62,7 +62,10 @@ export function StandingsPanel({
                 {ranked ? (
                   <span className="text-right">
                     <SignedValue value={row.totalPoints} className="block font-display text-xl font-bold" />
-                    <span className="block text-xs text-fog-400">Margin {formatSigned(row.totalMargin)}</span>
+                    <span className="block text-xs text-fog-400">
+                      Margin {formatSigned(row.totalMargin)}
+                      {row.awards.length > 0 && ` · Awards ${formatSigned(row.awardPoints, 0)}`}
+                    </span>
                   </span>
                 ) : (
                   <span className="text-right text-sm text-fog-400">{NOT_AVAILABLE}</span>

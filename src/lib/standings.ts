@@ -1,4 +1,5 @@
 import { SCORING, type ScoringConfig } from "@/config/scoring";
+import { awardsFor, decideAwards, type PickAward, type SeasonAwards } from "@/lib/awards";
 import { evaluateCall, evaluateFade, type Basis, type CallEvaluation, type FadeEvaluation } from "@/lib/scoring";
 import type { DraftPick, Fade, League, Team, TeamId } from "@/lib/types";
 
@@ -22,8 +23,13 @@ export interface ManagerResult {
   /** In pick order. */
   calls: ScoredCall[];
   fades: ScoredFade[];
+  /** Season awards this manager's picks hold on this basis (Best Pick first). Empty while awards are pending. */
+  awards: PickAward[];
   callPoints: number;
   fadePoints: number;
+  /** Sum of the awards' points: kept apart from callPoints, so a pick's own score never includes an award. */
+  awardPoints: number;
+  /** callPoints + fadePoints + awardPoints. */
   totalPoints: number;
   /** Sum of signed margins over scored calls. */
   totalMargin: number;
@@ -47,6 +53,8 @@ export interface Standings {
   complete: boolean;
   /** At least one call is scored on this basis. */
   anyScored: boolean;
+  /** Best Pick and Worst Pick on this basis, already counted in each owner's total. */
+  awards: SeasonAwards;
 }
 
 export function computeStandings(
@@ -61,6 +69,13 @@ export function computeStandings(
     if (!team) throw new Error(`Unknown team ${pick.teamId} at pick ${pick.pickNumber}`);
     callsByPick.set(pick.pickNumber, { pick, team, evaluation: evaluateCall(pick.side, team, basis, config) });
   }
+  const managerIds = new Set(input.managers.map((manager) => manager.id));
+  const awards = decideAwards(
+    [...callsByPick.values()].filter((call) => managerIds.has(call.pick.managerId)),
+    basis,
+    input.draft.status,
+    config,
+  );
 
   const results = input.managers.map((manager): ManagerResult & { seat: number } => {
     const calls = input.draft.picks
@@ -75,14 +90,18 @@ export function computeStandings(
     const scored = calls.filter((call) => call.evaluation.status === "scored");
     const callPoints = sum(scored.map((call) => call.evaluation.points ?? 0));
     const fadePoints = sum(fades.map((fade) => fade.evaluation.points ?? 0));
+    const managerAwards = awardsFor(awards, manager.id);
+    const awardPoints = sum(managerAwards.map((award) => award.points));
     return {
       managerId: manager.id,
       seat: manager.seat,
       calls,
       fades,
+      awards: managerAwards,
       callPoints,
       fadePoints,
-      totalPoints: callPoints + fadePoints,
+      awardPoints,
+      totalPoints: callPoints + fadePoints + awardPoints,
       totalMargin: sum(scored.map((call) => call.evaluation.margin ?? 0)),
       correctCalls: scored.filter((call) => call.evaluation.correct).length,
       scoredCalls: scored.length,
@@ -97,8 +116,10 @@ export function computeStandings(
     managerId: result.managerId,
     calls: result.calls,
     fades: result.fades,
+    awards: result.awards,
     callPoints: result.callPoints,
     fadePoints: result.fadePoints,
+    awardPoints: result.awardPoints,
     totalPoints: result.totalPoints,
     totalMargin: result.totalMargin,
     correctCalls: result.correctCalls,
@@ -114,6 +135,7 @@ export function computeStandings(
     rows,
     complete: input.draft.status === "complete" && rows.every((row) => row.pendingItems === 0),
     anyScored: allCalls.some((call) => call.evaluation.status === "scored"),
+    awards,
   };
 }
 

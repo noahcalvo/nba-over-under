@@ -13,6 +13,7 @@ import { ClosestCalls } from "./ClosestCalls";
 import { FadesPanel } from "./FadesPanel";
 import { PicksPanel } from "./PicksPanel";
 import { RecordsStatus } from "./RecordsStatus";
+import { SeasonAwardsPanel } from "./SeasonAwardsPanel";
 import { StandingsPanel } from "./StandingsPanel";
 import { SummaryStats } from "./SummaryStats";
 
@@ -21,24 +22,25 @@ export function LeagueOverview({
   teams,
   viewerId,
   records,
-  initialBasis = "projected",
+  initialBasis,
   highlightPick,
 }: {
   league: League;
   teams: Team[];
   viewerId: string | null;
   records: RecordStatus | null;
-  /** The scoring basis it opens on. */
+  /** The scoring basis it opens on. Default: final once the final standings are complete, else projected. */
   initialBasis?: Basis;
   /** A pick to name for a guided tour (its row and team link). */
   highlightPick?: number;
 }) {
-  const [selectedId, setSelectedId] = useState(viewerId ?? league.managers[0].id);
-  const [basis, setBasis] = useState<Basis>(initialBasis);
-
   const teamsById = useMemo(() => indexTeams(teams), [teams]);
   const projected = useMemo(() => computeStandings(league, teamsById, "projected"), [league, teamsById]);
   const final = useMemo(() => computeStandings(league, teamsById, "final"), [league, teamsById]);
+
+  const [selectedId, setSelectedId] = useState(viewerId ?? league.managers[0].id);
+  // A finished season opens on its final results, so its awards and standings are the settled ones.
+  const [basis, setBasis] = useState<Basis>(() => initialBasis ?? (final.complete ? "final" : "projected"));
   const standings = basis === "final" && final.anyScored ? final : projected;
   const row = standings.rows.find((candidate) => candidate.managerId === selectedId) ?? standings.rows[0];
   const manager = findManager(league.managers, row.managerId)!;
@@ -75,6 +77,7 @@ export function LeagueOverview({
             viewerId={viewerId}
             onSelect={setSelectedId}
           />
+          <SeasonAwardsPanel awards={standings.awards} managers={league.managers} viewerId={viewerId} />
           <FadesPanel row={row} managers={league.managers} />
         </div>
       </div>

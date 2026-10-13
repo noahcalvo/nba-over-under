@@ -36,6 +36,7 @@ describe("seasonStep", () => {
 
     proceed(overview, "draft-roster");
     proceed(overview, "draft-standings");
+    proceed(overview, "draft-awards");
     visit(overview, "draft-advance");
     progress = advanceCheckpoint(progress);
 
@@ -44,10 +45,12 @@ describe("seasonStep", () => {
     proceed(openingTeam, "mid-points");
     visit(openingTeam, "mid-back");
     proceed(overview, "mid-standings"); // back on the overview
+    proceed(overview, "mid-awards");
     visit(overview, "mid-advance");
     progress = advanceCheckpoint(progress);
 
     proceed(overview, "final-standings");
+    proceed(overview, "final-awards");
     proceed(overview, "final-results");
     proceed(overview, "final-finish");
     expect(at(progress, overview)).toBeNull();
@@ -74,6 +77,17 @@ describe("seasonStep", () => {
     expect(at(explained, otherTeam)).toMatchObject({ id: "mid-back", onPage: true });
     expect(at(explained, overview)).toMatchObject({ id: "mid-standings", onPage: true });
     expect(at(explained, rosters)).toMatchObject({ id: "mid-standings", page: { page: "overview" }, onPage: false });
+  });
+
+  it("shows the awards step to progress stored before it existed, at the right place", () => {
+    const stored = parseSeasonProgress({
+      checkpoint: "midseason",
+      seen: ["draft-roster", "draft-standings", "mid-chart", "mid-points", "mid-standings"],
+    })!;
+    expect(at(stored, overview)).toMatchObject({ id: "mid-awards", onPage: true });
+    expect(at(markSeen(stored, "mid-awards"), overview)?.id).toBe("mid-advance");
+    const final = parseSeasonProgress({ checkpoint: "final", seen: ["final-standings"] })!;
+    expect(id(final, overview)).toBe("final-awards");
   });
 
   it("keeps the Draft complete and Final results steps on the overview", () => {

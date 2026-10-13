@@ -100,7 +100,9 @@ function MoreDetails({ config }: { config: ScoringConfig }) {
           <span className="font-semibold text-fog-50">Locked lines</span> are the {LINES.book} season win totals
           (or the commissioner&apos;s overrides) frozen when the draft starts. Later line moves never change scores.
         </li>
-        <li>Standings rank by total points; ties go to the larger total margin.</li>
+        <li>
+          Standings rank by total points (picks, fades and season awards); ties go to the larger total margin.
+        </li>
         <li>Scoring weights and round count aren&apos;t configurable yet.</li>
       </ul>
     </details>
@@ -133,6 +135,13 @@ export function ScoringRulesPanel({ config = SCORING }: { config?: ScoringConfig
       >
         <Rule label="Each win on the correct side of the line" value={config.marginWeight} />
         <Rule label="Each win on the wrong side of the line" value={-config.marginWeight} />
+      </RuleGroup>
+      <RuleGroup
+        title="Season awards"
+        footer={`Each award goes to the pick's owner on top of the pick's own score, which never changes. Ties: every tied pick earns the full award, and one manager can win both. Fades and voided picks don't count. Awards are projected from win pace during the season and become final once every drafted team has played ${config.seasonGames} games.`}
+      >
+        <Rule label="Best Pick" note="The league's highest individual pick score." value={config.bestPickAward} />
+        <Rule label="Worst Pick" note="The league's lowest individual pick score." value={config.worstPickAward} />
       </RuleGroup>
       <Example config={config} />
       <MoreDetails config={config} />

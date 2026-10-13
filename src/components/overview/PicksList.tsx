@@ -1,3 +1,4 @@
+import { AwardTag } from "@/components/overview/SeasonAwardsPanel";
 import { Badge } from "@/components/ui/Badge";
 import { PaceBar } from "@/components/ui/PaceBar";
 import { SidePill } from "@/components/ui/SidePill";
@@ -5,6 +6,7 @@ import { SignedValue } from "@/components/ui/SignedValue";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TeamLink } from "@/components/ui/TeamLink";
 import { formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
+import type { PickAward } from "@/lib/awards";
 import type { Basis, CallEvaluation } from "@/lib/scoring";
 import type { ScoredCall } from "@/lib/standings";
 import { tourTarget } from "@/lib/tour/targets";
@@ -13,6 +15,19 @@ import { tourTarget } from "@/lib/tour/targets";
 function highlight(call: ScoredCall, highlightPick: number | undefined) {
   const on = call.pick.pickNumber === highlightPick;
   return { row: on ? tourTarget("highlight-pick") : {}, name: on ? tourTarget("highlight-pick-team") : {} };
+}
+
+/** The season awards a pick holds, as tags after its name. */
+function AwardTags({ call, awards }: { call: ScoredCall; awards: readonly PickAward[] }) {
+  const held = awards.filter((award) => award.call.pick.pickNumber === call.pick.pickNumber);
+  if (held.length === 0) return null;
+  return (
+    <span className="inline-flex flex-wrap gap-1 align-middle">
+      {held.map((award) => (
+        <AwardTag key={award.kind} award={award} />
+      ))}
+    </span>
+  );
 }
 
 function WinPace({ call }: { call: ScoredCall }) {
@@ -43,10 +58,13 @@ function Result({ evaluation }: { evaluation: CallEvaluation }) {
 export function PicksTable({
   calls,
   basis,
+  awards = [],
   highlightPick,
 }: {
   calls: ScoredCall[];
   basis: Basis;
+  /** The manager's season awards, tagged on the picks that hold them. */
+  awards?: readonly PickAward[];
   highlightPick?: number;
 }) {
   const projected = basis === "projected";
@@ -89,6 +107,7 @@ export function PicksTable({
                       {team.city} {team.name}
                     </TeamLink>
                   </span>
+                  <AwardTags call={call} awards={awards} />
                 </div>
               </td>
               <td className="px-3 py-3 text-center">
@@ -132,10 +151,13 @@ export function PicksTable({
 export function PickCards({
   calls,
   basis,
+  awards = [],
   highlightPick,
 }: {
   calls: ScoredCall[];
   basis: Basis;
+  /** The manager's season awards, tagged on the picks that hold them. */
+  awards?: readonly PickAward[];
   highlightPick?: number;
 }) {
   const projected = basis === "projected";
@@ -161,6 +183,7 @@ export function PickCards({
                 <p className="text-xs text-fog-400">
                   Pick {pick.pickNumber} · {formatRecord(team.wins, team.losses)}
                 </p>
+                <AwardTags call={call} awards={awards} />
               </div>
               <SidePill side={pick.side} size="sm" />
               <span className="font-semibold tabular-nums">{formatNumber(team.line)}</span>

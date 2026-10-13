@@ -44,6 +44,8 @@ function input(
   };
 }
 
+const NO_AWARDS = { ...SCORING, bestPickAward: 0, worstPickAward: 0 };
+
 // m1: Q OVER (hit) + P UNDER (miss). m2: P OVER (hit) + Q UNDER (miss), and fades m1's P UNDER (pick 4).
 const MIXED = input(
   [
@@ -66,7 +68,8 @@ describe("computeStandings — projected", () => {
   });
 
   it("adds projected fade bonuses and ranks by total points, not margin", () => {
-    const { rows } = computeStandings(MIXED, TEAMS, "projected");
+    // Awards off: this is about fades (the awards on MIXED are covered below).
+    const { rows } = computeStandings(MIXED, TEAMS, "projected", NO_AWARDS);
     expect(rows.map((row) => row.managerId)).toEqual(["m2", "m1"]);
     const [m2, m1] = rows;
     expect(m2.fadePoints).toBe(2);
@@ -162,6 +165,98 @@ describe("computeStandings — final", () => {
   });
 });
 
+describe("computeStandings — season awards", () => {
+  it("adds each owner's award points to the total once, and ranks on it", () => {
+    const standings = computeStandings(MIXED, TEAMS, "projected");
+    expect(standings.awards.status).toBe("projected");
+    // Best: m1's Q OVER (+1.22). Worst: m2's Q UNDER (−1.22).
+    expect(standings.awards.best.map((award) => award.call.pick.pickNumber)).toEqual([1]);
+    expect(standings.awards.worst.map((award) => award.call.pick.pickNumber)).toEqual([3]);
+    const [m1, m2] = standings.rows;
+    expect(m1.managerId).toBe("m1");
+    expect(m1.awards.map((award) => award.kind)).toEqual(["best"]);
+    expect(m1.awardPoints).toBe(SCORING.bestPickAward);
+    expect(m1.totalPoints).toBeCloseTo(0.17083 + 2, 4);
+    expect(m2.awardPoints).toBe(SCORING.worstPickAward);
+    expect(m2.totalPoints).toBeCloseTo(-0.17083 + 2 - 2, 4);
+    for (const row of standings.rows) {
+      expect(row.totalPoints).toBeCloseTo(row.callPoints + row.fadePoints + row.awardPoints);
+      // Pick scores stay the picks' own: the award is never folded into a call.
+      expect(row.callPoints).toBeCloseTo(row.calls.reduce((total, call) => total + (call.evaluation.points ?? 0), 0));
+    }
+    expect(m2.gapToFirst).toBeCloseTo(m1.totalPoints - m2.totalPoints);
+  });
+
+  it("nets out when one manager holds both awards", () => {
+    const league = input([
+      ["m1", "Q", "OVER"],
+      ["m2", "P", "OVER"],
+      ["m1", "Q", "UNDER"],
+    ]);
+    const m1 = computeStandings(league, TEAMS, "projected").rows.find((row) => row.managerId === "m1")!;
+    expect(m1.awards.map((award) => award.kind)).toEqual(["best", "worst"]);
+    expect(m1.awardPoints).toBe(0);
+  });
+
+  it("moves from projected leaders to final winners as records change", () => {
+    const league = input([
+      ["m1", "X", "OVER"],
+      ["m2", "Y", "OVER"],
+      ["m1", "W", "UNDER"],
+      ["m2", "V", "UNDER"],
+    ]);
+    const mid: Record<TeamId, Team> = {
+      X: team("X", 40.5, 30, 11), // pace 60: the projected Best Pick
+      Y: team("Y", 40.5, 20, 21),
+      W: team("W", 40.5, 20, 21),
+      V: team("V", 40.5, 30, 11), // Under on a pace of 60: the projected Worst Pick
+    };
+    const end: Record<TeamId, Team> = {
+      X: team("X", 40.5, 41, 41),
+      Y: team("Y", 40.5, 60, 22), // finishes best
+      W: team("W", 40.5, 70, 12), // finishes worst
+      V: team("V", 40.5, 42, 40),
+    };
+    const projected = computeStandings(league, mid, "projected");
+    expect(projected.awards.best[0].call.team.id).toBe("X");
+    expect(projected.awards.worst[0].call.team.id).toBe("V");
+    // Mid-season the final basis has nothing settled: no final awards, no award points.
+    const partial = computeStandings(league, mid, "final");
+    expect(partial.awards).toMatchObject({ status: "pending", pendingReason: "unsettled" });
+    expect(partial.rows.every((row) => row.awardPoints === 0)).toBe(true);
+
+    const final = computeStandings(league, end, "final");
+    expect(final.awards.status).toBe("final");
+    expect(final.awards.best[0].call.team.id).toBe("Y");
+    expect(final.awards.worst[0].call.team.id).toBe("W");
+    expect(final.rows.find((row) => row.managerId === "m2")!.awards.map((award) => award.kind)).toEqual(["best"]);
+    expect(final.rows.find((row) => row.managerId === "m1")!.awards.map((award) => award.kind)).toEqual(["worst"]);
+  });
+
+  it("holds awards back while a drafted team has no games, and before the draft's picks are final", () => {
+    const withZ = input([
+      ["m1", "Q", "OVER"],
+      ["m2", "Z", "OVER"],
+    ]);
+    const standings = computeStandings(withZ, TEAMS, "projected");
+    expect(standings.awards).toMatchObject({ status: "pending", pendingReason: "no_games" });
+    expect(standings.rows.every((row) => row.awardPoints === 0 && row.awards.length === 0)).toBe(true);
+    const live = input([["m1", "Q", "OVER"]], [], "live");
+    expect(computeStandings(live, TEAMS, "projected").awards.pendingReason).toBe("draft");
+  });
+
+  it("only considers picks owned by the league's managers", () => {
+    const stray = input([
+      ["m1", "P", "OVER"],
+      ["m9", "Q", "OVER"], // the best score, but no such manager
+      ["m2", "Q", "UNDER"],
+    ]);
+    const { awards } = computeStandings(stray, TEAMS, "projected");
+    expect(awards.best.map((award) => award.call.pick.managerId)).toEqual(["m1"]);
+    expect(awards.worst.map((award) => award.call.pick.managerId)).toEqual(["m2"]);
+  });
+});
+
 describe("closestCalls", () => {
   it("returns scored calls ordered by smallest absolute margin", () => {
     const league = input([
@@ -185,5 +280,17 @@ describe("after an early end", () => {
     const scoredPicks = standings.rows.flatMap((row) => row.calls.map((call) => call.pick.pickNumber));
     expect(scoredPicks.sort((a, b) => a - b)).toEqual(Array.from({ length: 54 }, (_, i) => i + 1));
     for (const row of standings.rows) expect(row.calls).toHaveLength(9);
+  });
+
+  it("awards only kept picks, never a voided one", () => {
+    const draft = blockedDraft(6, 10, 58);
+    expect(draft.voidedPicks.length).toBeGreaterThan(0);
+    const managers = seatIds(6).map((id, seat) => ({ id, seat, displayName: null }));
+    const teams = indexTeams(withLines(TEAM_INFO, STATIC_LINES));
+    const { awards } = computeStandings({ managers, draft, fades: [] }, teams, "projected");
+    expect(awards.status).toBe("projected");
+    const awarded = [...awards.best, ...awards.worst].map((award) => award.call.pick.pickNumber);
+    expect(awarded.length).toBeGreaterThanOrEqual(2);
+    expect(awarded.every((pickNumber) => pickNumber <= 54)).toBe(true);
   });
 });

@@ -135,4 +135,43 @@ CODE=$(curl -s -o "$JARS/body" -w "%{http_code}" -b "courtline_seats=$LEAGUE:m1"
 BODY=$(cat "$JARS/body")
 check "the old editable seat cookie grants nothing" 200 '"viewerId":null'
 
+# 30/30 Challenge: one entry per browser. Save checks run only while the challenge is open (a locked or
+# schedule-less environment answers the first full save 409/503 and the rest is skipped).
+TEAMS=(ATL BKN BOS CHA CHI CLE DAL DEN DET GSW HOU IND LAC LAL MEM MIA MIL MIN NOP NYK OKC ORL PHI PHX POR SAC SAS TOR UTA WAS)
+# picks N [DUPLICATE]: a JSON array of N picks (Over/Under alternating); DUPLICATE repeats the first team as the last.
+picks() {
+  local out="" i
+  for ((i = 0; i < $1; i++)); do
+    local team=${TEAMS[$i]} side=OVER
+    [ $((i % 2)) -eq 1 ] && side=UNDER
+    [ -n "${2:-}" ] && [ "$i" -eq $(($1 - 1)) ] && team=${TEAMS[0]}
+    out+="${out:+,}{\"teamId\":\"$team\",\"side\":\"$side\"}"
+  done
+  echo "[$out]"
+}
+
+call chloe PUT /api/challenge/entry "{\"displayName\":\"Smoke Chloe\",\"picks\":$(picks 30)}"
+if [ "$CODE" = "409" ] && grep -qF '"challenge_locked"' <<<"$BODY"; then
+  echo "SKIP challenge saves (locked)"
+elif [ "$CODE" = "503" ] && grep -qF '"deadline_unavailable"' <<<"$BODY"; then
+  echo "SKIP challenge saves (no deadline yet)"
+else
+  check "a full challenge entry saves" 200 '"entry"'
+  CHLOE_ID=$(sed -E 's/.*"entry":\{"id":"([A-Za-z0-9_-]+)".*/\1/' <<<"$BODY")
+  call chloe PUT /api/challenge/entry "{\"displayName\":\"Smoke Chloe\",\"picks\":$(picks 29)}"
+  check "an incomplete entry is refused" 400 '"incomplete_entry"'
+  call chloe PUT /api/challenge/entry "{\"displayName\":\"Smoke Chloe\",\"picks\":$(picks 30 dup)}"
+  check "a duplicate team is refused" 400 '"invalid_picks"'
+  call dev PUT /api/challenge/entry "{\"displayName\":\"Smoke Dev\",\"picks\":$(picks 30)}"
+  check "another browser saves its own entry" 200 '"entry"'
+  DEV_ID=$(sed -E 's/.*"entry":\{"id":"([A-Za-z0-9_-]+)".*/\1/' <<<"$BODY")
+  [ -n "$CHLOE_ID" ] && [ -n "$DEV_ID" ] && [ "$CHLOE_ID" != "$DEV_ID" ] &&
+    echo "PASS each browser has its own entry" || { echo "FAIL entries share an id ($CHLOE_ID, $DEV_ID)"; FAILED=1; }
+  call chloe GET /challenge/leaderboard
+  check "the leaderboard lists both entrants" 200 "Smoke Chloe"
+  grep -qF "Smoke Dev" <<<"$BODY" || { echo "FAIL leaderboard misses Smoke Dev"; FAILED=1; }
+fi
+call nobody PUT /api/challenge/entry '{"displayName":"x","picks":[]}'
+check "an empty challenge save is refused" 400 '"incomplete_entry"'
+
 exit $FAILED

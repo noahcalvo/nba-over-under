@@ -6,14 +6,18 @@ export type { ChallengeDraft };
 // This browser's unsaved challenge picks. Next keeps visited routes mounted but hidden (React <Activity>) and restores
 // their state on return, so a per-page copy would go stale; the board reads this one store (useSyncExternalStore) and
 // writes only from user actions. localStorage is the record (it survives reloads); when the browser refuses it, memory
-// holds the draft for this page load.
+// holds the draft for this page load. A key whose last write failed (storage full, reads still working) reads from
+// memory until a write succeeds again, so a stale stored copy never hides newer picks.
 
 const key = (season: number) => `courtline.challenge.draft.v1.${season}`;
 const listeners = new Set<() => void>();
 const memory = new Map<string, string>();
+/** Keys whose last localStorage write failed: memory is newer than storage. */
+const memoryAhead = new Set<string>();
 let cache: { key: string | null; raw: string | null; value: ChallengeDraft | null } = { key: null, raw: null, value: null };
 
 function read(season: number): string | null {
+  if (memoryAhead.has(key(season))) return memory.get(key(season)) ?? null;
   try {
     return window.localStorage.getItem(key(season));
   } catch {
@@ -50,8 +54,10 @@ export function writeDraft(season: number, draft: ChallengeDraft | null): void {
   try {
     if (draft) window.localStorage.setItem(key(season), JSON.stringify(draft));
     else window.localStorage.removeItem(key(season));
+    memoryAhead.delete(key(season));
   } catch {
-    // Storage unavailable: memory holds the draft (see above).
+    // Storage unavailable or full: memory holds the draft (see above).
+    memoryAhead.add(key(season));
   }
   listeners.forEach((listener) => listener());
 }

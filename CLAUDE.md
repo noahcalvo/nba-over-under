@@ -157,12 +157,18 @@ Next API.
     saving is refused (`deadline_unavailable`). Before the stored deadline, each schedule read (at most every
     `scheduleCheckMinutes` while the challenge is used, plus the daily cron) replaces the tip-off; once the stored deadline
     has passed the challenge stays locked, even if a later read moves the opening game. A read that puts the opening game
-    in the past locks at that moment, so saves between the true deadline and that detection stand.
+    in the past locks at that moment, so saves between the true deadline and that detection stand. The decision is
+    `scheduleCheck`: a stale check with a future deadline already stored runs after the response (`after()`, one read per
+    instance at a time); with no deadline yet it runs inline, and the cron forces one.
   - Lines: every successful FanDuel read for the challenge season is recorded as a snapshot (`challenge_line_snapshots`;
     identical values only push `confirmed_at`). The freeze (`freezeChallenge`, idempotent, run first by any challenge
     page render or save after the deadline) stores, per team, its value in the latest snapshot observed strictly before the
     deadline. A team never observed has no frozen line: its picks are "Unavailable" for everyone and excluded from totals,
-    never zero. League lines (`leagues.lines`) are never read or written by challenge code.
+    never zero. Once frozen no request reads FanDuel (current lines are only used before the lock). League lines
+    (`leagues.lines`) are never read or written by challenge code. Known limits: a snapshot write de-duplicates against the
+    newest snapshot only, so in a rare race between server instances writing out of order the freeze can take an
+    intermediate line; and "observed before the deadline" uses the app server's clock (`lines.asOf`), so its skew bounds how
+    late a pre-deadline observation can be.
   - Reference line: on each save the server gives a new or changed side the current FanDuel line (null when none) and the
     database time; an unchanged side keeps both. The client never sends lines. Movement is shown with neutral ▲/▼, not
     red/green. A team with no line can still be picked.
@@ -170,15 +176,17 @@ Next API.
     `frozen_lines` and `team_records` (season 2027, kept fresh by the records cron, which also refreshes the challenge's
     season), never stored. Entry total = sum of scored picks; unplayed or unsettled teams are never counted as zero.
     Phases (`challengePhase`): `schedule_unknown`, `open`, `locking`, `locked`, `in_season`, `final`.
-  - Others' picks stay hidden until the lock (the leaderboard lists names; `visibleEntry`); your own entry is always
-    visible to you. Ranking: tied totals (unrounded, `tieTolerance`) share a rank (1, 1, 3); display order among ties is name
+  - Others' picks stay hidden until the freeze is stored, not on the app clock's `locking` phase (the leaderboard lists
+    names, linked only once frozen; `visibleEntry`); your own entry is always visible to you. Before the freeze pages only
+    count or list entrants (`countEntries`, `listEntrants`), never load or score picks; `prepareChallenge` runs once per
+    request (React `cache`; the cron's `refreshChallenge` is uncached). Ranking: tied totals (unrounded, `tieTolerance`) share a rank (1, 1, 3); display order among ties is name
     (case-insensitive) then entry id; before any game there are no ranks and scores read "–".
   - Identity limitation: the entry belongs to the session (`challenge_entries.owner_session_id`, `ON DELETE SET NULL`);
-    there is no verification, so one person can enter from several browsers, and when the session ends the entry stays
-    on the leaderboard but nobody can edit it. Name required (1–24 characters, not unique), changeable until the deadline.
+    there is no verification, so one person can enter from several browsers, and when the session ends (cleared cookies,
+    or `ACCESS.sessionIdleDays` idle) the entry stays on the leaderboard but nobody can edit it. Name required (1–24 characters, not unique), changeable until the deadline.
     No endpoint takes an entry id for writing (`PUT /api/challenge/entry` saves the caller's own).
   - Unsaved work is a local draft only (`localStorage` `courtline.challenge.draft.v1.{season}`: picks and name, dropped
-    once locked); it never reaches the server until Save.
+    once locked; memory when storage refuses a write, until one succeeds); it never reaches the server until Save.
   - Local testing: with `RECORD_SOURCE=static` the opening game is the mock one (`src/data/schedule.ts`);
     `CHALLENGE_MOCK_TIPOFF=<ISO time>` overrides it to try the open and locked states. Delete `.data/pglite` between
     tries: a passed deadline cannot be moved back.

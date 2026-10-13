@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ChallengePageHeader } from "@/components/challenge/ChallengePageHeader";
 import { Panel } from "@/components/ui/Panel";
+import { ACCESS } from "@/config/access";
 import { CHALLENGE } from "@/config/challenge";
 import { SCORING } from "@/config/scoring";
 import { formatNumber, formatSigned } from "@/lib/format";
@@ -70,8 +71,8 @@ export default function HowItWorksPage() {
       body: (
         <p>
           An entry belongs to the browser that saved it. There are no accounts, so one person could enter from several
-          browsers. Clearing your cookies loses edit access, though the entry still counts. Other entries&apos; picks stay
-          hidden until the lock.
+          browsers. Clearing your cookies, or not visiting for {ACCESS.sessionIdleDays} days, loses edit access, though the
+          entry still counts and stays on the leaderboard. Other entries&apos; picks stay hidden until the lock.
         </p>
       ),
     },

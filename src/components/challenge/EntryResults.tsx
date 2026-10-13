@@ -11,6 +11,7 @@ import { TeamLogo } from "@/components/ui/TeamLogo";
 import { isLocked } from "@/lib/challenge/phase";
 import { movementState, pickStatus, type PickStatus } from "@/lib/challenge/status";
 import { formatDateTimeET, formatNumber, formatRecord, NOT_AVAILABLE } from "@/lib/format";
+import { projectWins } from "@/lib/scoring";
 import type { EntryResultsData, ResultRow } from "@/server/challenge-pages";
 import { ChallengePageHeader } from "./ChallengePageHeader";
 import { MovementBadge } from "./MovementBadge";
@@ -148,8 +149,9 @@ function FrozenLine({ row, frozen }: { row: ResultRow; frozen: boolean }) {
   return <span className="tabular-nums">{formatNumber(row.frozenLine)}</span>;
 }
 
+/** The team's win pace; a pick without a frozen line still shows it from the record (it just scores nothing). */
 function ProjectedWins({ row }: { row: ResultRow }) {
-  const wins = row.projected?.wins ?? null;
+  const wins = row.projected ? row.projected.wins : projectWins(row.team);
   return wins === null ? <span className="text-fog-400">{NOT_AVAILABLE}</span> : <span className="tabular-nums">{formatNumber(wins)}</span>;
 }
 

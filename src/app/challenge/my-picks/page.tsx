@@ -31,12 +31,13 @@ async function MyPicks() {
       <ChallengePageHeader title="My Picks" subtitle={`The 30/30 Challenge · ${CHALLENGE.season} NBA season`} />
       <Panel bodyClassName="flex flex-col items-start gap-4 p-5">
         <p className="text-lg font-semibold text-fog-50">
-          {locked ? "The challenge is locked" : "You haven't saved an entry yet"}
+          {locked ? "The challenge is locked" : "No entry in this browser"}
         </p>
         <p className="text-fog-300">
           {locked
-            ? "Entries closed at the deadline, and this browser has none. See how everyone else is doing."
-            : "Call Over or Under on all 30 teams and save before the deadline."}
+            ? "Entries closed at the deadline, and no entry is saved in this browser."
+            : "Call Over or Under on all 30 teams and save before the deadline."}{" "}
+          If you saved one in another browser, or haven&apos;t visited in a while, find it on the leaderboard.
         </p>
         <Link href={locked ? "/challenge/leaderboard" : "/challenge"} className={buttonClasses("primary")}>
           {locked ? "See the leaderboard" : "Make your picks"}

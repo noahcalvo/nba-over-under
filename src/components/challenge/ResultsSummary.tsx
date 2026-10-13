@@ -6,7 +6,8 @@ import type { EntryResultsData } from "@/server/challenge-pages";
 
 /** The locked entry's headline numbers. Never a zero before a game: unscored reads "Not available" / "Pending" / "–". */
 export function ResultsSummary({ data }: { data: EntryResultsData }) {
-  const { score, season, rank, entrants } = data;
+  const { score, season, rank, entrants, phase } = data;
+  const settled = phase === "final";
   const frozen = season?.frozen ?? null;
   const scored = score?.projectedScored ?? 0;
   return (
@@ -25,9 +26,9 @@ export function ResultsSummary({ data }: { data: EntryResultsData }) {
       />
       <StatCard
         icon={<Target className="size-7" />}
-        label="Picks on pace"
+        label={settled ? "Correct picks" : "Picks on pace"}
         value={scored === 0 ? "–" : `${score?.onPace ?? 0} / ${scored}`}
-        sub={scored === 0 ? "No games yet" : "Of picks whose team has played"}
+        sub={scored === 0 ? "No games yet" : settled ? "Of picks with a frozen line" : "Of picks whose team has played"}
       />
       <StatCard
         icon={<Hash className="size-7" />}

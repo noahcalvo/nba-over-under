@@ -31,7 +31,7 @@ export const SORT_OPTIONS: ReadonlyArray<{ value: TeamSort; label: string }> = [
 ];
 
 /** One of the filters, and with `movedOnly` only teams whose saved pick's line moved. */
-export function filterTeams(teams: readonly GridTeam[], filter: TeamFilter, movedOnly: boolean): GridTeam[] {
+export function filterTeams<T extends GridTeam>(teams: readonly T[], filter: TeamFilter, movedOnly: boolean): T[] {
   return teams.filter(
     (team) =>
       (filter === "all" || (filter === "unpicked" ? team.side === null : team.info.conference === filter)) &&
@@ -49,7 +49,7 @@ function compareNumbers(a: number | null, b: number | null, desc: boolean): numb
 }
 const size = (move: number | null) => (move === null ? null : Math.abs(move));
 
-export function sortTeams(teams: readonly GridTeam[], sort: TeamSort): GridTeam[] {
+export function sortTeams<T extends GridTeam>(teams: readonly T[], sort: TeamSort): T[] {
   const copy = [...teams];
   switch (sort) {
     case "team":

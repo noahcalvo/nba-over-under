@@ -18,6 +18,15 @@ describe("challengeNavItems", () => {
     ]);
   });
 
+  it("names the bottom tabs", () => {
+    expect(challengeNavItems().filter((item) => !item.sidebarOnly).map((item) => item.shortLabel)).toEqual([
+      "Challenge",
+      "My Picks",
+      "Leaderboard",
+      "How It Works",
+    ]);
+  });
+
   it("keeps Home in the sidebar only", () => {
     expect(challengeNavItems().filter((item) => item.sidebarOnly).map((item) => item.href)).toEqual(["/"]);
   });

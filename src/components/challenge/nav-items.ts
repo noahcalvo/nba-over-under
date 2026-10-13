@@ -16,7 +16,7 @@ export interface ChallengeNavItem {
 export function challengeNavItems(): ChallengeNavItem[] {
   return [
     { href: "/", label: "Home", shortLabel: "Home", icon: House, exact: true, sidebarOnly: true },
-    { href: "/challenge", label: "30/30 Challenge", shortLabel: "Picks", icon: Zap, exact: true },
+    { href: "/challenge", label: "30/30 Challenge", shortLabel: "Challenge", icon: Zap, exact: true },
     {
       href: "/challenge/my-picks",
       label: "My Picks",
@@ -28,7 +28,7 @@ export function challengeNavItems(): ChallengeNavItem[] {
     {
       href: "/challenge/leaderboard",
       label: "Leaderboard",
-      shortLabel: "Board",
+      shortLabel: "Leaderboard",
       icon: Trophy,
       exact: false,
       alsoActive: ["/challenge/entries"],

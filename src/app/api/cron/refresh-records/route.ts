@@ -1,25 +1,17 @@
-import { timingSafeEqual } from "node:crypto";
+import { CHALLENGE } from "@/config/challenge";
 import { refreshSeasonRecords, seasonsInUse } from "@/db/records";
 import { seasonEndYear } from "@/lib/records/season";
+import { cronRejection } from "@/server/cron";
 import { getDb } from "@/server/db";
 import { recordSource } from "@/server/records";
 
-function authorized(header: string | null, secret: string): boolean {
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const given = Buffer.from(header ?? "");
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
-
-/** Daily (vercel.json): refresh records for every season a stored league plays in. Vercel sends CRON_SECRET. */
+/** Daily (vercel.json): refresh records for every season a stored league plays in and the 30/30 Challenge's. Vercel sends CRON_SECRET. */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return Response.json({ error: "CRON_SECRET is not set." }, { status: 503 });
-  if (!authorized(request.headers.get("authorization"), secret)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const rejection = cronRejection(request);
+  if (rejection) return rejection;
   const db = await getDb();
   const results: { season: string; ok: boolean; message?: string }[] = [];
-  for (const label of await seasonsInUse(db)) {
+  for (const label of new Set([...(await seasonsInUse(db)), CHALLENGE.season])) {
     const season = seasonEndYear(label);
     if (season === null) {
       results.push({ season: label, ok: false, message: "Unrecognized season label." });

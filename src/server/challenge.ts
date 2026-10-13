@@ -66,11 +66,12 @@ export interface CurrentLines {
 }
 
 /** FanDuel's latest lines for the challenge season (recorded as a snapshot), else the newest stored snapshot. */
-async function readCurrentLines(db: Db): Promise<CurrentLines> {
+async function readCurrentLines(db: Db, frozen: boolean): Promise<CurrentLines> {
   const read = await readLines();
   if (read.lines?.season === CHALLENGE.season) {
-    // A failed read returns older lines, which an earlier successful read already recorded.
-    if (read.error === null) await recordLineSnapshot(db, CHALLENGE.seasonYear, read.lines);
+    // A failed read returns older lines, which an earlier successful read already recorded; after the freeze
+    // snapshots serve no purpose.
+    if (read.error === null && !frozen) await recordLineSnapshot(db, CHALLENGE.seasonYear, read.lines);
     const book = read.lines.source === "static" ? LINES.book : read.lines.source;
     return { values: read.lines.values, book, asOf: read.lines.asOf, error: read.error };
   }
@@ -101,7 +102,7 @@ export async function prepareChallenge(options: { forceSchedule?: boolean } = {}
   if (scheduleDue(season, now, options.forceSchedule ?? false)) {
     season = await syncChallengeSchedule(db, CHALLENGE.seasonYear, await readOpeningGame(), now);
   }
-  const [current, records] = await Promise.all([readCurrentLines(db), loadSeasonRecords(db, CHALLENGE.seasonYear)]);
+  const [current, records] = await Promise.all([readCurrentLines(db, season?.frozen != null), loadSeasonRecords(db, CHALLENGE.seasonYear)]);
   if (season?.deadline && !season.frozen && Date.parse(season.deadline) <= now.getTime()) {
     season = await freezeChallenge(db, CHALLENGE.seasonYear);
   }

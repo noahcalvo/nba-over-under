@@ -4,6 +4,7 @@ import { TEAM_DIVISIONS, TEAM_IDS, TEAM_INFO, type Division } from "@/data/teams
 import { listEntries, loadEntry } from "@/db/challenge";
 import { lineMove } from "@/lib/challenge/movement";
 import { isLocked } from "@/lib/challenge/phase";
+import { visibleEntry } from "@/lib/challenge/visibility";
 import { entryTotal, rankEntries, scoreEntry, type EntryScore } from "@/lib/challenge/scoring";
 import type { ChallengeEntry, ChallengePhase, ChallengePick, ChallengeSeason } from "@/lib/challenge/types";
 import type { GameLogRead } from "@/lib/game-log/types";
@@ -35,6 +36,7 @@ export interface EntryResultsData {
   phase: ChallengePhase;
   season: ChallengeSeason | null;
   now: string;
+  /** Picks are empty when `hidden`. */
   entry: ChallengeEntry;
   isViewer: boolean;
   /** True before the lock for anyone but the owner: the picks are not shown. */
@@ -98,14 +100,14 @@ async function buildResults(entry: ChallengeEntry, prepared: PreparedChallenge, 
   const isViewer = viewer?.id === entry.id;
   const hidden = !isViewer && !isLocked(phase);
   const basis = basisFor(phase);
-  const score = hidden ? null : scoreAgainstFrozen(entry, prepared);
-  const { entries, ranked } = await rankAll(prepared, basis);
+  const { entries, ranked, scores } = await rankAll(prepared, basis);
+  const score = hidden ? null : (scores.get(entry.id) ?? null);
   return {
     seasonLabel: CHALLENGE.season,
     phase,
     season,
     now: now.toISOString(),
-    entry,
+    entry: visibleEntry(entry, !hidden),
     isViewer,
     hidden,
     rows: hidden ? [] : resultRows(entry, score, prepared),

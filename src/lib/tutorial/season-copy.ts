@@ -49,13 +49,6 @@ export interface SeasonTourStep extends TourStep {
   advance: "continue" | "action" | "end";
 }
 
-const scoringRules = [
-  `Correct pick: ${formatSigned(SCORING.correctCall, 0)} point.`,
-  `Incorrect pick: ${formatSigned(SCORING.missedCall, 0)} point.`,
-  `Each win beyond the line: ${formatSigned(SCORING.marginWeight)} on the correct side, ${formatSigned(-SCORING.marginWeight)} on the incorrect side.`,
-  `Only the final ${SCORING.seasonGames}-game record counts; projections move every game.`,
-] as const;
-
 /** Shown with the final results only when the user's pick or faded pick pushed. */
 export const PUSH_RULE = "If a team finishes exactly on its locked line, both the pick and any fades targeting it score 0.";
 
@@ -80,7 +73,6 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
     advance: "continue",
     title: "Projected points",
     body: "Your pick scores by comparing the team's projected wins with its locked line. Here's the math:",
-    details: { summary: "Scoring rules", items: scoringRules },
     spotlight: ["team-stats", "my-side"],
     interactive: [],
     continueLabel: "Got it",
@@ -128,7 +120,7 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "final-awards": {
     advance: "continue",
     title: "Award winners",
-    body: "Final records decide the awards. Here's who won them and what they did to the standings:",
+    body: "Final records settle the awards.",
     spotlight: ["season-awards", "standings"],
     interactive: [],
     continueLabel: "See who won",

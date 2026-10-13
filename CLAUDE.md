@@ -125,8 +125,9 @@ Next API.
   page fed the completed demo draft (shown as id `demo`, `isDemo: true`), or "Finish the demo draft first". Three
   checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`, which first plays
   the games for a moment (progress bar, `PLAYING_LINES`; only that animation is local state). Awards are
-  introduced at Midseason, once there are leaders (`mid-awards`), and settled at Final results (`final-awards`); words
-  from `awardsStory`, `awardImpactStory`, `awardChangeStory`. Final results opens on the user's own pick and fade and
+  introduced at Midseason, once there are leaders (`mid-awards`), and settled at Final results (`final-awards`); the
+  spotlit awards panel shows the winners and the callout only says whether they changed who leads
+  (`awardImpactStory`). Final results opens on the user's own pick and fade and
   closes on the final standings (`final-finish`). One synthetic
   82-game W/L sequence per team, seeded by the draft's picks (`simulateSeason`; strength = line + normal spread, never
   favouring anyone); a checkpoint is a prefix of it. The team page gets that log (no dates or opponents, upcoming games

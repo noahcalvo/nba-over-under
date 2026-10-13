@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SCORING } from "@/config/scoring";
-import { awardChanges, awardPendingText, awardsFor, decideAwards } from "@/lib/awards";
+import { awardPendingText, awardsFor, decideAwards } from "@/lib/awards";
 import { evaluateCall, type Basis } from "@/lib/scoring";
 import type { ScoredCall } from "@/lib/standings";
 import type { DraftStatus, Side, Team } from "@/lib/types";
@@ -98,24 +98,6 @@ describe("decideAwards", () => {
     }
     expect(decide(calls, "projected", "fades").status).toBe("projected");
     expect(decide([], "projected", "complete")).toMatchObject({ status: "pending", pendingReason: "draft" });
-  });
-});
-
-describe("awardChanges", () => {
-  it("says which award leaders held on and which changed between two decisions", () => {
-    const a = call("m1", A, "OVER");
-    const b = call("m2", B, "OVER");
-    const c = call("m3", C, "OVER");
-    const before = decide([a, b, c]);
-    expect(awardChanges(before, before)).toEqual({ best: "held", worst: "held" });
-    // Later, b overtakes a while c stays the worst.
-    const later = decide([
-      { ...a, evaluation: { ...a.evaluation, points: 0.5 } },
-      { ...b, evaluation: { ...b.evaluation, points: 1.5 } },
-      c,
-    ]);
-    expect(awardChanges(before, later)).toEqual({ best: "changed", worst: "held" });
-    expect(awardChanges(decide([], "projected"), later)).toEqual({ best: "new", worst: "new" });
   });
 });
 

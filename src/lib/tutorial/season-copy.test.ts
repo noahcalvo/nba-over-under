@@ -18,10 +18,7 @@ describe("SEASON_STEPS", () => {
     }
   });
 
-  it("states the scoring rules from the scoring config", () => {
-    expect(SEASON_STEPS["mid-points"].details?.items).toEqual(
-      expect.arrayContaining(["Correct pick: +1 point.", "Incorrect pick: −1 point."]),
-    );
+  it("states the games each advance plays from the season config", () => {
     expect(SEASON_STEPS["draft-advance"].body).toContain("first 41 games");
     expect(SEASON_STEPS["mid-advance"].body).toContain("remaining 41 games");
   });
@@ -50,9 +47,8 @@ describe("SEASON_STEPS", () => {
     expect(SEASON_CHECKPOINTS.map((checkpoint) => SEASON_STEP_ORDER[checkpoint].length)).toEqual([1, 6, 3]);
   });
 
-  it("folds extra rules away only where they help: the scoring rules", () => {
-    const withDetails = Object.entries(SEASON_STEPS).filter(([, step]) => step.details);
-    expect(withDetails.map(([id]) => id)).toEqual(["mid-points"]);
+  it("keeps every step to its title and body: no folded-away rules", () => {
+    for (const step of Object.values(SEASON_STEPS)) expect(step.details).toBeUndefined();
   });
 });
 

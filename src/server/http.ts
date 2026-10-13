@@ -30,6 +30,8 @@ const STATUS: Record<ApiError, number> = {
   invalid_config: 400,
   config_locked: 409,
   seats_claimed: 409,
+  order_locked: 409,
+  invalid_order: 409,
 };
 
 export function errorResponse(error: ApiError): Response {

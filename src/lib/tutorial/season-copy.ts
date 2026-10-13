@@ -1,17 +1,11 @@
 import { SCORING } from "@/config/scoring";
-import { formatNumber, formatSigned } from "@/lib/format";
+import { formatSigned } from "@/lib/format";
 import type { TourStep } from "@/lib/tour/targets";
-import { advanceCheckpointGames, type SeasonCheckpoint } from "./season";
+import { advanceCheckpointGames, checkpointGames, type SeasonCheckpoint } from "./season";
 import type { SeasonStepId } from "./season-steps";
 
 const BEST = formatSigned(SCORING.bestPickAward, 0);
 const WORST = formatSigned(SCORING.worstPickAward, 0);
-
-const awardRules = [
-  "Pick scores are compared before any award points, across every manager's picks.",
-  "Ties: every tied pick earns the full award, and one manager can win both.",
-  "Fades don't count toward the awards.",
-] as const;
 
 // The guided season's words and spotlights. The user's own numbers (breakdowns, fade, standings) are added under the
 // text by the overlay from season-story.ts; this copy stays the same for every draft.
@@ -29,91 +23,64 @@ export const ADVANCE_LABELS: Record<SeasonCheckpoint, string | null> = {
   final: null,
 };
 
+/** Shown, a few in turn, while an advance plays its games. */
+export const PLAYING_LINES = [
+  "Playing basketball…",
+  "Behind-the-back hesis…",
+  "Punch step-backs…",
+  "Chase-down blocks…",
+  "Lobs off the backboard…",
+  "Arguing with the refs…",
+  "Crashing the offensive glass…",
+  "Bricking free throws…",
+] as const;
+
+/** Lines shown during one advance; each gets an equal share of it. */
+export const PLAYING_LINES_PER_ADVANCE = 3;
+
+/** The line to show `fraction` of the way through an advance that started on line `start`. */
+export function playingLine(start: number, fraction: number): string {
+  const step = Math.min(Math.floor(fraction * PLAYING_LINES_PER_ADVANCE), PLAYING_LINES_PER_ADVANCE - 1);
+  return PLAYING_LINES[(start + step) % PLAYING_LINES.length];
+}
+
 export interface SeasonTourStep extends TourStep {
   /** continue: a button; action: the user's own action (a page opening, a checkpoint advance); end: the last step. */
   advance: "continue" | "action" | "end";
 }
 
-const scoringRules = [
-  `Correct pick: ${formatSigned(SCORING.correctCall, 0)} point.`,
-  `Incorrect pick: ${formatSigned(SCORING.missedCall, 0)} point.`,
-  `Each win beyond the line: ${formatSigned(SCORING.marginWeight)} on the correct side, ${formatSigned(-SCORING.marginWeight)} on the incorrect side.`,
-  `Projected wins = wins ÷ games played × ${SCORING.seasonGames}.`,
-] as const;
-
 /** Shown with the final results only when the user's pick or faded pick pushed. */
 export const PUSH_RULE = "If a team finishes exactly on its locked line, both the pick and any fades targeting it score 0.";
 
 export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
-  "draft-roster": {
-    advance: "continue",
-    title: "Your draft is complete",
-    body: "Here's your first pick and your fade. Your picks gain or lose points as their teams play, and your fade can earn bonus points.",
-    spotlight: ["highlight-pick", "fades"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
-  "draft-standings": {
-    advance: "continue",
-    title: "The standings",
-    body: "Managers compete to earn the most total points: every pick on their roster plus their fade. No games have been played yet, so nobody has points and there's no ranking.",
-    spotlight: ["standings"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
-  "draft-awards": {
-    advance: "continue",
-    title: "Season awards",
-    body: `Two awards go to single picks: Best Pick (${BEST} to its owner) for the league's highest pick score and Worst Pick (${WORST}) for the lowest. No games have been played, so there are no leaders yet.`,
-    spotlight: ["season-awards"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
   "draft-advance": {
     advance: "action",
     title: "Tip off the season",
-    body: `We'll simulate the first ${advanceCheckpointGames("draft")} games for all 30 NBA teams. These are made-up demo results, not real NBA games.`,
-    spotlight: ["season-control"],
+    body: `Your picks and fade score as their teams play, and the most points wins. Play the first ${advanceCheckpointGames("draft")} games to see how you're doing.`,
+    spotlight: ["season-control", "highlight-pick"],
     interactive: ["season-control"],
     pointAt: "season-advance",
   },
   "mid-pick": {
     advance: "action",
-    title: "Midseason",
-    body: "We're halfway through the season! Your picks are earning projected points based on how their teams are performing. Let's take a closer look at one of your teams: open your first pick's team.",
+    title: "Check on your pick",
+    body: `${checkpointGames("midseason")} games in, every pick has projected points. Open your first pick's team to see how it's doing.`,
     spotlight: ["highlight-pick"],
     interactive: ["highlight-pick-team"],
     pointAt: "highlight-pick-team",
   },
-  "mid-chart": {
-    advance: "continue",
-    title: "Season trajectory",
-    body: "This chart shows your team's journey so far. The solid line tracks actual wins, the dashed line shows the pace needed to reach the betting line, and the projected line shows where the team is heading if it maintains its current winning rate.",
-    details: {
-      summary: "Chart controls",
-      items: [
-        "Last 8 zooms in on recent games; Full season shows all 82.",
-        "Games after the checkpoint haven't been played yet, so they have no result.",
-        "The demo's games are simulated: no dates or opponents.",
-      ],
-    },
-    spotlight: ["season-progress"],
-    interactive: ["season-progress"],
-    continueLabel: "Continue",
-  },
   "mid-points": {
     advance: "continue",
     title: "Projected points",
-    body: "Your pick earns points by comparing the team's projected wins with the locked line. Here's your pick in numbers:",
-    details: { summary: "Scoring rules", items: [...scoringRules, "Projections change every game; only the final 82-game record counts."] },
+    body: "Your pick scores by comparing the team's projected wins with its locked line. Here's the math:",
     spotlight: ["team-stats", "my-side"],
     interactive: [],
-    continueLabel: "Continue",
+    continueLabel: "Got it",
   },
   "mid-back": {
     advance: "action",
     title: "Back to the league",
-    body: "Now let's see how your whole roster adds up. Go back to the League overview.",
+    body: "Now see how your whole roster adds up. Open the League overview.",
     spotlight: ["nav-overview"],
     interactive: ["nav-overview"],
     pointAt: "nav-overview",
@@ -121,57 +88,48 @@ export const SEASON_STEPS: Record<SeasonStepId, SeasonTourStep> = {
   "mid-standings": {
     advance: "continue",
     title: "Projected standings",
-    body: `Standings add up the projected points of every pick on a roster, that manager's projected fade and any season awards. A fade earns ${formatSigned(SCORING.fadeHit, 0)} if the pick it targets misses and ${formatNumber(SCORING.fadeMiss, 0)} if it hits, with no margin points. These results can still change before the season ends.`,
+    body: "Your total adds up every pick's projected points, your fade and any season awards. It moves with every game until the season ends.",
     spotlight: ["standings", "fades"],
     interactive: [],
-    continueLabel: "Continue",
+    continueLabel: "See the awards",
   },
   "mid-awards": {
     advance: "continue",
-    title: "Projected awards",
-    body: `These picks have the league's best and worst projected scores right now. Their owners' projected totals already include ${BEST} and ${WORST}, but the leaders are provisional and can still change before the season ends.`,
-    details: { summary: "Award rules", items: awardRules },
+    title: "Season awards",
+    body: `The league's best single pick earns its owner ${BEST} (Best Pick) and the worst costs its owner ${WORST} (Worst Pick). These are the leaders so far, and they can still change.`,
     spotlight: ["season-awards", "standings"],
     interactive: [],
-    continueLabel: "Continue",
+    continueLabel: "Got it",
   },
   "mid-advance": {
     advance: "action",
     title: "Finish the season",
-    body: `We'll simulate the remaining ${advanceCheckpointGames("midseason")} games for every team. Final records replace the projections.`,
+    body: `Play the remaining ${advanceCheckpointGames("midseason")} games. Final records replace the projections.`,
     spotlight: ["season-control"],
     interactive: ["season-control"],
     pointAt: "season-advance",
   },
-  "final-standings": {
-    advance: "continue",
-    title: "Final standings",
-    body: "The season is over! All 82 games have been played, and your picks have received their final scores. The manager with the most points wins the league!",
-    spotlight: ["standings"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
-  "final-awards": {
-    advance: "continue",
-    title: "The season awards",
-    body: "Final records decide the awards. The winners, their owners and what the award points did to the final standings:",
-    spotlight: ["season-awards", "standings"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
   "final-results": {
     advance: "continue",
     title: "Your results",
-    body: "Here's how your first pick and your fade finished:",
+    body: `All ${SCORING.seasonGames} games are in. Here's how your first pick and your fade finished:`,
     spotlight: ["highlight-pick", "fades"],
     interactive: [],
-    continueLabel: "Continue",
+    continueLabel: "See the awards",
+  },
+  "final-awards": {
+    advance: "continue",
+    title: "Award winners",
+    body: "Final records settle the awards.",
+    spotlight: ["season-awards", "standings"],
+    interactive: [],
+    continueLabel: "See who won",
   },
   "final-finish": {
     advance: "end",
-    title: "That's a Courtline season",
-    body: "You drafted, faded, and followed your picks from projections to final scores. Explore this league, replay the demo, or start a real league with friends.",
-    spotlight: [],
+    title: "Final standings",
+    body: "That's a Courtline season. Here's who won:",
+    spotlight: ["standings"],
     interactive: [],
   },
 };

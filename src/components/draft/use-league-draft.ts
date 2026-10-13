@@ -82,7 +82,12 @@ export function useLeagueDraft(initial: LeagueView): DraftRoomDriver {
     [send, initial.league.id],
   );
 
+  const saveDraftOrder = useCallback(
+    (order: string[]) => send(`/api/leagues/${initial.league.id}/order`, "PUT", { order }),
+    [send, initial.league.id],
+  );
+
   const dismissError = useCallback(() => setError(null), []);
 
-  return { view, error, pending, dispatch, saveLineOverrides, saveConfig, dismissError };
+  return { view, error, pending, dispatch, saveLineOverrides, saveConfig, saveDraftOrder, dismissError };
 }

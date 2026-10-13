@@ -10,7 +10,7 @@ import { computeStandings } from "@/lib/standings";
 import type { Team } from "@/lib/types";
 import { completedDemo } from "./demo-drafts";
 import { draftSeed, simulateSeason, teamsAt } from "./season";
-import { awardChangeStory, awardImpactStory, awardsStory, fadeStory, pickStory, standingsStory } from "./season-story";
+import { awardImpactStory, fadeStory, pickStory, standingsStory } from "./season-story";
 
 const base = tutorialTeams().find((team) => team.id === "MIN")!;
 const at = (wins: number, losses: number, line = 46.5): Team => ({ ...base, line, wins, losses });
@@ -132,9 +132,7 @@ describe("season awards in the demo season", () => {
     const standings = standingsAt(0, "projected");
     expect(standings.awards).toMatchObject({ status: "pending", pendingReason: "no_games", best: [], worst: [] });
     expect(standings.rows.every((row) => row.awardPoints === 0)).toBe(true);
-    expect(awardsStory(standings.awards, league.managers, TUTORIAL_VIEWER_ID)).toEqual([
-      "No award leaders yet: Projected leaders appear once every drafted team has played.",
-    ]);
+    expect(awardImpactStory(standings, standings, league.managers, TUTORIAL_VIEWER_ID)).toBe("No award points yet.");
   });
 
   it("Midseason: projected leaders are the extreme projected pick scores, counted once in the projected totals", () => {
@@ -153,10 +151,6 @@ describe("season awards in the demo season", () => {
     }
     const awarded = standings.rows.reduce((total, row) => total + row.awardPoints, 0);
     expect(awarded).toBe(awards.best.length * SCORING.bestPickAward + awards.worst.length * SCORING.worstPickAward);
-    const lines = awardsStory(awards, league.managers, TUTORIAL_VIEWER_ID);
-    expect(lines[0]).toMatch(/^Best Pick \(projected\): /);
-    expect(lines[1]).toMatch(/^Worst Pick \(projected\): /);
-    expect(lines.join(" ")).toMatch(/\+2/);
     // Same draft, same season, same awards.
     const again = computeStandings(
       league,
@@ -170,13 +164,8 @@ describe("season awards in the demo season", () => {
     const final = standingsAt(82, "final");
     expect(final.complete).toBe(true);
     expect(final.awards.status).toBe("final");
-    const lines = awardsStory(final.awards, league.managers, TUTORIAL_VIEWER_ID);
-    expect(lines[0]).toMatch(/^Best Pick: /);
     const impact = awardImpactStory(final, standingsAt(82, "final", awardsOff()), league.managers, TUTORIAL_VIEWER_ID);
     expect(impact).toMatch(/wins the league|have won/);
-    const changes = awardChangeStory(standingsAt(41, "projected").awards, final.awards, league.managers, TUTORIAL_VIEWER_ID);
-    expect(changes).toHaveLength(2);
-    for (const line of changes) expect(line).toMatch(/held on|At Midseason/);
   });
 });
 

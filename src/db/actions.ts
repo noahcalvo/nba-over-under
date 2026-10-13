@@ -8,6 +8,7 @@ import {
   createLeague,
   decideClaim,
   decideDraftAction,
+  decideDraftOrder,
   decideInviteChange,
   decideLeagueConfig,
   decideLineOverrides,
@@ -104,6 +105,20 @@ export function setLeagueConfig(
 ): Promise<Result<DraftOutcome>> {
   return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
     const decided = decideLeagueConfig(league, actorId, config);
+    if (!decided.ok) return fail(decided.error);
+    return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
+  });
+}
+
+/** Commissioner: set the draft order before the draft. Parse the body with parseDraftOrder before calling. */
+export function setDraftOrder(
+  db: Db,
+  leagueId: string,
+  sessionId: string | null,
+  order: readonly string[],
+): Promise<Result<DraftOutcome>> {
+  return withLockedLeague(db, leagueId, sessionId, async ({ tx, league, actorId }) => {
+    const decided = decideDraftOrder(league, actorId, order);
     if (!decided.ok) return fail(decided.error);
     return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
   });

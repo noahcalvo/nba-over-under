@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
-import { claimLink, createLeagueFor, resetSeat, runDraftAction, setLeagueConfig } from "@/db/actions";
+import { claimLink, createLeagueFor, resetSeat, runDraftAction, setDraftOrder, setLeagueConfig } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import { listActiveLinks } from "@/db/links";
@@ -164,5 +164,56 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
       expect(shrunk.error).toBe("seats_claimed");
       expect(league.managers.find((manager) => manager.id === "m4")?.displayName).toBe("Dee");
     }
+  });
+
+  it("applies a reorder and a start in one order or the other: the draft starts from whatever order is stored", async () => {
+    const { leagueId, commissioner } = await newLeague();
+    const order = ["m3", "m1", "m4", "m2"];
+    const [reordered, started] = await Promise.all([
+      setDraftOrder(db, leagueId, commissioner, order),
+      runDraftAction(db, leagueId, commissioner, { type: "start" }, STATIC_LINES),
+    ]);
+    expect(started.ok).toBe(true);
+    const league = (await loadLeague(db, leagueId))!;
+    expect(league.draft.status).toBe("live");
+    if (reordered.ok) {
+      expect(league.draft.seatOrder).toEqual(order);
+    } else {
+      expect(reordered.error).toBe("order_locked");
+      expect(league.draft.seatOrder).toEqual(["m1", "m2", "m3", "m4"]);
+    }
+    expect(league.managers.map((m) => m.seat)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("serializes parallel reorders: the last one wins and seats stay a clean 0..n-1", async () => {
+    const { leagueId, commissioner } = await newLeague();
+    const orders = [
+      ["m2", "m1", "m3", "m4"],
+      ["m4", "m3", "m2", "m1"],
+      ["m3", "m4", "m1", "m2"],
+      ["m1", "m3", "m2", "m4"],
+    ];
+    const results = await Promise.all(
+      Array.from({ length: PARALLEL }, (_, i) => setDraftOrder(db, leagueId, commissioner, orders[i % orders.length])),
+    );
+    expect(results.every((result) => result.ok)).toBe(true);
+    const league = (await loadLeague(db, leagueId))!;
+    expect(orders).toContainEqual(league.draft.seatOrder);
+    expect(league.managers.map((m) => m.seat)).toEqual([0, 1, 2, 3]);
+    expect(league.version).toBe(1 + PARALLEL);
+  });
+
+  it("keeps both a reorder and a claim that race each other", async () => {
+    const { leagueId, commissioner } = await newLeague();
+    const invite = (await listActiveLinks(db, leagueId)).find((link) => link.kind === "league_invite")!;
+    const guest = await createSession(db, crypto.randomUUID());
+    const [reordered, claimed] = await Promise.all([
+      setDraftOrder(db, leagueId, commissioner, ["m4", "m3", "m2", "m1"]),
+      claimLink(db, invite.id, guest, { managerId: "m3", displayName: "Dee" }),
+    ]);
+    expect(reordered.ok && claimed.ok).toBe(true);
+    const league = (await loadLeague(db, leagueId))!;
+    expect(league.draft.seatOrder).toEqual(["m4", "m3", "m2", "m1"]);
+    expect(league.managers[1]).toEqual({ id: "m3", seat: 1, displayName: "Dee" });
   });
 });

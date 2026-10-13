@@ -9,12 +9,11 @@ import { INITIAL_SEASON_PROGRESS } from "@/lib/tutorial/season-steps";
 import { applyTutorialCommand } from "@/lib/tutorial/session";
 import { simulateAll, simulateStep, type SimulationKind } from "@/lib/tutorial/simulation";
 import type { RestoredTutorial } from "@/lib/tutorial/snapshot";
-import { INITIAL_PROGRESS, type TutorialProgress } from "@/lib/tutorial/steps";
 import type { LeagueView } from "@/lib/types";
 import { clearTutorial, getServerTutorialStore, getTutorialStore, saveTutorial, subscribeTutorial } from "./tutorial-store";
 
 function freshTutorial(): RestoredTutorial {
-  return { league: buildTutorialLeague(), progress: INITIAL_PROGRESS, season: INITIAL_SEASON_PROGRESS };
+  return { league: buildTutorialLeague(), season: INITIAL_SEASON_PROGRESS };
 }
 
 /**
@@ -27,7 +26,7 @@ export function useTutorialSession() {
   const state = tutorial ?? fresh;
   const [error, setError] = useState<string | null>(null);
   const teams = useMemo(() => tutorialTeams(), []);
-  const { league, progress } = state;
+  const { league } = state;
   // Set by exit, so a simulated step landing during the navigation away can't save the demo again. Cleared whenever
   // the page shows again (Next keeps left routes mounted but hidden, and re-runs their effects on return).
   const exited = useRef(false);
@@ -71,18 +70,13 @@ export function useTutorialSession() {
       error,
       pending: false,
       dispatch,
-      // The demo starts live, so the lobby (lines, league size) never shows.
+      // The demo starts live, so the lobby (lines, league size, draft order) never shows.
       saveLineOverrides: async () => false,
       saveConfig: async () => false,
+      saveDraftOrder: async () => false,
       dismissError: () => setError(null),
     }),
     [view, error, dispatch],
-  );
-
-  const acknowledge = useCallback(
-    (flag: keyof TutorialProgress) =>
-      update((current) => ({ ...current, progress: { ...current.progress, [flag]: true } })),
-    [update],
   );
 
   /** One simulated command, or (skip) all that remain. Both reach the same league. */
@@ -101,5 +95,5 @@ export function useTutorialSession() {
     clearTutorial();
   }, []);
 
-  return { league, progress, driver, acknowledge, simulate, exit };
+  return { league, driver, simulate, exit };
 }

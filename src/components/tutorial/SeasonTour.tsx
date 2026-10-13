@@ -9,17 +9,8 @@ import { indexTeams } from "@/lib/lines";
 import { computeStandings, type Standings } from "@/lib/standings";
 import type { TourStep } from "@/lib/tour/targets";
 import { PUSH_RULE, SEASON_STEPS, seasonStepLabel } from "@/lib/tutorial/season-copy";
-import { checkpointGames, teamsAt } from "@/lib/tutorial/season";
 import type { SeasonLocation, SeasonStepState } from "@/lib/tutorial/season-steps";
-import {
-  awardChangeStory,
-  awardImpactStory,
-  awardsStory,
-  fadeStory,
-  pickStory,
-  standingsStory,
-  type BreakdownRow,
-} from "@/lib/tutorial/season-story";
+import { awardImpactStory, fadeStory, pickStory, standingsStory, type BreakdownRow } from "@/lib/tutorial/season-story";
 import type { DemoSeasonSession } from "./use-demo-season";
 
 const EXIT_HREF = "/";
@@ -73,20 +64,11 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
   const teamsById = indexTeams(demo.teams);
   const standings: Standings = computeStandings(demo.league, teamsById, basis);
   const { managers } = demo.league;
-  /** The award sentences, the awards' effect on the standings and the user's breakdown (picks, fade, awards, total). */
-  const awardDetails = (extra: readonly string[] = []) => (
-    <>
-      <Lines lines={[...awardsStory(standings.awards, managers, demo.viewerId), ...extra]} />
-      <Story
-        summary={awardImpactStory(
-          standings,
-          computeStandings(demo.league, teamsById, basis, awardsOff()),
-          managers,
-          demo.viewerId,
-        )}
-        rows={standingsStory(standings, managers, demo.viewerId).rows}
-      />
-    </>
+  /** The one thing the spotlit awards panel doesn't say: whether the award points changed who leads. */
+  const awardImpact = (
+    <p className="text-sm font-semibold text-fog-50">
+      {awardImpactStory(standings, computeStandings(demo.league, teamsById, basis, awardsOff()), managers, demo.viewerId)}
+    </p>
   );
   const viewerRow = standings.rows.find((row) => row.managerId === demo.viewerId)!;
   const openingTeam = demo.teams.find((team) => team.id === demo.openingPick.teamId)!;
@@ -106,15 +88,8 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
       );
     }
     case "mid-awards":
-      return awardDetails();
-    case "final-awards": {
-      // The same season cut at Midseason: what the projections said then.
-      const midTeams = indexTeams(teamsAt(demo.teams, demo.season, checkpointGames("midseason")));
-      const midseason = computeStandings(demo.league, midTeams, "projected").awards;
-      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId));
-    }
-    case "final-standings":
-      return <Story summary={standingsStory(standings, demo.league.managers, demo.viewerId).summary} rows={[]} />;
+    case "final-awards":
+      return awardImpact;
     case "final-results": {
       const pick = pickStory(demo.openingPick, openingTeam, "final");
       const fade = fadeStory(viewerRow, demo.league.managers);
@@ -130,33 +105,24 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
     }
     case "final-finish":
       return (
-        <div className="flex flex-col gap-2">
-          <Button onClick={() => demo.seen("final-finish")}>Explore results</Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" onClick={demo.replay}>
-              Replay demo
-            </Button>
-            <Link href="/" className={buttonClasses("secondary")}>
-              Create league
-            </Link>
+        <>
+          <p className="text-sm font-semibold text-fog-50">{standingsStory(standings, managers, demo.viewerId).summary}</p>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => demo.seen("final-finish")}>Explore results</Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" onClick={demo.replay}>
+                Replay demo
+              </Button>
+              <Link href="/" className={buttonClasses("secondary")}>
+                Create league
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       );
     default:
       return null;
   }
-}
-
-function Lines({ lines }: { lines: readonly string[] }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      {lines.map((line) => (
-        <p key={line} className="text-sm text-fog-300">
-          {line}
-        </p>
-      ))}
-    </div>
-  );
 }
 
 function Story({ summary, rows }: { summary: string; rows: readonly BreakdownRow[] }) {

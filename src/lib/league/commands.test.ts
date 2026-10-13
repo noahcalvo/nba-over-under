@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { draftTotalPicks, managerOnTheClock, type DraftAction } from "@/lib/draft";
+import { draftTotalPicks, managerOnTheClock, seatForPick, type DraftAction } from "@/lib/draft";
 import type { FadeAction } from "@/lib/fades";
 import {
   createLeague,
   decideClaim,
   decideDraftAction,
+  decideDraftOrder,
   decideInviteChange,
   decideLeagueConfig,
   decideLineOverrides,
@@ -359,5 +360,96 @@ describe("decideLeagueConfig", () => {
 
   it("keeps new leagues at the default 4 × 11", () => {
     expect(newLeague().draft).toMatchObject({ rounds: 11, seatOrder: ["m1", "m2", "m3", "m4"] });
+  });
+});
+
+describe("decideDraftOrder", () => {
+  const ORDER = ["m3", "m1", "m4", "m2"];
+
+  it("renumbers seats to the order and keeps every id and name", () => {
+    const league = must(decideDraftOrder(join(newLeague(), "m2", "Ben"), "m1", ORDER));
+    expect(league.managers.map((m) => [m.id, m.seat, m.displayName])).toEqual([
+      ["m3", 0, null],
+      ["m1", 1, "Ana"],
+      ["m4", 2, null],
+      ["m2", 3, "Ben"],
+    ]);
+    expect(league.draft).toMatchObject({ status: "not_started", seatOrder: ORDER, picks: [], rounds: 11 });
+    expect(league.commissionerId).toBe("m1");
+  });
+
+  it("can be changed again, or put back", () => {
+    const once = must(decideDraftOrder(newLeague(), "m1", ORDER));
+    const back = must(decideDraftOrder(once, "m1", ["m1", "m2", "m3", "m4"]));
+    expect(back.draft.seatOrder).toEqual(["m1", "m2", "m3", "m4"]);
+    expect(back.managers.map((m) => m.seat)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("starts the draft from the saved order and snakes from there", () => {
+    const league = must(decideDraftOrder(newLeague(), "m1", ORDER));
+    const started = must(act(league, "m1", { type: "start" }));
+    expect(started.draft.seatOrder).toEqual(ORDER);
+    expect(managerOnTheClock(started.draft)).toBe("m3");
+    const order = started.draft.seatOrder;
+    expect(Array.from({ length: 8 }, (_, i) => order[seatForPick(i + 1, order.length)])).toEqual([
+      "m3", "m1", "m4", "m2", // round 1
+      "m2", "m4", "m1", "m3", // round 2 reverses
+    ]);
+    const afterOne = must(act(started, "m1", pick(started, "MIN", "OVER")));
+    expect(afterOne.draft.picks[0].managerId).toBe("m3");
+    expect(managerOnTheClock(afterOne.draft)).toBe("m1");
+  });
+
+  it("refuses orders that aren't exactly the league's managers", () => {
+    const league = newLeague();
+    for (const order of [["m1", "m2", "m3"], ["m1", "m1", "m3", "m4"], ["m1", "m2", "m3", "m9"], []]) {
+      expect(decideDraftOrder(league, "m1", order)).toEqual({ ok: false, error: "invalid_order" });
+    }
+  });
+
+  it("refuses an order made before the league size changed", () => {
+    const grown = must(decideLeagueConfig(newLeague(), "m1", { managerCount: 6, rounds: 10 }));
+    expect(decideDraftOrder(grown, "m1", ORDER)).toEqual({ ok: false, error: "invalid_order" });
+  });
+
+  it("belongs to the commissioner, and never to the demo league", () => {
+    const league = join(newLeague(), "m2", "Ben");
+    expect(decideDraftOrder(league, "m2", ORDER)).toEqual({ ok: false, error: "forbidden" });
+    expect(decideDraftOrder(league, null, ORDER)).toEqual({ ok: false, error: "forbidden" });
+    expect(decideDraftOrder({ ...league, isDemo: true }, "m1", ORDER)).toEqual({ ok: false, error: "demo_league" });
+  });
+
+  it("is locked once the draft starts: live, paused, fades and complete", () => {
+    const started = must(act(newLeague(), "m1", { type: "start" }));
+    expect(decideDraftOrder(started, "m1", ORDER)).toEqual({ ok: false, error: "order_locked" });
+    const paused = must(act(started, "m1", { type: "pause" }));
+    expect(decideDraftOrder(paused, "m1", ORDER)).toEqual({ ok: false, error: "order_locked" });
+    for (const status of ["fades", "complete"] as const) {
+      const later = { ...started, draft: { ...started.draft, status } };
+      expect(decideDraftOrder(later, "m1", ORDER)).toEqual({ ok: false, error: "order_locked" });
+    }
+  });
+
+  it("never reorders a draft that has picks, whatever its status says", () => {
+    const started = must(act(newLeague(), "m1", { type: "start" }));
+    const picked = must(act(started, "m1", pick(started, "MIN", "OVER")));
+    const inconsistent = { ...picked, draft: { ...picked.draft, status: "not_started" as const } };
+    expect(decideDraftOrder(inconsistent, "m1", ORDER)).toEqual({ ok: false, error: "order_locked" });
+  });
+
+  it("works at 2 and 12 managers", () => {
+    const two = must(decideLeagueConfig(newLeague(), "m1", { managerCount: 2, rounds: 30 }));
+    expect(must(decideDraftOrder(two, "m1", ["m2", "m1"])).draft.seatOrder).toEqual(["m2", "m1"]);
+    const twelve = must(decideLeagueConfig(newLeague(), "m1", { managerCount: 12, rounds: 5 }));
+    const reversed = [...twelve.draft.seatOrder].reverse();
+    expect(must(decideDraftOrder(twelve, "m1", reversed)).draft.seatOrder).toEqual(reversed);
+  });
+
+  it("lets the league grow after a reorder without reusing an id", () => {
+    const reordered = must(decideDraftOrder(newLeague(), "m1", ["m4", "m1", "m2", "m3"]));
+    const shrunk = must(decideLeagueConfig(reordered, "m1", { managerCount: 3, rounds: 11 }));
+    expect(shrunk.draft.seatOrder).toEqual(["m4", "m1", "m2"]);
+    const grown = must(decideLeagueConfig(shrunk, "m1", { managerCount: 5, rounds: 11 }));
+    expect(grown.draft.seatOrder).toEqual(["m4", "m1", "m2", "m3", "m5"]);
   });
 });

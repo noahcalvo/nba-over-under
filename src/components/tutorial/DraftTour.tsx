@@ -11,7 +11,7 @@ import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { NO_ACCESS } from "@/lib/access/links";
 import { draftTotalPicks, roundOf } from "@/lib/draft";
 import type { SideRef } from "@/lib/draft-filters";
-import { TUTORIAL_STEP_COUNT, TUTORIAL_STEPS, tutorialStep, type TutorialStepId } from "@/lib/tutorial/steps";
+import { TUTORIAL_STEP_COUNT, TUTORIAL_STEPS, tutorialStep } from "@/lib/tutorial/steps";
 import type { League } from "@/lib/types";
 import { getServerTutorialStore, getTutorialStore, subscribeTutorial } from "./tutorial-store";
 import { useTutorialSession } from "./use-tutorial-session";
@@ -31,18 +31,17 @@ export function DraftTour() {
 }
 
 function DraftTourSession() {
-  const { league, progress, driver, acknowledge, simulate, exit } = useTutorialSession();
+  const { league, driver, simulate, exit } = useTutorialSession();
   const [hasSelection, setHasSelection] = useState(false);
   const [hasFadeTarget, setHasFadeTarget] = useState(false);
   const onSelectionChange = useCallback((selection: SideRef | null) => setHasSelection(selection !== null), []);
   const onFadeTargetChange = useCallback((target: number | null) => setHasFadeTarget(target !== null), []);
-  const stepId = tutorialStep(progress, { league, hasSelection, hasFadeTarget });
+  const stepId = tutorialStep({ league, hasSelection, hasFadeTarget });
   const step = TUTORIAL_STEPS[stepId];
 
-  // Simulated steps play one command at a time; each new league version schedules the next. The other fades stop
-  // simulating once the draft completes, and their step then waits for Continue.
-  const fadesDone = league.draft.status === "complete";
-  const simulating = stepId === "simulate" ? "draft" : stepId === "fade-sim" && !fadesDone ? "fades" : null;
+  // Simulated steps play one command at a time; each new league version schedules the next. The last fade completes
+  // the draft, which moves the tour on to its final step.
+  const simulating = stepId === "simulate" ? "draft" : stepId === "fade-sim" ? "fades" : null;
   useEffect(() => {
     if (simulating === null) return;
     const timer = window.setTimeout(
@@ -51,12 +50,6 @@ function DraftTourSession() {
     );
     return () => window.clearTimeout(timer);
   }, [simulating, league.version, simulate]);
-
-  const continueFor: Partial<Record<TutorialStepId, () => void>> = {
-    welcome: () => acknowledge("welcomed"),
-    snake: () => acknowledge("snakeExplained"),
-    ...(fadesDone && { "fade-sim": () => acknowledge("fadesWatched") }),
-  };
 
   return (
     <>
@@ -77,7 +70,6 @@ function DraftTourSession() {
         key={stepId}
         step={step}
         stepLabel={`Step ${step.number} of ${TUTORIAL_STEP_COUNT}`}
-        onContinue={continueFor[stepId]}
         exit={{ label: "Exit demo", href: EXIT_HREF, onExit: exit }}
       >
         {stepId === "simulate" && (
@@ -86,7 +78,7 @@ function DraftTourSession() {
         {stepId === "fade-sim" && (
           <SimulationProgress
             label={`${league.fades.length} of ${league.managers.length} fades locked`}
-            onSkip={fadesDone ? undefined : () => simulate("fades", true)}
+            onSkip={() => simulate("fades", true)}
           />
         )}
         {stepId === "complete" && (
@@ -108,18 +100,15 @@ function draftProgress(league: League): string {
   return `Pick ${current} of ${total} · Round ${round}, ${round % 2 === 1 ? "left to right" : "right to left"}`;
 }
 
-/** Without onSkip (the simulation is done) only the label shows. */
-function SimulationProgress({ label, onSkip }: { label: string; onSkip?: () => void }) {
+function SimulationProgress({ label, onSkip }: { label: string; onSkip: () => void }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <p role="status" className="text-sm font-semibold text-fog-50">
         {label}
       </p>
-      {onSkip && (
-        <Button variant="secondary" size="sm" onClick={onSkip}>
-          Skip to the end
-        </Button>
-      )}
+      <Button variant="secondary" size="sm" onClick={onSkip}>
+        Skip
+      </Button>
     </div>
   );
 }

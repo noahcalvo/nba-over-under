@@ -111,7 +111,7 @@ export async function insertLeague(tx: Tx, league: League): Promise<boolean> {
   return true;
 }
 
-/** Writes what changed between two versions of a locked league (seats, rounds, new and voided picks, fades, names, status, lines) and bumps version. */
+/** Writes what changed between two versions of a locked league (seats, seat order, rounds, new and voided picks, fades, names, status, lines) and bumps version. */
 export async function saveLeague(tx: Tx, before: League, after: League): Promise<League> {
   // Seats change only before the draft (decideLeagueConfig): removed seats are open, so nothing else points at them.
   const removed = before.managers.filter((manager) => !after.managers.some((kept) => kept.id === manager.id));
@@ -125,6 +125,20 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
         ),
       ),
     );
+  }
+  // The draft order (decideDraftOrder) renumbers kept seats before the draft. managers_seat_unique isn't deferrable,
+  // so moved seats first park on negative numbers (-1 - seat, distinct and never a real seat), then take their seats.
+  const moved = after.managers.filter((manager) => {
+    const previous = before.managers.find((old) => old.id === manager.id);
+    return previous !== undefined && previous.seat !== manager.seat;
+  });
+  for (const seat of [(manager: Manager) => -1 - manager.seat, (manager: Manager) => manager.seat]) {
+    for (const manager of moved) {
+      await tx
+        .update(managers)
+        .set({ seat: seat(manager) })
+        .where(and(eq(managers.leagueId, after.id), eq(managers.id, manager.id)));
+    }
   }
   const added = after.managers.filter((manager) => !before.managers.some((old) => old.id === manager.id));
   if (added.length > 0) {

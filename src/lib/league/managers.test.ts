@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findManager, managerInitials, managerLabel, openSeats } from "@/lib/league/managers";
+import { findManager, managerInitials, managerLabel, managerNumber, openSeats } from "@/lib/league/managers";
 import type { Manager } from "@/lib/types";
 
 const MANAGERS: Manager[] = [
@@ -9,15 +9,26 @@ const MANAGERS: Manager[] = [
   { id: "m4", seat: 3, displayName: null },
 ];
 
-describe("managerLabel and managerInitials", () => {
-  it("uses the display name when claimed, else a seat label", () => {
-    expect(managerLabel({ seat: 0, displayName: "Ana" })).toBe("Ana");
-    expect(managerLabel({ seat: 2, displayName: null })).toBe("Manager 3");
+describe("managerNumber, managerLabel and managerInitials", () => {
+  it("number a manager by their id, wherever they sit in the draft order", () => {
+    expect(managerNumber({ id: "m3", seat: 0 })).toBe(3);
+    expect(managerNumber({ id: "m12", seat: 4 })).toBe(12);
   });
 
-  it("derives initials from the seat", () => {
-    expect(managerInitials({ seat: 0 })).toBe("M1");
-    expect(managerInitials({ seat: 3 })).toBe("M4");
+  it("fall back to the seat for ids that aren't m{n}", () => {
+    expect(managerNumber({ id: "guest", seat: 2 })).toBe(3);
+  });
+
+  it("use the display name when claimed, else the manager's number", () => {
+    expect(managerLabel({ id: "m1", seat: 1, displayName: "Ana" })).toBe("Ana");
+    expect(managerLabel({ id: "m3", seat: 0, displayName: null })).toBe("Manager 3");
+    expect(managerInitials({ id: "m4", seat: 0 })).toBe("M4");
+  });
+
+  it("match the old seat-based names for a league that was never reordered", () => {
+    for (const manager of MANAGERS) {
+      expect(managerInitials(manager)).toBe(`M${manager.seat + 1}`);
+    }
   });
 });
 

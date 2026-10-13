@@ -1,4 +1,4 @@
-import { managerInitials } from "@/lib/league/managers";
+import { managerInitials, managerNumber } from "@/lib/league/managers";
 import type { Manager } from "@/lib/types";
 
 const SEAT_BG = [
@@ -29,7 +29,7 @@ export function ManagerAvatar({
   return (
     <span
       aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold text-white ${SEAT_BG[manager.seat % SEAT_BG.length]} ${SIZES[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold text-white ${SEAT_BG[(managerNumber(manager) - 1) % SEAT_BG.length]} ${SIZES[size]} ${className}`}
     >
       {managerInitials(manager)}
     </span>

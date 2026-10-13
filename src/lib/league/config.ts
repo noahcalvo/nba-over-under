@@ -41,9 +41,18 @@ export function minManagerCount(managers: readonly Manager[]): number {
   return Math.max(LEAGUE_LIMITS.minManagers, lastClaimed + 1);
 }
 
-/** Seats for a new size: existing seats kept in seat order, trailing seats dropped, new open seats `m{seat + 1}` added. */
+/**
+ * Seats for a new size: existing seats kept in draft order, trailing seats dropped, new open seats added at the end.
+ * A new seat takes the smallest unused id `m{n}` (seats can be reordered, so `m{seat + 1}` may be taken).
+ */
 export function resizeSeats(managers: readonly Manager[], managerCount: number): Manager[] {
   const kept = [...managers].sort((a, b) => a.seat - b.seat).slice(0, managerCount);
-  for (let seat = kept.length; seat < managerCount; seat++) kept.push({ id: `m${seat + 1}`, seat, displayName: null });
+  const taken = new Set(kept.map((manager) => manager.id));
+  let next = 1;
+  for (let seat = kept.length; seat < managerCount; seat++) {
+    while (taken.has(`m${next}`)) next++;
+    taken.add(`m${next}`);
+    kept.push({ id: `m${next}`, seat, displayName: null });
+  }
   return kept;
 }

@@ -13,6 +13,7 @@ import {
   revokeLeagueInvite,
   rotateLeagueInvite,
   runDraftAction,
+  setDraftOrder,
   setLeagueConfig,
   setLineOverrides,
 } from "@/db/actions";
@@ -571,5 +572,76 @@ describe("early end", () => {
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.draft).toMatchObject({ status: "fades", blockedPick: null, voidedPicks: [] });
     expect(league.draft.picks).toHaveLength(56);
+  });
+});
+
+describe("draft order", () => {
+  const ORDER = ["m3", "m1", "m4", "m2"];
+
+  it("persists after a reload and bumps the version", async () => {
+    expect((await setDraftOrder(db, LEAGUE, ana, ORDER)).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.managers.map((m) => [m.id, m.seat])).toEqual([["m3", 0], ["m1", 1], ["m4", 2], ["m2", 3]]);
+    expect(league.draft.seatOrder).toEqual(ORDER);
+    expect(league.version).toBe(2);
+  });
+
+  it("keeps names, sessions and links with their manager, and open seats stay claimable", async () => {
+    await joinAs(ben, "m2", "Ben");
+    const linksBefore = (await listActiveLinks(db, LEAGUE)).map((l) => [l.id, l.kind, l.managerId]);
+    expect((await setDraftOrder(db, LEAGUE, ana, ORDER)).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.managers.find((m) => m.id === "m2")?.displayName).toBe("Ben");
+    expect(league.commissionerId).toBe("m1");
+    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m1");
+    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m2");
+    expect((await listActiveLinks(db, LEAGUE)).map((l) => [l.id, l.kind, l.managerId])).toEqual(linksBefore);
+    expect((await joinAs(cal, "m3", "Cal")).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.managers[0]).toEqual({ id: "m3", seat: 0, displayName: "Cal" });
+  });
+
+  it("starts the draft from the saved order", async () => {
+    await joinAs(ben, "m2", "Ben");
+    await setDraftOrder(db, LEAGUE, ana, ["m2", "m1", "m3", "m4"]);
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    expect(await confirm(ana, 1, "MIN", "OVER")).toEqual({ ok: false, error: "forbidden" });
+    expect((await confirm(ben, 1, "MIN", "OVER")).ok).toBe(true);
+    expect((await confirm(ana, 2, "OKC", "OVER")).ok).toBe(true);
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.seatOrder).toEqual(["m2", "m1", "m3", "m4"]);
+    expect(league.draft.picks.map((pick) => pick.managerId)).toEqual(["m2", "m1"]);
+  });
+
+  it("refuses other managers, spectators, bad orders and a started draft, writing nothing", async () => {
+    await joinAs(ben, "m2", "Ben");
+    expect(await setDraftOrder(db, LEAGUE, ben, ORDER)).toEqual({ ok: false, error: "forbidden" });
+    expect(await setDraftOrder(db, LEAGUE, cal, ORDER)).toEqual({ ok: false, error: "forbidden" });
+    expect(await setDraftOrder(db, LEAGUE, null, ORDER)).toEqual({ ok: false, error: "forbidden" });
+    expect(await setDraftOrder(db, LEAGUE, ana, ["m1", "m1", "m2", "m3"])).toEqual({ ok: false, error: "invalid_order" });
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    expect(await setDraftOrder(db, LEAGUE, ana, ORDER)).toEqual({ ok: false, error: "order_locked" });
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.seatOrder).toEqual(["m1", "m2", "m3", "m4"]);
+    expect(league.version).toBe(3); // the claim and the start only
+  });
+
+  it("refuses an order saved from a screen that missed a size change", async () => {
+    await setLeagueConfig(db, LEAGUE, ana, { managerCount: 5, rounds: 11 });
+    expect(await setDraftOrder(db, LEAGUE, ana, ORDER)).toEqual({ ok: false, error: "invalid_order" });
+    expect((await loadLeague(db, LEAGUE))!.draft.seatOrder).toEqual(["m1", "m2", "m3", "m4", "m5"]);
+  });
+
+  it("shrinks from the end of the order and grows with fresh ids after a reorder", async () => {
+    await setDraftOrder(db, LEAGUE, ana, ["m4", "m1", "m2", "m3"]);
+    expect((await setLeagueConfig(db, LEAGUE, ana, { managerCount: 3, rounds: 11 })).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.draft.seatOrder).toEqual(["m4", "m1", "m2"]);
+    expect((await setLeagueConfig(db, LEAGUE, ana, { managerCount: 5, rounds: 11 })).ok).toBe(true);
+    expect((await loadLeague(db, LEAGUE))!.draft.seatOrder).toEqual(["m4", "m1", "m2", "m3", "m5"]);
+  });
+
+  it("leaves a league that was never reordered in creation order", async () => {
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.draft.seatOrder).toEqual(["m1", "m2", "m3", "m4"]);
+    expect(league.managers.map((m) => m.seat)).toEqual([0, 1, 2, 3]);
   });
 });

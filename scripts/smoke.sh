@@ -72,10 +72,24 @@ check "commissioner overrides a line" 200 '"BOS":44.5'
 call ben PUT "/api/leagues/$LEAGUE/lines" '{"overrides":{"BOS":40.5}}'
 check "only the commissioner overrides lines" 403 '"forbidden"'
 
+call ben PUT "/api/leagues/$LEAGUE/order" '{"order":["m2","m1","m3","m4"]}'
+check "only the commissioner sets the draft order" 403 '"forbidden"'
+call ana PUT "/api/leagues/$LEAGUE/order" '{"order":["m1","m1","m3","m4"]}'
+check "a draft order must name every manager once" 409 '"invalid_order"'
+call ana PUT "/api/leagues/$LEAGUE/order" '{"order":"m1"}'
+check "a malformed draft order is refused" 400 '"invalid_request"'
+call ana PUT "/api/leagues/$LEAGUE/order" '{"order":["m2","m1","m3","m4"]}'
+check "commissioner reorders the draft" 200 '"seatOrder":["m2","m1","m3","m4"]'
+call ana PUT "/api/leagues/$LEAGUE/order" '{"order":["m1","m2","m3","m4"]}'
+check "commissioner puts the order back" 200 '"seatOrder":["m1","m2","m3","m4"]'
+
 call ben POST "/api/leagues/$LEAGUE/draft" '{"type":"start"}'
 check "only the commissioner starts" 403 '"forbidden"'
 call ana POST "/api/leagues/$LEAGUE/draft" '{"type":"start"}'
 check "commissioner starts; lines freeze" 200 '"season":"'
+
+call ana PUT "/api/leagues/$LEAGUE/order" '{"order":["m2","m1","m3","m4"]}'
+check "draft order is locked once the draft starts" 409 '"order_locked"'
 
 confirm ana MIN OVER 1
 check "pick 1" 200

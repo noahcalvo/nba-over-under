@@ -132,7 +132,7 @@ export function standingsStory(standings: Standings, managers: readonly Manager[
   }
   const final = standings.basis === "final";
   const points = (row: StandingRow) => `${formatSigned(row.totalPoints, BREAKDOWN_DIGITS)}${final ? "" : " projected"} points`;
-  const leaderName = managerLabel(findManager(managers, leader.managerId) ?? { seat: 0, displayName: null });
+  const leaderName = managerLabel(findManager(managers, leader.managerId) ?? { id: leader.managerId, seat: 0, displayName: null });
   const place = `${formatOrdinal(viewer.rank)} of ${standings.rows.length}`;
   let summary: string;
   if (final) {

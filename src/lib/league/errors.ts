@@ -21,6 +21,8 @@ export type DomainError =
   | "invalid_config"
   | "config_locked"
   | "seats_claimed"
+  | "order_locked"
+  | "invalid_order"
   | DraftError
   | FadeError;
 
@@ -53,6 +55,8 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   invalid_config: `Leagues have ${LEAGUE_LIMITS.minManagers}–${LEAGUE_LIMITS.maxManagers} managers, and managers × rounds can't exceed the ${TOTAL_SIDES} sides.`,
   config_locked: "League size is locked once the draft starts.",
   seats_claimed: "Claimed seats can't be removed. Only open seats at the end of the order can go.",
+  order_locked: "Draft order is locked once the draft starts.",
+  invalid_order: "The seats changed since you set this order. Check it and save again.",
   not_live: "The draft isn't live.",
   side_taken: "That side was just drafted.",
   unknown_team: "Unknown team.",

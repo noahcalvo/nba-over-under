@@ -41,6 +41,7 @@ export interface DraftRoomDriver {
   dispatch: (command: DraftCommand) => Promise<boolean>;
   saveLineOverrides: (overrides: Record<string, number>) => Promise<boolean>;
   saveConfig: (config: LeagueConfig) => Promise<boolean>;
+  saveDraftOrder: (order: string[]) => Promise<boolean>;
   dismissError: () => void;
 }
 
@@ -66,12 +67,13 @@ export function DraftRoomView({
   /** Told whenever the chosen fade target changes (its pick number). */
   onFadeTargetChange?: (pickNumber: number | null) => void;
 }) {
-  const { view, error, pending, dispatch, saveLineOverrides, saveConfig, dismissError } = driver;
+  const { view, error, pending, dispatch, saveLineOverrides, saveConfig, saveDraftOrder, dismissError } = driver;
   const { league, viewerId } = view;
   const { draft } = league;
   const teamsById = useMemo(() => indexTeams(view.teams), [view.teams]);
   const ended = earlyEnd(draft, view.teams.map((team) => team.id));
   const [configDirty, setConfigDirty] = useState(false);
+  const [orderDirty, setOrderDirty] = useState(false);
   const [selection, setSelection] = useState<SideRef | null>(null);
   const [filters, setFilters] = useState<TeamFilters>(DEFAULT_FILTERS);
   const [linesDirty, setLinesDirty] = useState(false);
@@ -88,7 +90,9 @@ export function DraftRoomView({
     ? null
     : configDirty
       ? "Save or discard your league size change first."
-      : review.missing.length > 0
+      : orderDirty
+        ? "Save or discard your draft order change first."
+        : review.missing.length > 0
         ? `Enter lines for the ${review.missing.length} team${review.missing.length === 1 ? "" : "s"} still missing one.`
         : linesDirty
           ? "Save or discard your line changes first."
@@ -181,6 +185,8 @@ export function DraftRoomView({
             teamCount={review?.rows.length ?? view.teams.length}
             onSaveConfig={saveConfig}
             onConfigDirtyChange={setConfigDirty}
+            onSaveOrder={saveDraftOrder}
+            onOrderDirtyChange={setOrderDirty}
           />
           {review && (
             <LineReviewPanel

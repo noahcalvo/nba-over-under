@@ -108,7 +108,7 @@ export function LinkClaimForm({
                   className="accent-[var(--color-accent)]"
                 />
                 <ManagerAvatar manager={manager} size="sm" />
-                <span className="flex-1">{isOpen ? `Seat ${manager.seat + 1} · open` : managerLabel(manager)}</span>
+                <span className="flex-1">{isOpen ? `${managerLabel(manager)} · open · draft position ${manager.seat + 1}` : managerLabel(manager)}</span>
               </label>
             );
           })}
@@ -118,7 +118,7 @@ export function LinkClaimForm({
           <div className="flex items-center gap-3">
             <ManagerAvatar manager={seat} />
             <p className="text-fog-300">
-              Rejoin seat {seat.seat + 1}. Its picks are kept; you can change the name.
+              Rejoin as {managerLabel(seat)}. The seat&apos;s picks are kept; you can change the name.
             </p>
           </div>
         )

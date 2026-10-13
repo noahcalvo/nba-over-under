@@ -37,16 +37,16 @@ Next API.
   11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
   `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
   `TUTORIAL`, `TUTORIAL_SEASON` and `TOUR` (`tour.ts`: guided demo size and pacing, simulated season, overlay spacing).
-- `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season
-  awards (`awards.ts`), snake draft,
-  formatting, permissions, league commands (`league/commands.ts`: every mutation's decision), tokens and link rules
-  (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks), game logs (`game-log/`: ESPN
-  schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window and Y axis (`chart-window.ts`),
-  team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest market line), feed errors
-  (`feed-error.ts`), league size rules (`league/config.ts`), scripted test drafts (`draft-scenarios.ts`, tests only),
-  environment checks (`env.ts`), seeded randomness (`random.ts`), guided demo (`tutorial/`: in-memory league commands,
-  deterministic draft simulation, steps, snapshot; the season: `season.ts` simulation, `season-steps.ts` derivation,
-  `season-story.ts` the user's numbers, `season-copy.ts` words) and tour layout (`tour/`: target ids, geometry, callout placement).
+- `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season awards
+  (`awards.ts`), snake draft, formatting, permissions, league commands (`league/commands.ts`: every mutation's
+  decision), tokens and link rules (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
+  game logs (`game-log/`: ESPN schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window
+  and Y axis (`chart-window.ts`), team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest
+  market line), feed errors (`feed-error.ts`), league size rules (`league/config.ts`), draft order
+  (`league/draft-order.ts`), scripted test drafts (`draft-scenarios.ts`, tests only), environment checks (`env.ts`),
+  seeded randomness (`random.ts`), guided demo (`tutorial/`: in-memory league commands, deterministic draft simulation,
+  steps, snapshot; the season: `season.ts` simulation, `season-steps.ts` derivation, `season-story.ts` the user's
+  numbers, `season-copy.ts` words) and tour layout (`tour/`: target ids, geometry, callout placement).
 - `src/data/` — the single mock dataset: `teams.ts` (30 teams: prior wins, current record), `static-lines.ts` (the
   mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) `demo-league.ts` and
   `tutorial-league.ts` (the guided demo's fixture: live 4 × 11, empty board). Never add per-page fixtures.
@@ -82,6 +82,13 @@ Next API.
 - Draft: snake order; each team's Over and Under are separate sides (60). The commissioner sets 2–12 managers and
   1–⌊60 ÷ managers⌋ rounds before the start (`PUT /api/leagues/{id}/config`, `decideLeagueConfig`; seats are added or
   removed at the end, never a claimed one); default 4 × 11 = 44 picks.
+- Draft order: `managers.seat` is the order (round 1 in seat order, the snake reverses after). Before the start the
+  commissioner reorders or randomizes it in the draft lobby and saves (`PUT /api/leagues/{id}/order`,
+  `decideDraftOrder`): every manager id exactly once (`invalid_order`), refused once the draft starts
+  (`order_locked`). Reordering renumbers seats only; ids, names, links and sessions stay. Randomize is a client-side
+  Fisher–Yates over `crypto.getRandomValues` into the unsaved order. Seats are removed from the end of the order; a
+  new seat takes the smallest unused id `m{n}`. Labels, initials and avatar colors follow the id (`managerNumber`),
+  never the position.
 - A manager holds at most one side of each team (`team_already_held`). A confirm names its `pickNumber`; any other pick
   number is `stale_pick`.
 - Early end: after each pick, if the manager on the clock for the next pick has no eligible side (every open side is
@@ -130,8 +137,8 @@ Next API.
   unplayed), no sportsbook panel, and a "Simulated demo season" note. The step is `seasonStep(progress, page)`: the
   required team-name click is recognised by the team page opening, the way back by the overview. Scores only through
   `computeStandings` / `evaluateCall`.
-- Commissioner = seat 1. Only the commissioner starts, pauses and resumes, picks for unclaimed seats, manages the
-  league invite and resets seats.
+- Commissioner = `m1` (`commissionerId`), wherever they sit in the draft order. Only the commissioner starts, pauses and
+  resumes, picks for unclaimed seats, manages the league invite and resets seats.
 
 ## State and identity
 - Leagues live in Postgres (`DATABASE_URL`; `DATABASE_URL_UNPOOLED` is used for migrations when present). Without

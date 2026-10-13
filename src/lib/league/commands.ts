@@ -6,6 +6,7 @@ import { applyDraftAction, createDraftState, currentPickNumber } from "@/lib/dra
 import { applyFade, type DraftCommand, type FadeAction } from "@/lib/fades";
 import { isValidLeagueConfig, minManagerCount, resizeSeats, type LeagueConfig } from "@/lib/league/config";
 import { fail, succeed, type Result } from "@/lib/league/errors";
+import { applyDraftOrder, isDraftOrderFor } from "@/lib/league/draft-order";
 import { findManager } from "@/lib/league/managers";
 import { canControlDraft, canFadeFor, canManageSeats, canPickNow, canResetSeat } from "@/lib/league/permissions";
 import { buildLineReview, freezeLines, sameLineValues } from "@/lib/lines";
@@ -139,6 +140,25 @@ export function decideLeagueConfig(league: League, actorId: string | null, confi
     ...league,
     managers,
     draft: { ...league.draft, rounds: config.rounds, seatOrder: managers.map((manager) => manager.id) },
+  });
+}
+
+/**
+ * Sets the draft order before the draft: `order` lists every manager id once, round 1 first. Seats are renumbered;
+ * ids, names, links and sessions stay with their manager. Commissioner only. Parse the request with parseDraftOrder first.
+ */
+export function decideDraftOrder(league: League, actorId: string | null, order: readonly string[]): Result<League> {
+  if (league.isDemo) return fail("demo_league");
+  if (!canControlDraft(league, actorId)) return fail("forbidden");
+  const { draft } = league;
+  if (draft.status !== "not_started" || draft.picks.length > 0 || draft.voidedPicks.length > 0) {
+    return fail("order_locked");
+  }
+  if (!isDraftOrderFor(league.managers, order)) return fail("invalid_order");
+  return succeed({
+    ...league,
+    managers: applyDraftOrder(league.managers, order),
+    draft: { ...draft, seatOrder: [...order] },
   });
 }
 

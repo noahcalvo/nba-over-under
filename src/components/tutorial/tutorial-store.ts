@@ -69,8 +69,8 @@ export function getServerTutorialStore(): TutorialStore {
   return SERVER_STORE;
 }
 
-export function saveTutorial({ league, progress, season }: RestoredTutorial): void {
-  writeRaw(JSON.stringify(snapshotOf(league, progress, season)));
+export function saveTutorial({ league, season }: RestoredTutorial): void {
+  writeRaw(JSON.stringify(snapshotOf(league, season)));
 }
 
 /** Ends this tab's demo: the next visit starts over from the first step. */

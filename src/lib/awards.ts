@@ -85,19 +85,6 @@ export function awardsFor(awards: SeasonAwards, managerId: string): PickAward[] 
   return [...awards.best, ...awards.worst].filter((award) => award.call.pick.managerId === managerId);
 }
 
-/** new: there was no leader before. held: the same picks lead. changed: different picks lead. */
-export type AwardChange = "new" | "held" | "changed";
-
-/** How each award's leaders moved between two decisions (e.g. the midseason projection and the final result). */
-export function awardChanges(before: SeasonAwards, after: SeasonAwards): Record<AwardKind, AwardChange> {
-  const change = (a: PickAward[], b: PickAward[]): AwardChange => {
-    if (a.length === 0) return "new";
-    const key = (list: PickAward[]) => list.map((award) => award.call.pick.pickNumber).join(",");
-    return key(a) === key(b) ? "held" : "changed";
-  };
-  return { best: change(before.best, after.best), worst: change(before.worst, after.worst) };
-}
-
 export const AWARD_LABELS: Record<AwardKind, string> = { best: "Best Pick", worst: "Worst Pick" };
 
 /** Why there are no award leaders yet, in a sentence. */

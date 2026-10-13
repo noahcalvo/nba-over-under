@@ -2,8 +2,8 @@
 export const TUTORIAL = {
   managerCount: 4,
   rounds: 11,
-  /** Delay between simulated picks while the user watches the rest of the draft. */
-  pickIntervalMs: 160,
+  /** Delay between simulated picks while the user watches the rest of the draft (and reads how the snake works). */
+  pickIntervalMs: 250,
   /** Delay between the other managers' simulated fades. */
   fadeIntervalMs: 700,
 } as const;
@@ -23,6 +23,8 @@ export const TOUR = {
 
 /** The guided demo's simulated season: where Midseason stops and how far teams stray from their lines. */
 export const TUTORIAL_SEASON = {
+  /** How long advancing a checkpoint plays its games (a progress bar) before the results appear. */
+  advancePlayMs: 2400,
   /** Games every team has played at the Midseason checkpoint. */
   midseasonGames: 41,
   /** Standard deviation, in wins over a full season, of a team's hidden strength around its line. */

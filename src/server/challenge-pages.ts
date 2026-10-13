@@ -1,9 +1,8 @@
 import "server-only";
 import { CHALLENGE } from "@/config/challenge";
 import { TEAM_DIVISIONS, TEAM_IDS, TEAM_INFO, type Division } from "@/data/teams";
-import { listEntries, loadEntry } from "@/db/challenge";
+import { countEntries, listEntrants, listEntries, loadEntry } from "@/db/challenge";
 import { lineMove } from "@/lib/challenge/movement";
-import { isLocked } from "@/lib/challenge/phase";
 import { visibleEntry } from "@/lib/challenge/visibility";
 import { entryTotal, rankEntries, scoreEntry, type EntryScore } from "@/lib/challenge/scoring";
 import type { ChallengeEntry, ChallengePhase, ChallengePick, ChallengeSeason } from "@/lib/challenge/types";
@@ -54,21 +53,17 @@ export interface EntryResultsData {
 
 const basisFor = (phase: ChallengePhase): Basis => (phase === "final" ? "final" : "projected");
 
-function scoreAgainstFrozen(entry: ChallengeEntry, prepared: PreparedChallenge): EntryScore | null {
-  const frozen = prepared.season?.frozen;
-  return frozen ? scoreEntry(entry.picks, prepared.teams, frozen.values) : null;
-}
-
-/** Every entry of the season ranked on the basis (all unscored, hence unranked, before the freeze). */
+/**
+ * Every entry of the season ranked on the basis against the frozen lines. Null before the freeze: nothing is scored
+ * then, so pages only count or list the entrants.
+ */
 async function rankAll(prepared: PreparedChallenge, basis: Basis) {
+  const frozen = prepared.season?.frozen;
+  if (!frozen) return null;
   const entries = await listEntries(prepared.db, CHALLENGE.seasonYear);
-  const scores = new Map(entries.map((entry) => [entry.id, scoreAgainstFrozen(entry, prepared)]));
-  const ranked = rankEntries(
-    entries.map((entry) => {
-      const score = scores.get(entry.id);
-      return { entry, score: score ? entryTotal(score, basis) : null };
-    }),
-  );
+  const scored = entries.map((entry) => ({ entry, detail: scoreEntry(entry.picks, prepared.teams, frozen.values) }));
+  const scores = new Map(scored.map(({ entry, detail }) => [entry.id, detail]));
+  const ranked = rankEntries(scored.map(({ entry, detail }) => ({ entry, score: entryTotal(detail, basis) })));
   return { entries, ranked, scores };
 }
 
@@ -98,10 +93,12 @@ function resultRows(entry: ChallengeEntry, score: EntryScore | null, prepared: P
 async function buildResults(entry: ChallengeEntry, prepared: PreparedChallenge, viewer: ChallengeEntry | null): Promise<EntryResultsData> {
   const { season, phase, now, current } = prepared;
   const isViewer = viewer?.id === entry.id;
-  const hidden = !isViewer && !isLocked(phase);
+  // Others' picks show only once the freeze is stored, never on the app clock alone (a save may still be accepted
+  // under clock skew until then).
+  const hidden = !isViewer && !season?.frozen;
   const basis = basisFor(phase);
-  const { entries, ranked, scores } = await rankAll(prepared, basis);
-  const score = hidden ? null : (scores.get(entry.id) ?? null);
+  const all = await rankAll(prepared, basis);
+  const score = hidden ? null : (all?.scores.get(entry.id) ?? null);
   return {
     seasonLabel: CHALLENGE.season,
     phase,
@@ -113,8 +110,8 @@ async function buildResults(entry: ChallengeEntry, prepared: PreparedChallenge, 
     rows: hidden ? [] : resultRows(entry, score, prepared),
     score,
     basis,
-    rank: ranked.find((row) => row.entry.id === entry.id)?.rank ?? null,
-    entrants: entries.length,
+    rank: all?.ranked.find((row) => row.entry.id === entry.id)?.rank ?? null,
+    entrants: all ? all.entries.length : await countEntries(prepared.db, CHALLENGE.seasonYear),
     lines: { book: current.book, asOf: current.asOf, error: current.error },
   };
 }
@@ -160,24 +157,35 @@ export async function loadLeaderboard(): Promise<LeaderboardData> {
   const prepared = await prepareChallenge();
   const basis = basisFor(prepared.phase);
   const viewer = await getViewerEntry(prepared.db);
-  const { ranked, scores } = await rankAll(prepared, basis);
+  const all = await rankAll(prepared, basis);
+  const rows: LeaderboardRow[] = all
+    ? all.ranked.map(({ entry, score, rank }) => {
+        const detail = all.scores.get(entry.id);
+        return {
+          id: entry.id,
+          displayName: entry.displayName,
+          rank,
+          score,
+          onPace: detail?.onPace ?? 0,
+          scored: detail ? (basis === "final" ? detail.finalScored : detail.projectedScored) : 0,
+          isViewer: viewer?.id === entry.id,
+        };
+      })
+    : rankEntries((await listEntrants(prepared.db, CHALLENGE.seasonYear)).map((entry) => ({ entry, score: null }))).map(({ entry }) => ({
+        id: entry.id,
+        displayName: entry.displayName,
+        rank: null,
+        score: null,
+        onPace: 0,
+        scored: 0,
+        isViewer: viewer?.id === entry.id,
+      }));
   return {
     seasonLabel: CHALLENGE.season,
     phase: prepared.phase,
     season: prepared.season,
     basis,
-    rows: ranked.map(({ entry, score, rank }) => {
-      const detail = scores.get(entry.id);
-      return {
-        id: entry.id,
-        displayName: entry.displayName,
-        rank,
-        score,
-        onPace: detail?.onPace ?? 0,
-        scored: detail ? (basis === "final" ? detail.finalScored : detail.projectedScored) : 0,
-        isViewer: viewer?.id === entry.id,
-      };
-    }),
+    rows,
     viewerEntryId: viewer?.id ?? null,
     now: prepared.now.toISOString(),
   };

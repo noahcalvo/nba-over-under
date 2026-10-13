@@ -10,7 +10,7 @@ import { ChallengePageHeader } from "./ChallengePageHeader";
 
 const DASH = "–";
 
-/** Before the lock only the entrant's own name links (the others' picks are hidden). */
+/** Until the freeze is stored only the entrant's own name links (the others' picks are hidden). */
 function EntrantName({ row, linked }: { row: LeaderboardRow; linked: boolean }) {
   if (!linked && !row.isViewer) return <span className="font-medium text-fog-50">{row.displayName}</span>;
   return (
@@ -66,7 +66,7 @@ function RankedTable({ rows, data }: { rows: LeaderboardRow[]; data: Leaderboard
             </td>
             <td className="px-3 py-3">
               <span className="flex items-center gap-2">
-                <EntrantName row={row} linked />
+                <EntrantName row={row} linked={data.season?.frozen != null} />
                 {row.isViewer && <Badge tone="accent">You</Badge>}
               </span>
             </td>
@@ -96,7 +96,7 @@ function RankedCards({ rows, data }: { rows: LeaderboardRow[]; data: Leaderboard
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-2">
                 <span className="min-w-0 truncate">
-                  <EntrantName row={row} linked />
+                  <EntrantName row={row} linked={data.season?.frozen != null} />
                 </span>
                 {row.isViewer && <Badge tone="accent">You</Badge>}
               </p>

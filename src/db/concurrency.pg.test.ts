@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
 import { TEAM_INFO } from "@/data/teams";
-import { loadEntryForSession, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
+import { listEntries, loadEntryForSession, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import { claimLink, createLeagueFor, resetSeat, runDraftAction, setDraftOrder, setLeagueConfig } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
@@ -58,6 +58,8 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
     expect(results.every((result) => result.ok)).toBe(true);
     const entry = await loadEntryForSession(db, season, sessionId);
     expect(entry?.picks).toHaveLength(30);
+    expect(await listEntries(db, season)).toHaveLength(1);
+    expect(new Set(results.map((result) => (result.ok ? result.value.id : null)))).toEqual(new Set([entry?.id]));
   });
 
   it("lets exactly one of many parallel confirms take the pick", async () => {

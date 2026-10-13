@@ -1,4 +1,6 @@
 import "server-only";
+import { after } from "next/server";
+import { cache } from "react";
 import { CHALLENGE } from "@/config/challenge";
 import { LINES } from "@/config/lines";
 import { MOCK_OPENING_GAME } from "@/data/schedule";
@@ -15,7 +17,7 @@ import {
 } from "@/db/challenge";
 import { loadSeasonRecords } from "@/db/records";
 import { challengePhase } from "@/lib/challenge/phase";
-import { openingGame } from "@/lib/challenge/schedule";
+import { openingGame, scheduleCheck } from "@/lib/challenge/schedule";
 import type { ChallengeEntry, ChallengePhase, ChallengeSeason } from "@/lib/challenge/types";
 import { FeedError } from "@/lib/feed-error";
 import { withRecords } from "@/lib/records/merge";
@@ -47,13 +49,13 @@ async function readOpeningGame(): Promise<ScheduleRead> {
   }
 }
 
-/** True when the stored schedule should be read again: no row yet, or still open to change and stale (or forced). */
-function scheduleDue(season: ChallengeSeason | null, now: Date, force: boolean): boolean {
-  if (!season) return true;
-  if (season.frozen) return false;
-  if (season.deadline && Date.parse(season.deadline) <= now.getTime()) return false;
-  if (force || !season.scheduleCheckedAt) return true;
-  return now.getTime() - Date.parse(season.scheduleCheckedAt) > CHALLENGE.scheduleCheckMinutes * 60_000;
+/** Reads and stores the schedule; one read at a time per server instance. */
+let scheduleSyncInFlight: Promise<ChallengeSeason> | null = null;
+function syncSchedule(db: Db): Promise<ChallengeSeason> {
+  scheduleSyncInFlight ??= (async () => syncChallengeSchedule(db, CHALLENGE.seasonYear, await readOpeningGame(), new Date()))().finally(() => {
+    scheduleSyncInFlight = null;
+  });
+  return scheduleSyncInFlight;
 }
 
 export interface CurrentLines {
@@ -65,13 +67,16 @@ export interface CurrentLines {
   error: string | null;
 }
 
-/** FanDuel's latest lines for the challenge season (recorded as a snapshot), else the newest stored snapshot. */
-async function readCurrentLines(db: Db, frozen: boolean): Promise<CurrentLines> {
+/**
+ * FanDuel's latest lines for the challenge season (recorded as a snapshot), else the newest stored snapshot. Once
+ * frozen, nothing is read: every page shows the frozen lines and the current ones are only used before the lock.
+ */
+async function readCurrentLines(db: Db, season: ChallengeSeason | null): Promise<CurrentLines> {
+  if (season?.frozen) return { values: {}, book: season.frozen.source, asOf: null, error: null };
   const read = await readLines();
   if (read.lines?.season === CHALLENGE.season) {
-    // A failed read returns older lines, which an earlier successful read already recorded; after the freeze
-    // snapshots serve no purpose.
-    if (read.error === null && !frozen) await recordLineSnapshot(db, CHALLENGE.seasonYear, read.lines);
+    // A failed read returns older lines, which an earlier successful read already recorded.
+    if (read.error === null) await recordLineSnapshot(db, CHALLENGE.seasonYear, read.lines);
     const book = read.lines.source === "static" ? LINES.book : read.lines.source;
     return { values: read.lines.values, book, asOf: read.lines.asOf, error: read.error };
   }
@@ -92,22 +97,40 @@ export interface PreparedChallenge {
 }
 
 /**
- * Brings the challenge up to date for this request: reads the schedule when due, records the current lines, and
- * stores the freeze once the deadline passed. Every page and the save route start here.
+ * Brings the challenge up to date for this request: reads the schedule when due (after the response when a future
+ * deadline is already stored), reads the current lines until the freeze, and stores the freeze once the deadline passed.
+ * The save route and the cron start here; pages use the per-request `prepareChallenge`.
  */
-export async function prepareChallenge(options: { forceSchedule?: boolean } = {}): Promise<PreparedChallenge> {
+async function prepare(forceSchedule: boolean): Promise<PreparedChallenge> {
   const db = await getDb();
   const now = new Date();
   let season = await loadChallengeSeason(db, CHALLENGE.seasonYear);
-  if (scheduleDue(season, now, options.forceSchedule ?? false)) {
-    season = await syncChallengeSchedule(db, CHALLENGE.seasonYear, await readOpeningGame(), now);
+  const check = scheduleCheck(season, now, forceSchedule);
+  if (check === "now") season = await syncSchedule(db);
+  if (check === "after") {
+    after(async () => {
+      try {
+        await syncSchedule(db);
+      } catch (error) {
+        console.error("Challenge schedule sync failed", error);
+      }
+    });
   }
-  const [current, records] = await Promise.all([readCurrentLines(db, season?.frozen != null), loadSeasonRecords(db, CHALLENGE.seasonYear)]);
+  // Lines are read before the freeze: a cached read observed before the deadline is still recorded for it.
+  const [current, records] = await Promise.all([readCurrentLines(db, season), loadSeasonRecords(db, CHALLENGE.seasonYear)]);
   if (season?.deadline && !season.frozen && Date.parse(season.deadline) <= now.getTime()) {
     season = await freezeChallenge(db, CHALLENGE.seasonYear);
   }
   const teams = withRecords(TEAM_INFO, records);
   return { db, season, current, teams, phase: challengePhase(season, now, teams), now };
+}
+
+/** The challenge prepared once per request (React `cache`; a route handler gets a fresh run per call). */
+export const prepareChallenge = cache((): Promise<PreparedChallenge> => prepare(false));
+
+/** The cron's run: always re-reads the schedule (until the deadline), never cached. */
+export function refreshChallenge(): Promise<PreparedChallenge> {
+  return prepare(true);
 }
 
 /** This browser's entry for the season. For rendering only: saves authorize under the season lock. */

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { LINES } from "@/config/lines";
 import { TEAM_INFO } from "@/data/teams";
 import { base64url } from "@/lib/access/tokens";
@@ -198,6 +198,23 @@ export async function listEntries(db: Db, season: number): Promise<ChallengeEntr
     .where(eq(challengeEntries.season, season))
     .orderBy(asc(challengeEntries.createdAt), asc(challengeEntries.id));
   return withPicks(db, rows);
+}
+
+/** How many entries the season has. */
+export async function countEntries(db: Db, season: number): Promise<number> {
+  const [row] = await db.select({ count: count() }).from(challengeEntries).where(eq(challengeEntries.season, season));
+  return row?.count ?? 0;
+}
+
+export type ChallengeEntrant = Pick<ChallengeEntry, "id" | "displayName">;
+
+/** The season's entrants (ids and names only, no picks), oldest first. Owners' sessions are never read. */
+export async function listEntrants(db: Db, season: number): Promise<ChallengeEntrant[]> {
+  return db
+    .select({ id: challengeEntries.id, displayName: challengeEntries.displayName })
+    .from(challengeEntries)
+    .where(eq(challengeEntries.season, season))
+    .orderBy(asc(challengeEntries.createdAt), asc(challengeEntries.id));
 }
 
 export interface SaveEntryInput {

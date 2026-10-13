@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { createTestDb } from "@/db/test-db";
 import {
+  countEntries,
   databaseNow,
   freezeChallenge,
+  listEntrants,
   listEntries,
   loadChallengeSeason,
   loadEntry,
@@ -180,6 +182,23 @@ describe("saveChallengeEntry", () => {
     await saveChallengeEntry(db, { season: SEASON, sessionId: other, displayName: "Ben", picks: allPicks("UNDER"), currentLines: {} }, { now: at("2026-10-14T12:00:00Z") });
     await save();
     expect((await listEntries(db, SEASON)).map((entry) => entry.displayName)).toEqual(["Ben", "Ana"]);
+  });
+  it("counts and lists the season's entrants without picks or owners", async () => {
+    expect(await countEntries(db, SEASON)).toBe(0);
+    expect(await listEntrants(db, SEASON)).toEqual([]);
+    const other = await createSession(db, "hash-b");
+    const ben = await saveChallengeEntry(db, { season: SEASON, sessionId: other, displayName: "Ben", picks: allPicks("UNDER"), currentLines: {} }, { now: at("2026-10-14T12:00:00Z") });
+    const ana = await save();
+    if (!ben.ok || !ana.ok) throw new Error("save failed");
+    const past = { ok: true as const, game: { tipoff: "2025-10-20T23:30:00.000Z", teams: ["BOS", "NYK"] as [string, string] } };
+    await syncChallengeSchedule(db, 2026, past, at("2025-10-01T00:00:00Z"));
+    await saveChallengeEntry(db, { season: 2026, sessionId: other, displayName: "Old", picks: allPicks("OVER"), currentLines: {} }, { now: at("2025-10-02T00:00:00Z") });
+    expect(await countEntries(db, SEASON)).toBe(2);
+    expect(await countEntries(db, 2026)).toBe(1);
+    expect(await listEntrants(db, SEASON)).toEqual([
+      { id: ben.value.id, displayName: "Ben" },
+      { id: ana.value.id, displayName: "Ana" },
+    ]);
   });
   it("refuses a save at and after the deadline", async () => {
     await save();

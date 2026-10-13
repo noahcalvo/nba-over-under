@@ -27,7 +27,11 @@ export function CreateLeagueForm() {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(typeof data?.message === "string" ? data.message : "Couldn't create the league.");
+        setError(
+          typeof data?.message === "string"
+            ? data.message
+            : "Couldn't create the league.",
+        );
         setPending(false);
         return;
       }
@@ -42,7 +46,10 @@ export function CreateLeagueForm() {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          League name <span className="font-normal text-fog-400">Optional</span>
+          <div className="flex items-baseline gap-1.5">
+            League name{" "}
+            <span className="font-normal text-fog-400">Optional</span>
+          </div>
           <input
             value={leagueName}
             onChange={(event) => setLeagueName(event.target.value)}
@@ -72,9 +79,10 @@ export function CreateLeagueForm() {
         {pending ? "Creating…" : "Create league"}
       </Button>
       <p className="text-sm text-fog-400">
-        You&apos;ll be Manager 1 and the commissioner. Leagues start at {LEAGUE_DEFAULTS.managerCount} managers and{" "}
-        {LEAGUE_DEFAULTS.rounds} rounds; change the size in the draft room before the draft starts, then share the
-        invite link.
+        You&apos;ll be Manager 1 and the commissioner. Leagues start at{" "}
+        {LEAGUE_DEFAULTS.managerCount} managers and {LEAGUE_DEFAULTS.rounds}{" "}
+        rounds; change the size in the draft room before the draft starts, then
+        share the invite link.
       </p>
     </form>
   );

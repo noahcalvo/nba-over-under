@@ -8,6 +8,8 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
+  serial,
   smallint,
   text,
   timestamp,
@@ -202,3 +204,83 @@ export const recordRefreshes = pgTable("record_refreshes", {
   /** Why the last attempt failed; null when it succeeded. */
   error: text("error"),
 });
+
+/** One row per challenge season: the schedule-derived deadline and, once locked, the shared frozen lines. */
+export const challengeSeasons = pgTable(
+  "challenge_seasons",
+  {
+    /** End year: 2027 for 2026–27. */
+    season: smallint("season").primaryKey(),
+    openingTipoff: timestamp("opening_tipoff", { withTimezone: true }),
+    /** [awayId, homeId] of the opening game, display only. */
+    openingTeams: jsonb("opening_teams").$type<[string | null, string | null]>(),
+    deadline: timestamp("deadline", { withTimezone: true }),
+    scheduleCheckedAt: timestamp("schedule_checked_at", { withTimezone: true }),
+    scheduleError: text("schedule_error"),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    frozenLines: jsonb("frozen_lines").$type<Record<string, number>>(),
+    frozenLineTimes: jsonb("frozen_line_times").$type<Record<string, string>>(),
+    frozenMissing: jsonb("frozen_missing").$type<string[]>(),
+    frozenSource: text("frozen_source"),
+  },
+  (t) => [
+    check(
+      "challenge_seasons_freeze_check",
+      sql`${t.lockedAt} is null or (${t.frozenLines} is not null and ${t.frozenLineTimes} is not null and ${t.frozenMissing} is not null and ${t.frozenSource} is not null)`,
+    ),
+  ],
+);
+
+/** Every distinct FanDuel read the challenge saw, so the freeze only ever uses lines observed before the deadline. */
+export const challengeLineSnapshots = pgTable(
+  "challenge_line_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    season: smallint("season").notNull(),
+    source: text("source").notNull(),
+    /** When the read that first saw these values happened (LineSet.asOf). */
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    /** The latest read with identical values. */
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull(),
+    lines: jsonb("lines").$type<Record<string, number>>().notNull(),
+  },
+  (t) => [uniqueIndex("challenge_line_snapshots_observed").on(t.season, t.observedAt)],
+);
+
+/** One official entry per session per season. The id is public; the owner's session never leaves the server. */
+export const challengeEntries = pgTable(
+  "challenge_entries",
+  {
+    id: text("id").primaryKey(),
+    season: smallint("season")
+      .notNull()
+      .references(() => challengeSeasons.season),
+    /** Null once the owning session is gone: the entry still counts but nobody can edit it. */
+    ownerSessionId: uuid("owner_session_id").references(() => sessions.id, { onDelete: "set null" }),
+    displayName: text("display_name").notNull(),
+    createdAt: createdAt(),
+    savedAt: timestamp("saved_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    unique("challenge_entries_owner_unique").on(t.season, t.ownerSessionId),
+    index("challenge_entries_by_season").on(t.season),
+  ],
+);
+
+/** An entry's side for one team, with the FanDuel line when that side was saved. Scores are never stored. */
+export const challengePicks = pgTable(
+  "challenge_picks",
+  {
+    entryId: text("entry_id")
+      .notNull()
+      .references(() => challengeEntries.id, { onDelete: "cascade" }),
+    teamId: text("team_id").notNull(),
+    side: text("side", { enum: ["OVER", "UNDER"] }).notNull(),
+    lineAtPick: real("line_at_pick"),
+    pickedAt: timestamp("picked_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "challenge_picks_pkey", columns: [t.entryId, t.teamId] }),
+    check("challenge_picks_side_check", sql`${t.side} in ('OVER', 'UNDER')`),
+  ],
+);

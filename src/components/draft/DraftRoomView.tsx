@@ -12,7 +12,7 @@ import { openFadeSeats, type DraftCommand } from "@/lib/fades";
 import type { LeagueConfig } from "@/lib/league/config";
 import { findManager, managerLabel } from "@/lib/league/managers";
 import { canControlDraft, canPickNow } from "@/lib/league/permissions";
-import { describeTurn } from "@/lib/league/turn";
+import { describeTurn, draftsFor } from "@/lib/league/turn";
 import { describeLineSet, indexTeams } from "@/lib/lines";
 import type { LeagueView } from "@/lib/types";
 import { AvailablePicks } from "./AvailablePicks";
@@ -28,6 +28,12 @@ import { SelectionBar } from "./SelectionBar";
 import { SelectionPreview } from "./SelectionPreview";
 
 /** Where the room's state comes from and where its actions go: the server (useLeagueDraft) or the guided demo. */
+/** A seat whose held teams block the other side, with the words the room uses for it ("You have", "Manager 3 has"). */
+export interface SeatHolder {
+  id: string;
+  label: string;
+}
+
 export interface DraftRoomDriver {
   view: LeagueView;
   error: string | null;
@@ -91,19 +97,23 @@ export function DraftRoomView({
             : null;
 
   // A selection stops being active, and says why, when someone else drafts that side (seen via polling) or when the
-  // manager now on the clock holds the team's other side (the list disables it for them too).
+  // seat this viewer drafts for holds the team's other side (the list disables it for them too). Other managers'
+  // teams never block a side here; the server still checks the manager who actually picks.
   const takenBy = selection ? findPickForSide(draft, selection.teamId, selection.side) : undefined;
-  const onClock = findManager(league.managers, managerOnTheClock(draft));
-  const heldByOnClock =
-    draft.status === "live" && selection !== null && onClock !== undefined && holdsTeam(draft, onClock.id, selection.teamId);
-  const activeSelection = selection && !takenBy && !heldByOnClock && draft.status === "live" ? selection : null;
+  const blockedManager = findManager(league.managers, draftsFor(league, viewerId));
+  const blockedFor: SeatHolder | null = blockedManager
+    ? { id: blockedManager.id, label: blockedManager.id === viewerId ? "You have" : `${managerLabel(blockedManager)} has` }
+    : null;
+  const heldByViewer =
+    draft.status === "live" && selection !== null && blockedFor !== null && holdsTeam(draft, blockedFor.id, selection.teamId);
+  const activeSelection = selection && !takenBy && !heldByViewer && draft.status === "live" ? selection : null;
   let notice: string | null = null;
   if (selection && takenBy) {
     notice = `${teamsById[selection.teamId].name} ${selection.side} was drafted by ${managerLabel(
       findManager(league.managers, takenBy.managerId)!,
     )}. Pick another side.`;
-  } else if (selection && heldByOnClock) {
-    notice = `${teamsById[selection.teamId].name} ${selection.side}: ${managerLabel(onClock)} has the other side. Pick another side.`;
+  } else if (selection && heldByViewer) {
+    notice = `${teamsById[selection.teamId].name} ${selection.side}: ${blockedFor!.label} the other side. Pick another side.`;
   }
 
   const turn = describeTurn(league, viewerId);
@@ -261,6 +271,7 @@ export function DraftRoomView({
               selection={activeSelection}
               onSelect={setSelection}
               selectable={draft.status === "live"}
+              blockedFor={blockedFor}
             />
             <div className="min-w-0 xl:sticky xl:top-8 xl:self-start">
               <Panel

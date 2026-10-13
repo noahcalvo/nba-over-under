@@ -5,11 +5,11 @@ import { Panel } from "@/components/ui/Panel";
 import { Select } from "@/components/ui/Select";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TOTAL_SIDES } from "@/data/teams";
-import { findPickForSide, holdsTeam, managerOnTheClock } from "@/lib/draft";
+import { findPickForSide, holdsTeam } from "@/lib/draft";
 import { availableSideCount, filterTeams, SIDES, type SideRef, type TeamFilters } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
-import { findManager, managerLabel } from "@/lib/league/managers";
 import type { DraftState, Manager, Side, Team } from "@/lib/types";
+import type { SeatHolder } from "./DraftRoomView";
 import { SideButton } from "./SideButton";
 
 export function AvailablePicks({
@@ -21,6 +21,7 @@ export function AvailablePicks({
   selection,
   onSelect,
   selectable,
+  blockedFor,
 }: {
   teams: Team[];
   draft: DraftState;
@@ -30,12 +31,13 @@ export function AvailablePicks({
   selection: SideRef | null;
   onSelect: (ref: SideRef) => void;
   selectable: boolean;
+  /** The seat this viewer drafts for (see `draftsFor`); the other side of its teams is blocked. */
+  blockedFor: SeatHolder | null;
 }) {
   const teams = filterTeams(allTeams, draft, filters);
-  // A manager may hold one side per team: block the other side of teams the manager on the clock already has.
-  const onClock = findManager(managers, managerOnTheClock(draft));
+  // A manager may hold one side per team: block the other side of teams this viewer's seat already has.
   const blockedNote = (team: Team) =>
-    selectable && onClock && holdsTeam(draft, onClock.id, team.id) ? `${managerLabel(onClock)} has the other side` : undefined;
+    selectable && blockedFor && holdsTeam(draft, blockedFor.id, team.id) ? `${blockedFor.label} the other side` : undefined;
   const button = (team: Team, side: Side, noteId: string) => {
     const reason = blockedNote(team);
     return (

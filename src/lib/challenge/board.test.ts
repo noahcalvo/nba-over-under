@@ -3,11 +3,14 @@ import { TEAM_DIVISIONS, TEAM_IDS, TEAM_INFO } from "@/data/teams";
 import {
   boardCards,
   countdownParts,
+  draftBase,
+  draftToStore,
   entryPicks,
   newerEntry,
   parseDraft,
   pickCount,
   saveState,
+  type ChallengeDraft,
   type SaveStateInput,
 } from "./board";
 import type { ChallengeEntry, ChallengePick, PickMap } from "./types";
@@ -158,5 +161,41 @@ describe("countdownParts", () => {
   });
   it("stops at zero", () => {
     expect(countdownParts(-5000)).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  });
+});
+
+describe("draftToStore", () => {
+  const saved = entry({
+    displayName: "Ana Smith",
+    picks: [{ teamId: "MIN", side: "OVER", lineAtPick: 50.5, pickedAt: "2026-10-01T00:00:00.000Z" }],
+  });
+  it("drops a draft equal to the saved entry", () => {
+    expect(draftToStore(saved, { picks: { MIN: "OVER" }, name: "Ana Smith" })).toBeNull();
+  });
+  it("keeps a name being typed even when it normalizes to the saved one", () => {
+    const next: ChallengeDraft = { picks: { MIN: "OVER" }, name: "Ana Smith " };
+    expect(draftToStore(saved, next)).toBe(next);
+  });
+  it("keeps changed, added or removed picks", () => {
+    expect(draftToStore(saved, { picks: { MIN: "UNDER" }, name: "Ana Smith" })).not.toBeNull();
+    expect(draftToStore(saved, { picks: { MIN: "OVER", BOS: "OVER" }, name: "Ana Smith" })).not.toBeNull();
+    expect(draftToStore(saved, { picks: {}, name: "Ana Smith" })).not.toBeNull();
+  });
+  it("without a saved entry keeps anything picked or typed, even a space", () => {
+    expect(draftToStore(null, { picks: {}, name: "" })).toBeNull();
+    expect(draftToStore(null, { picks: {}, name: " " })).not.toBeNull();
+    expect(draftToStore(null, { picks: { MIN: "OVER" }, name: "" })).not.toBeNull();
+  });
+});
+
+describe("draftBase", () => {
+  it("starts from the draft when there is one", () => {
+    const draft = { picks: { BOS: "UNDER" as const }, name: "Bo" };
+    expect(draftBase(draft, entry())).toBe(draft);
+  });
+  it("else from the saved entry, else from nothing", () => {
+    const saved = entry({ picks: [{ teamId: "MIN", side: "OVER", lineAtPick: null, pickedAt: "2026-10-01T00:00:00.000Z" }] });
+    expect(draftBase(null, saved)).toEqual({ picks: { MIN: "OVER" }, name: "Ana" });
+    expect(draftBase(null, null)).toEqual({ picks: {}, name: "" });
   });
 });

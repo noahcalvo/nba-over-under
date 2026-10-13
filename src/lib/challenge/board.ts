@@ -4,6 +4,7 @@ import { normalizeName } from "@/lib/league/commands";
 import type { Side, TeamId, TeamInfo } from "@/lib/types";
 import type { GridTeam } from "./grid";
 import { lineMove } from "./movement";
+import { pickMap } from "./picks";
 import type { ChallengeEntry, ChallengePhase, ChallengePick, PickMap } from "./types";
 
 /** Unsaved work kept in this browser: every working pick and the typed name. Never an entry. */
@@ -24,6 +25,23 @@ export function parseDraft(value: unknown, teamIds: ReadonlySet<TeamId>): Challe
     if (teamIds.has(teamId) && SIDES.has(side)) valid[teamId] = side as Side;
   }
   return { picks: valid, name: typeof name === "string" ? name : "" };
+}
+
+/**
+ * The draft to keep for the next working state, or null when it is exactly the saved entry (nothing saved: nothing
+ * picked or typed). Compares the name as typed, so "Ana " is kept while the user is adding a word; whether that counts
+ * as an unsaved change is hasUnsavedChanges's call.
+ */
+export function draftToStore(saved: ChallengeEntry | null, next: ChallengeDraft): ChallengeDraft | null {
+  const savedPicks: PickMap = saved ? pickMap(saved.picks) : {};
+  const teams = new Set([...Object.keys(savedPicks), ...Object.keys(next.picks)]);
+  for (const teamId of teams) if (savedPicks[teamId] !== next.picks[teamId]) return next;
+  return next.name === (saved?.displayName ?? "") ? null : next;
+}
+
+/** The working state a change starts from: the stored draft, else the saved entry, else nothing. */
+export function draftBase(draft: ChallengeDraft | null, saved: ChallengeEntry | null): ChallengeDraft {
+  return draft ?? { picks: saved ? pickMap(saved.picks) : {}, name: saved?.displayName ?? "" };
 }
 
 /** A grid card: the working side plus what the saved entry holds for the team. */

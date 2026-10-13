@@ -5,17 +5,19 @@ export type { ChallengeDraft };
 
 // This browser's unsaved challenge picks. Next keeps visited routes mounted but hidden (React <Activity>) and restores
 // their state on return, so a per-page copy would go stale; the board reads this one store (useSyncExternalStore) and
-// writes only from user actions. localStorage is the record; when the browser refuses it the page works without a draft.
+// writes only from user actions. localStorage is the record (it survives reloads); when the browser refuses it, memory
+// holds the draft for this page load.
 
 const key = (season: number) => `courtline.challenge.draft.v1.${season}`;
 const listeners = new Set<() => void>();
+const memory = new Map<string, string>();
 let cache: { key: string | null; raw: string | null; value: ChallengeDraft | null } = { key: null, raw: null, value: null };
 
 function read(season: number): string | null {
   try {
     return window.localStorage.getItem(key(season));
   } catch {
-    return null;
+    return memory.get(key(season)) ?? null;
   }
 }
 
@@ -43,11 +45,13 @@ export function getDraft(season: number): ChallengeDraft | null {
 }
 
 export function writeDraft(season: number, draft: ChallengeDraft | null): void {
+  if (draft) memory.set(key(season), JSON.stringify(draft));
+  else memory.delete(key(season));
   try {
     if (draft) window.localStorage.setItem(key(season), JSON.stringify(draft));
     else window.localStorage.removeItem(key(season));
   } catch {
-    // Storage unavailable: the page still works without a draft.
+    // Storage unavailable: memory holds the draft (see above).
   }
   listeners.forEach((listener) => listener());
 }

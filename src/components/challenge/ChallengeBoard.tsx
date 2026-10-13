@@ -7,7 +7,16 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
 import { CHALLENGE } from "@/config/challenge";
-import { boardCards, entryPicks, newerEntry, pickCount, saveState, type ChallengeDraft } from "@/lib/challenge/board";
+import {
+  boardCards,
+  draftBase,
+  draftToStore,
+  entryPicks,
+  newerEntry,
+  pickCount,
+  saveState,
+  type ChallengeDraft,
+} from "@/lib/challenge/board";
 import { filterTeams, sortTeams, type TeamFilter, type TeamSort } from "@/lib/challenge/grid";
 import { hasUnsavedChanges, movedTeams, saveLabel } from "@/lib/challenge/movement";
 import { isLocked } from "@/lib/challenge/phase";
@@ -136,13 +145,17 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, locked]);
 
-  function update(next: ChallengeDraft) {
-    writeDraft(season, hasUnsavedChanges(saved, next.picks, next.name) ? next : null);
+  /**
+   * Applies a change to the latest stored state, not this render's copy: several clicks before a re-render must all
+   * land. The draft is kept while it differs at all from the saved entry (a name being typed keeps its spaces).
+   */
+  function update(change: (base: ChallengeDraft) => ChallengeDraft) {
+    writeDraft(season, draftToStore(saved, change(draftBase(getDraft(season), saved))));
   }
 
   function pick(teamId: TeamId, side: Side) {
-    if (locked) return;
-    update({ picks: { ...working, [teamId]: side }, name });
+    if (locked || expired) return;
+    update((base) => ({ ...base, picks: { ...base.picks, [teamId]: side } }));
   }
 
   function showMoved() {
@@ -264,6 +277,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
                   team={team}
                   locked={locked}
                   frozen={frozen}
+                  hasSaved={saved !== null}
                   onPick={(side) => pick(team.info.id, side)}
                 />
               ))}
@@ -307,7 +321,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
             <div className={!frozen ? "sm:col-span-2 xl:col-span-1" : ""}>
               <SavePanel
                 name={name}
-                onName={(next) => update({ picks: working, name: next })}
+                onName={(next) => update((base) => ({ ...base, name: next }))}
                 canSave={canSave}
                 label={label}
                 blocker={blocker}

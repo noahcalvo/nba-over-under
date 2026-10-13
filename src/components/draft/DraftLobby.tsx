@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Users } from "lucide-react";
 import { CopyLink } from "@/components/access/CopyLink";
 import { Button } from "@/components/ui/Button";
@@ -41,6 +44,8 @@ export function DraftLobby({
   onSaveOrder: (order: string[]) => Promise<boolean>;
   onOrderDirtyChange: (dirty: boolean) => void;
 }) {
+  // Lives here, not in the keyed order panel: a saved order remounts the panel and would drop the message.
+  const [announcement, setAnnouncement] = useState("");
   return (
     <Panel
       title="Draft lobby"
@@ -68,7 +73,11 @@ export function DraftLobby({
         pending={pending}
         onSave={onSaveOrder}
         onDirtyChange={onOrderDirtyChange}
+        onAnnounce={setAnnouncement}
       />
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       {access.invitePath && openSeats(league.managers).length > 0 && (
         <CopyLink
           path={access.invitePath}

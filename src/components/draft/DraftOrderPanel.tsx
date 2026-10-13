@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, GripVertical, Shuffle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { moveInOrder, shuffled } from "@/lib/league/draft-order";
@@ -20,6 +20,7 @@ export function DraftOrderPanel({
   pending,
   onSave,
   onDirtyChange,
+  onAnnounce,
 }: {
   league: League;
   viewerId: string | null;
@@ -27,12 +28,23 @@ export function DraftOrderPanel({
   pending: boolean;
   onSave: (order: string[]) => Promise<boolean>;
   onDirtyChange: (dirty: boolean) => void;
+  onAnnounce: (message: string) => void;
 }) {
   const saved = league.draft.seatOrder;
   const [order, setOrder] = useState<string[]>(saved);
   const [dragging, setDragging] = useState<number | null>(null);
-  const [announcement, setAnnouncement] = useState("");
+  const dragStartOrder = useRef<string[] | null>(null);
+  const listRef = useRef<HTMLOListElement>(null);
+  const refocus = useRef<string | null>(null);
   const dirty = order.some((id, index) => id !== saved[index]);
+
+  // After a move, a used arrow that became disabled hands focus to the row's other arrow.
+  useEffect(() => {
+    if (refocus.current === null) return;
+    const target = listRef.current?.querySelector<HTMLButtonElement>(`[data-arrow="${refocus.current}"]`);
+    refocus.current = null;
+    target?.focus();
+  }, [order]);
 
   useEffect(() => {
     onDirtyChange(dirty);
@@ -44,25 +56,28 @@ export function DraftOrderPanel({
     return manager ? managerLabel(manager) : id;
   };
 
-  function move(from: number, to: number) {
+  function move(from: number, to: number, via?: "up" | "down") {
     if (to < 0 || to >= order.length || from === to) return;
+    const id = order[from];
     setOrder(moveInOrder(order, from, to));
-    setAnnouncement(`${labelOf(order[from])} moved to draft position ${to + 1}.`);
+    if (via === "up" && to === 0) refocus.current = `${id}:down`;
+    if (via === "down" && to === order.length - 1) refocus.current = `${id}:up`;
+    onAnnounce(`${labelOf(id)} moved to draft position ${to + 1}.`);
   }
 
   function randomize() {
     const next = shuffled(order);
     setOrder(next);
-    setAnnouncement(`Order randomized, not saved yet. ${labelOf(next[0])} picks first.`);
+    onAnnounce(`Order randomized, not saved yet. ${labelOf(next[0])} picks first.`);
   }
 
   function discard() {
     setOrder(saved);
-    setAnnouncement("Changes discarded.");
+    onAnnounce("Changes discarded.");
   }
 
   async function save() {
-    if (await onSave(order)) setAnnouncement("Draft order saved.");
+    if (await onSave(order)) onAnnounce("Draft order saved.");
   }
 
   const editing = canEdit && !pending;
@@ -83,7 +98,7 @@ export function DraftOrderPanel({
           ? " Drag a manager or use the arrows. Locks when the draft starts."
           : " Set by the commissioner. It can change until the draft starts."}
       </p>
-      <ol className="flex max-w-2xl flex-col gap-2">
+      <ol ref={listRef} className="flex max-w-2xl flex-col gap-2">
         {order.map((id, index) => {
           const manager = findManager(league.managers, id);
           if (!manager) return null;
@@ -95,6 +110,7 @@ export function DraftOrderPanel({
               onDragStart={(event) => {
                 event.dataTransfer.effectAllowed = "move";
                 event.dataTransfer.setData("text/plain", id);
+                dragStartOrder.current = order;
                 setDragging(index);
               }}
               onDragOver={(event) => {
@@ -107,9 +123,13 @@ export function DraftOrderPanel({
               }}
               onDrop={(event) => {
                 event.preventDefault();
-                if (dragging !== null) setAnnouncement(`${label} moved to draft position ${index + 1}.`);
+                if (dragging !== null) onAnnounce(`${label} moved to draft position ${index + 1}.`);
               }}
-              onDragEnd={() => setDragging(null)}
+              onDragEnd={(event) => {
+                if (event.dataTransfer.dropEffect === "none" && dragStartOrder.current) setOrder(dragStartOrder.current);
+                dragStartOrder.current = null;
+                setDragging(null);
+              }}
               className={`flex items-center gap-3 rounded-lg border bg-ink-900 px-3 py-2.5 ${
                 dragging === index ? "border-accent/60 opacity-70" : "border-ink-700"
               } ${editing ? "cursor-grab active:cursor-grabbing" : ""}`}
@@ -142,8 +162,9 @@ export function DraftOrderPanel({
                     size="sm"
                     className="px-2"
                     aria-label={`Move ${label} up`}
+                    data-arrow={`${id}:up`}
                     disabled={!editing || index === 0}
-                    onClick={() => move(index, index - 1)}
+                    onClick={() => move(index, index - 1, "up")}
                   >
                     <ArrowUp aria-hidden className="size-4" />
                   </Button>
@@ -152,8 +173,9 @@ export function DraftOrderPanel({
                     size="sm"
                     className="px-2"
                     aria-label={`Move ${label} down`}
+                    data-arrow={`${id}:down`}
                     disabled={!editing || index === order.length - 1}
-                    onClick={() => move(index, index + 1)}
+                    onClick={() => move(index, index + 1, "down")}
                   >
                     <ArrowDown aria-hidden className="size-4" />
                   </Button>
@@ -184,9 +206,6 @@ export function DraftOrderPanel({
           </p>
         </div>
       )}
-      <p aria-live="polite" className="sr-only">
-        {announcement}
-      </p>
     </section>
   );
 }

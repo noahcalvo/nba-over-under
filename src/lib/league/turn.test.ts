@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seatForPick } from "@/lib/draft";
 import type { DraftAccess } from "@/lib/league/permissions";
-import { describeTurn } from "@/lib/league/turn";
+import { describeTurn, draftsFor } from "@/lib/league/turn";
 import type { DraftStatus, Manager } from "@/lib/types";
 
 const MANAGERS: Manager[] = [
@@ -60,5 +60,26 @@ describe("describeTurn", () => {
   it("reports paused and complete drafts", () => {
     expect(describeTurn(league("paused", 1), "m2")).toEqual({ kind: "paused", managerId: "m2" });
     expect(describeTurn(league("complete", 8), "m1")).toEqual({ kind: "complete", managerId: null });
+  });
+});
+
+describe("draftsFor", () => {
+  // Picks so far: m1 MIN Over, m2 OKC Over. The seat whose held teams block a side is the viewer's, not the clock's.
+  it("is the viewer's own seat while someone else is on the clock", () => {
+    expect(draftsFor(league("live", 1), "m1")).toBe("m1");
+    expect(draftsFor(league("live", 2), "m2")).toBe("m2");
+    expect(draftsFor(league("live", 4), "m2")).toBe("m2");
+  });
+
+  it("is the viewer's own seat when they are on the clock", () => {
+    expect(draftsFor(league("live", 1), "m2")).toBe("m2");
+  });
+
+  it("is the open seat the commissioner is picking for", () => {
+    expect(draftsFor(league("live", 2), "m1")).toBe("m3");
+  });
+
+  it("is nobody for a viewer without a seat", () => {
+    expect(draftsFor(league("live", 1), null)).toBeNull();
   });
 });

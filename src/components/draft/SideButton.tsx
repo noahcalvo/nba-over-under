@@ -32,7 +32,7 @@ export function SideButton({
   selected: boolean;
   managers: Manager[];
   disabled: boolean;
-  /** Why the manager on the clock can't take this side (they hold the team's other side). */
+  /** Why this viewer can't take this side (their seat holds the team's other side). */
   blockedNote?: string;
   /** Id of the visible text that gives the reason, so keyboard and screen-reader users get it too. */
   describedBy?: string;

@@ -1,13 +1,13 @@
 import { Users } from "lucide-react";
 import { CopyLink } from "@/components/access/CopyLink";
 import { Button } from "@/components/ui/Button";
-import { ManagerAvatar } from "@/components/ui/ManagerAvatar";
 import { Panel } from "@/components/ui/Panel";
 import { draftTotalPicks } from "@/lib/draft";
-import { managerLabel, openSeats } from "@/lib/league/managers";
+import { openSeats } from "@/lib/league/managers";
 import type { LeagueAccess } from "@/lib/access/links";
 import type { LeagueConfig } from "@/lib/league/config";
 import type { League } from "@/lib/types";
+import { DraftOrderPanel } from "./DraftOrderPanel";
 import { LeagueSizeForm } from "./LeagueSizeForm";
 
 export function DraftLobby({
@@ -23,6 +23,8 @@ export function DraftLobby({
   teamCount,
   onSaveConfig,
   onConfigDirtyChange,
+  onSaveOrder,
+  onOrderDirtyChange,
 }: {
   league: League;
   access: LeagueAccess;
@@ -36,6 +38,8 @@ export function DraftLobby({
   teamCount: number;
   onSaveConfig: (config: LeagueConfig) => Promise<boolean>;
   onConfigDirtyChange: (dirty: boolean) => void;
+  onSaveOrder: (order: string[]) => Promise<boolean>;
+  onOrderDirtyChange: (dirty: boolean) => void;
 }) {
   return (
     <Panel
@@ -56,26 +60,15 @@ export function DraftLobby({
           onDirtyChange={onConfigDirtyChange}
         />
       )}
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {league.managers.map((manager) => (
-          <li key={manager.id} className="flex items-center gap-3 rounded-lg border border-ink-700 bg-ink-900 px-3 py-3">
-            <ManagerAvatar manager={manager} />
-            <div className="min-w-0">
-              <p className="truncate font-semibold">
-                {managerLabel(manager)}
-                {manager.id === viewerId && <span className="ml-2 text-xs text-accent">You</span>}
-              </p>
-              <p className="text-xs text-fog-400">
-                {manager.id === league.commissionerId
-                  ? "Commissioner"
-                  : manager.displayName === null
-                    ? "Open seat"
-                    : "Joined"}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <DraftOrderPanel
+        key={league.draft.seatOrder.join(",")}
+        league={league}
+        viewerId={viewerId}
+        canEdit={canControl}
+        pending={pending}
+        onSave={onSaveOrder}
+        onDirtyChange={onOrderDirtyChange}
+      />
       {access.invitePath && openSeats(league.managers).length > 0 && (
         <CopyLink
           path={access.invitePath}

@@ -71,9 +71,10 @@ export function useTutorialSession() {
       error,
       pending: false,
       dispatch,
-      // The demo starts live, so the lobby (lines, league size) never shows.
+      // The demo starts live, so the lobby (lines, league size, draft order) never shows.
       saveLineOverrides: async () => false,
       saveConfig: async () => false,
+      saveDraftOrder: async () => false,
       dismissError: () => setError(null),
     }),
     [view, error, dispatch],

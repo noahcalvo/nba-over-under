@@ -1,15 +1,25 @@
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { createTestDb } from "@/db/test-db";
 import {
   databaseNow,
   freezeChallenge,
+  listEntries,
   loadChallengeSeason,
+  loadEntry,
+  loadEntryForSession,
   loadLatestSnapshot,
   recordLineSnapshot,
+  saveChallengeEntry,
   syncChallengeSchedule,
 } from "@/db/challenge";
+import { createLeagueFor, runDraftAction } from "@/db/actions";
+import { loadLeague } from "@/db/leagues";
+import { sessions } from "@/db/schema";
+import { createSession } from "@/db/sessions";
 import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
 import type { LineSet } from "@/lib/types";
 
 const SEASON = 2027;
@@ -113,5 +123,110 @@ describe("freezeChallenge", () => {
   });
   it("returns null for a season that was never set up", async () => {
     expect(await freezeChallenge(db, 2030)).toBeNull();
+  });
+  it("uses the database clock when no time is given", async () => {
+    const past = { ok: true as const, game: { tipoff: "2020-10-20T23:30:00.000Z", teams: ["BOS", "NYK"] as [string, string] } };
+    await syncChallengeSchedule(db, 2021, past, at("2019-01-01T00:00:00Z"));
+    const season = await freezeChallenge(db, 2021);
+    expect(season?.frozen).not.toBeNull();
+    expect(season?.frozen?.missing).toHaveLength(30);
+  });
+});
+
+const allPicks = (side: "OVER" | "UNDER") => Object.fromEntries(TEAM_INFO.map((team) => [team.id, side]));
+const BEFORE = at("2026-10-15T12:00:00Z");
+
+describe("saveChallengeEntry", () => {
+  let session: string;
+  beforeEach(async () => {
+    await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
+    session = await createSession(db, "hash-a");
+  });
+  const save = (overrides: Partial<Parameters<typeof saveChallengeEntry>[1]> = {}, now = BEFORE) =>
+    saveChallengeEntry(db, { season: SEASON, sessionId: session, displayName: "Ana", picks: allPicks("OVER"), currentLines: STATIC_LINES.values, ...overrides }, { now });
+
+  it("creates the session's entry with every pick and its reference line", async () => {
+    const result = await save();
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.picks).toHaveLength(30);
+    expect(result.value.picks.find((pick) => pick.teamId === "MIN")).toEqual({ teamId: "MIN", side: "OVER", lineAtPick: STATIC_LINES.values.MIN, pickedAt: BEFORE.toISOString() });
+    expect(await loadEntryForSession(db, SEASON, session)).toEqual(result.value);
+    expect(await loadEntry(db, result.value.id)).toEqual(result.value);
+  });
+  it("updates the same entry and keeps unchanged references when lines moved", async () => {
+    const first = await save();
+    const moved = { ...STATIC_LINES.values, MIN: 40.5, BOS: 55.5 };
+    const second = await save({ displayName: "Ana B", picks: { ...allPicks("OVER"), BOS: "UNDER" }, currentLines: moved }, at("2026-10-16T12:00:00Z"));
+    if (!first.ok || !second.ok) throw new Error("save failed");
+    expect(second.value.id).toBe(first.value.id);
+    expect(second.value.displayName).toBe("Ana B");
+    expect(second.value.picks.find((pick) => pick.teamId === "MIN")).toEqual(first.value.picks.find((pick) => pick.teamId === "MIN"));
+    expect(second.value.picks.find((pick) => pick.teamId === "BOS")).toMatchObject({ side: "UNDER", lineAtPick: 55.5, pickedAt: "2026-10-16T12:00:00.000Z" });
+    expect(second.value.savedAt).toBe("2026-10-16T12:00:00.000Z");
+    expect(await listEntries(db, SEASON)).toHaveLength(1);
+  });
+  it("gives another session its own entry and never touches the first", async () => {
+    const first = await save();
+    const other = await createSession(db, "hash-b");
+    const second = await saveChallengeEntry(db, { season: SEASON, sessionId: other, displayName: "Ben", picks: allPicks("UNDER"), currentLines: {} }, { now: BEFORE });
+    if (!first.ok || !second.ok) throw new Error("save failed");
+    expect(second.value.id).not.toBe(first.value.id);
+    expect(await loadEntry(db, first.value.id)).toEqual(first.value);
+    expect(await listEntries(db, SEASON)).toHaveLength(2);
+  });
+  it("lists entries oldest first", async () => {
+    const other = await createSession(db, "hash-b");
+    await saveChallengeEntry(db, { season: SEASON, sessionId: other, displayName: "Ben", picks: allPicks("UNDER"), currentLines: {} }, { now: at("2026-10-14T12:00:00Z") });
+    await save();
+    expect((await listEntries(db, SEASON)).map((entry) => entry.displayName)).toEqual(["Ben", "Ana"]);
+  });
+  it("refuses a save at and after the deadline", async () => {
+    await save();
+    expect(await save({ picks: allPicks("UNDER") }, at(DEADLINE))).toEqual({ ok: false, error: "challenge_locked" });
+    expect(await save({ picks: allPicks("UNDER") }, at("2026-10-21T00:00:00Z"))).toEqual({ ok: false, error: "challenge_locked" });
+    const stored = await loadEntryForSession(db, SEASON, session);
+    expect(stored?.picks.every((pick) => pick.side === "OVER")).toBe(true);
+  });
+  it("refuses a save once the freeze is stored, whatever the clock says", async () => {
+    await freezeChallenge(db, SEASON, { now: at(DEADLINE) });
+    expect(await save()).toEqual({ ok: false, error: "challenge_locked" });
+  });
+  it("refuses a save before any deadline is known", async () => {
+    const fresh = await createTestDb();
+    const owner = await createSession(fresh, "hash-c");
+    expect(await saveChallengeEntry(fresh, { season: SEASON, sessionId: owner, displayName: "Ana", picks: allPicks("OVER"), currentLines: {} }, { now: BEFORE })).toEqual({ ok: false, error: "deadline_unavailable" });
+  });
+  it("keeps the entry when its session is deleted", async () => {
+    const result = await save();
+    if (!result.ok) throw new Error("save failed");
+    await db.delete(sessions).where(eq(sessions.id, session));
+    expect(await loadEntry(db, result.value.id)).toEqual(result.value);
+  });
+  it("uses the database clock when no time is given", async () => {
+    const past = { ok: true as const, game: { tipoff: "2020-10-20T23:30:00.000Z", teams: ["BOS", "NYK"] as [string, string] } };
+    await syncChallengeSchedule(db, 2021, past, at("2019-01-01T00:00:00Z"));
+    const result = await saveChallengeEntry(db, { season: 2021, sessionId: session, displayName: "Ana", picks: allPicks("OVER"), currentLines: {} });
+    expect(result).toEqual({ ok: false, error: "challenge_locked" });
+  });
+});
+
+describe("league lines", () => {
+  it("are untouched by challenge writes", async () => {
+    const owner = await createSession(db, "hash-league");
+    await createLeagueFor(db, owner, { leagueName: "Hoops", displayName: "Ana" }, () => "lg0001");
+    const started = await runDraftAction(db, "lg0001", owner, { type: "start" }, STATIC_LINES);
+    expect(started.ok).toBe(true);
+    await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
+    const saved = await saveChallengeEntry(
+      db,
+      { season: SEASON, sessionId: owner, displayName: "Ana", picks: allPicks("OVER"), currentLines: { ...STATIC_LINES.values, MIN: 30.5 } },
+      { now: BEFORE },
+    );
+    expect(saved.ok).toBe(true);
+    await recordLineSnapshot(db, SEASON, lines("2026-10-20T22:00:00.000Z", { ...STATIC_LINES.values, MIN: 31.5 }));
+    await freezeChallenge(db, SEASON, { now: at(DEADLINE) });
+    const league = await loadLeague(db, "lg0001");
+    expect(league?.lines?.values).toEqual(STATIC_LINES.values);
   });
 });

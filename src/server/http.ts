@@ -32,6 +32,10 @@ const STATUS: Record<ApiError, number> = {
   seats_claimed: 409,
   order_locked: 409,
   invalid_order: 409,
+  challenge_locked: 409,
+  deadline_unavailable: 503,
+  incomplete_entry: 400,
+  invalid_picks: 400,
 };
 
 export function errorResponse(error: ApiError): Response {

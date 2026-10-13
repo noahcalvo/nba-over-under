@@ -26,14 +26,27 @@ function remainingText(needed: number, remaining: number): string {
   return needed > remaining ? `${games} · Out of reach` : games;
 }
 
+export interface LineLabels {
+  label: string;
+  /** Under the value while there is no line yet. */
+  unset: string;
+  /** Under the value once the line is fixed. */
+  set: string;
+}
+
+const DRAFT_LINE_LABELS: LineLabels = { label: "Locked line", unset: "Set at draft start", set: "Frozen at draft" };
+
 export function TeamStatStrip({
   record,
   lockedLine,
   showProjected,
+  lineLabels = DRAFT_LINE_LABELS,
 }: {
   record: TeamRecord;
   lockedLine: number | null;
   showProjected: boolean;
+  /** How the fixed line is named; a league freezes at the draft start, the challenge at its deadline. */
+  lineLabels?: LineLabels;
 }) {
   const projected = projectWins(record);
   const stats: Stat[] = [
@@ -43,8 +56,8 @@ export function TeamStatStrip({
       sub: `${gamesPlayed(record)} of ${SCORING.seasonGames} games`,
     },
     lockedLine === null
-      ? { label: "Locked line", value: "—", sub: "Set at draft start" }
-      : { label: "Locked line", value: formatNumber(lockedLine), sub: "Frozen at draft" },
+      ? { label: lineLabels.label, value: "—", sub: lineLabels.unset }
+      : { label: lineLabels.label, value: formatNumber(lockedLine), sub: lineLabels.set },
   ];
   if (isSettled(record)) {
     // A finished season has final wins, not a projection.

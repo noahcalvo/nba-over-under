@@ -23,6 +23,10 @@ export type DomainError =
   | "seats_claimed"
   | "order_locked"
   | "invalid_order"
+  | "challenge_locked"
+  | "deadline_unavailable"
+  | "incomplete_entry"
+  | "invalid_picks"
   | DraftError
   | FadeError;
 
@@ -68,5 +72,9 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   unknown_pick: "That pick doesn't exist.",
   voided_pick: "That pick was voided when the draft ended early. Fade a kept pick.",
   own_pick: "Fade another manager's pick, not your own.",
+  challenge_locked: "The challenge is locked: picks can't change after the deadline.",
+  deadline_unavailable: "The season schedule hasn't been read yet, so saving is paused. Try again in a few minutes.",
+  incomplete_entry: "Pick Over or Under for all 30 teams before saving.",
+  invalid_picks: "Those picks weren't valid. Reload the page and try again.",
   invalid_request: "Invalid request.",
 };

@@ -22,6 +22,7 @@ export function SeasonProgressPanel({
   showProjected,
   teamNames,
   note,
+  noLineNote = "The locked-line pace appears once the draft starts.",
   className = "",
 }: {
   /** Never rejects: `readGameLog` reports a failed feed as a read with no log. */
@@ -32,6 +33,8 @@ export function SeasonProgressPanel({
   teamNames: Readonly<Record<TeamId, string>>;
   /** Shown first under the chart, e.g. where the game history comes from. */
   note?: string;
+  /** Shown while there is no locked line to draw. */
+  noLineNote?: string;
   className?: string;
 }) {
   return (
@@ -43,6 +46,7 @@ export function SeasonProgressPanel({
         showProjected={showProjected}
         teamNames={teamNames}
         note={note}
+        noLineNote={noLineNote}
         className={className}
       />
     </Suspense>
@@ -73,6 +77,7 @@ function SeasonProgress({
   showProjected,
   teamNames,
   note,
+  noLineNote,
   className = "",
 }: {
   gameLog: Promise<GameLogRead>;
@@ -81,6 +86,7 @@ function SeasonProgress({
   showProjected: boolean;
   teamNames: Readonly<Record<TeamId, string>>;
   note?: string;
+  noLineNote: string;
   className?: string;
 }) {
   const gameLog = use(gameLogPromise);
@@ -94,7 +100,7 @@ function SeasonProgress({
   const notes: string[] = note ? [note] : [];
   if (gameLog.log && model.history === "partial") notes.push(`Game log covers ${model.historyGames} of ${played} games.`);
   if (gameLog.log && model.history === "mismatch") notes.push("Game log doesn't match the stored record yet.");
-  if (lockedLine === null) notes.push("The locked-line pace appears once the draft starts.");
+  if (lockedLine === null) notes.push(noLineNote);
 
   return (
     <section

@@ -4,6 +4,8 @@ import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
+import { TEAM_INFO } from "@/data/teams";
+import { listEntries, loadEntryForSession, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import { claimLink, createLeagueFor, resetSeat, runDraftAction, setDraftOrder, setLeagueConfig } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
@@ -41,6 +43,24 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
     if (!created.ok) throw new Error(created.error);
     return { leagueId, commissioner };
   }
+
+  it("creates one entry when a session saves in parallel for the first time", async () => {
+    const season = 3000 + Math.floor(Math.random() * 20000);
+    const tipoff = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    await syncChallengeSchedule(db, season, { ok: true, game: { tipoff, teams: [null, null] } }, new Date());
+    const sessionId = await createSession(db, crypto.randomUUID());
+    const picks = Object.fromEntries(TEAM_INFO.map((team) => [team.id, "OVER" as const]));
+    const results = await Promise.all(
+      Array.from({ length: PARALLEL }, () =>
+        saveChallengeEntry(db, { season, sessionId, displayName: "Ana", picks, currentLines: STATIC_LINES.values }),
+      ),
+    );
+    expect(results.every((result) => result.ok)).toBe(true);
+    const entry = await loadEntryForSession(db, season, sessionId);
+    expect(entry?.picks).toHaveLength(30);
+    expect(await listEntries(db, season)).toHaveLength(1);
+    expect(new Set(results.map((result) => (result.ok ? result.value.id : null)))).toEqual(new Set([entry?.id]));
+  });
 
   it("lets exactly one of many parallel confirms take the pick", async () => {
     const { leagueId, commissioner } = await newLeague();

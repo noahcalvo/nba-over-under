@@ -36,6 +36,13 @@
       "when": 1791824860352,
       "tag": "0004_league_size",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791910022537,
+      "tag": "0005_challenge",
+      "breakpoints": true
     }
   ]
 }

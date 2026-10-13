@@ -173,7 +173,7 @@ describe("season awards in the demo season", () => {
     const lines = awardsStory(final.awards, league.managers, TUTORIAL_VIEWER_ID);
     expect(lines[0]).toMatch(/^Best Pick: /);
     const impact = awardImpactStory(final, standingsAt(82, "final", awardsOff()), league.managers, TUTORIAL_VIEWER_ID);
-    expect(impact).toMatch(/win|wins/);
+    expect(impact).toMatch(/wins the league|have won/);
     const changes = awardChangeStory(standingsAt(41, "projected").awards, final.awards, league.managers, TUTORIAL_VIEWER_ID);
     expect(changes).toHaveLength(2);
     for (const line of changes) expect(line).toMatch(/held on|At Midseason/);

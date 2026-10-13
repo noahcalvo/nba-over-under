@@ -89,7 +89,7 @@ describe("buildDemoLeague", () => {
 
   it("derives a projected order where points, not margin, decide the ranking", () => {
     const standings = computeStandings(league, TEAMS_BY_ID, "projected");
-    expect(standings.rows.map((row) => row.managerId)).toEqual(["m3", "m1", "m4", "m2"]);
+    expect(standings.rows.map((row) => row.managerId)).toEqual(["m3", "m4", "m1", "m2"]);
     const m2 = standings.rows.find((row) => row.managerId === "m2")!;
     const m4 = standings.rows.find((row) => row.managerId === "m4")!;
     expect(m2.totalMargin).toBeGreaterThan(m4.totalMargin);

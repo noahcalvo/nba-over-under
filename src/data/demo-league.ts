@@ -47,10 +47,10 @@ export function buildDemoLeague(): League {
     },
     lineOverrides: {},
     fades: [
-      { id: "f1", managerId: "m1", targetPickNumber: 2 },
+      { id: "f1", managerId: "m1", targetPickNumber: 15 },
       { id: "f2", managerId: "m2", targetPickNumber: 6 },
       { id: "f3", managerId: "m3", targetPickNumber: 13 },
-      { id: "f4", managerId: "m4", targetPickNumber: 9 },
+      { id: "f4", managerId: "m4", targetPickNumber: 23 },
     ],
     lines: STATIC_LINES,
   };

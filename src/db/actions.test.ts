@@ -363,7 +363,7 @@ describe("line overrides", () => {
     expect((await loadLeague(db, LEAGUE))!.lineOverrides).toEqual({ BOS: 44.5 });
     await runDraftAction(db, LEAGUE, ana, { type: "start" }, partial);
     const lines = (await loadLeague(db, LEAGUE))!.lines!;
-    expect(lines).toMatchObject({ source: "static", season: "2025–26", manual: ["BOS"] });
+    expect(lines).toMatchObject({ source: "static", season: "2026–27", manual: ["BOS"] });
     expect(lines.values.BOS).toBe(44.5);
   });
 

@@ -67,3 +67,15 @@ const ESPN_ABBR: Readonly<Record<TeamId, string>> = {
 export function espnAbbr(teamId: TeamId): string {
   return ESPN_ABBR[teamId] ?? teamId.toLowerCase();
 }
+
+export type Division = "Atlantic" | "Central" | "Southeast" | "Northwest" | "Pacific" | "Southwest";
+
+/** Each team's NBA division (five per division, three per conference). */
+export const TEAM_DIVISIONS: Readonly<Record<TeamId, Division>> = {
+  BOS: "Atlantic", BKN: "Atlantic", NYK: "Atlantic", PHI: "Atlantic", TOR: "Atlantic",
+  CHI: "Central", CLE: "Central", DET: "Central", IND: "Central", MIL: "Central",
+  ATL: "Southeast", CHA: "Southeast", MIA: "Southeast", ORL: "Southeast", WAS: "Southeast",
+  DEN: "Northwest", MIN: "Northwest", OKC: "Northwest", POR: "Northwest", UTA: "Northwest",
+  GSW: "Pacific", LAC: "Pacific", LAL: "Pacific", PHX: "Pacific", SAC: "Pacific",
+  DAL: "Southwest", HOU: "Southwest", MEM: "Southwest", NOP: "Southwest", SAS: "Southwest",
+};

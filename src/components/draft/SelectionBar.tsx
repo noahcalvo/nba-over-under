@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { SEASON } from "@/config/league";
 import type { SideRef } from "@/lib/draft-filters";
 import { formatNumber } from "@/lib/format";
 import type { TeamLookup } from "@/lib/standings";
@@ -48,11 +49,16 @@ export function SelectionBar({
   return (
     <div data-tour={tourBar} className={`${frame} border-ink-600`}>
       <TeamLogo team={team} size={36} />
-      <p className="min-w-0 flex-1 truncate text-sm">
-        <span className="font-semibold">{team.name}</span>{" "}
-        <span className={selection.side === "OVER" ? "text-over" : "text-under"}>{selection.side}</span>{" "}
-        {formatNumber(team.line)}
-      </p>
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="truncate">
+          <span className="font-semibold">{team.name}</span>{" "}
+          <span className={selection.side === "OVER" ? "text-over" : "text-under"}>{selection.side}</span>{" "}
+          {formatNumber(team.line)}
+        </p>
+        <p className="truncate text-xs text-fog-300">
+          {SEASON.previousLabel}: {team.prevWins} wins
+        </p>
+      </div>
       <Button size="sm" variant="ghost" onClick={onClear} aria-label="Clear selection">
         <X aria-hidden className="size-4" />
       </Button>

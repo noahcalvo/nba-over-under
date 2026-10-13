@@ -165,7 +165,7 @@ describe("season awards in the demo season", () => {
     expect(final.complete).toBe(true);
     expect(final.awards.status).toBe("final");
     const impact = awardImpactStory(final, standingsAt(82, "final", awardsOff()), league.managers, TUTORIAL_VIEWER_ID);
-    expect(impact).toMatch(/win|wins/);
+    expect(impact).toMatch(/wins the league|have won/);
   });
 });
 

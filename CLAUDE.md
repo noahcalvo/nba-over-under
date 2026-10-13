@@ -34,7 +34,7 @@ Next API.
 
 ## Architecture
 - `src/config/` — the only home for tunable numbers: `SCORING` (scoring weights and season award points), `LEAGUE_DEFAULTS` (4 managers,
-  11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo and mock data),
+  11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo season label and the previous season shown as "wins"),
   `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
   `TUTORIAL`, `TUTORIAL_SEASON` and `TOUR` (`tour.ts`: guided demo size and pacing, simulated season, overlay spacing).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season awards
@@ -109,7 +109,8 @@ Next API.
 - Team records come from ESPN's standings JSON (`RECORD_SOURCE=static` uses the mock records), stored per season (end
   year) and team in `team_records`; every stored league in a season shares them. A refresh saves all 30 or nothing and
   never lets games played go down. The commissioner refreshes from the Overview; `/api/cron/refresh-records` runs daily
-  at 10:00 UTC with `CRON_SECRET`. The demo league keeps its mock records in code. `prevWins` is still mock.
+  at 10:00 UTC with `CRON_SECRET`. The demo league keeps its mock records in code. `prevWins` (`src/data/teams.ts`) holds the real 2025–26 final wins
+  (`SEASON.previousLabel`); update it with `SEASON` each season.
   A refresh with `RECORD_SOURCE=static` stores mock records under the real season; games played may never go down, so
   later ESPN refreshes of it then fail. Delete `.data/pglite` (or those `team_records` rows) after testing with it.
 - Team page (`/l/{id}/teams/{teamId}`; breadcrumb to the overview, no nav item highlighted; team names and logos on the

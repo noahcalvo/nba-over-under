@@ -119,7 +119,7 @@ describe("rosterColumns", () => {
 
   it("attaches each manager's fade and the owner of the faded pick", () => {
     const m1 = columns[0];
-    expect(m1.fade?.fade.targetPickNumber).toBe(2);
+    expect(m1.fade?.fade.targetPickNumber).toBe(15);
     expect(m1.fadeTarget?.id).toBe(m1.fade?.target.pick.managerId);
     expect(m1.fadeTarget?.id).not.toBe("m1");
   });

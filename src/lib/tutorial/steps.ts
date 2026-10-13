@@ -2,18 +2,17 @@ import { SCORING } from "@/config/scoring";
 import { TUTORIAL_VIEWER_ID } from "@/data/tutorial-league";
 import { picksForManager } from "@/lib/draft";
 import { fadeFor } from "@/lib/fades";
+import { formatNumber, formatSigned } from "@/lib/format";
 import type { TourStep } from "@/lib/tour/targets";
 import type { League } from "@/lib/types";
 
-// The guided draft. The step shown is derived from the demo league itself (a confirmed pick, a locked fade) plus two
-// "seen" flags for the informational steps, so it only ever moves on a real state change, and going back (clearing a
-// selection) needs no special handling.
+// The guided draft. The step shown is derived from the demo league itself (a selection, a confirmed pick, a locked
+// fade), so it only ever moves on a real state change and going back (clearing a selection) needs no special
+// handling. No step waits on a Continue button: the user's own actions and the simulations move it along.
 
 export type TutorialStepId =
-  | "welcome"
   | "over-under"
   | "confirm-pick"
-  | "snake"
   | "simulate"
   | "fades"
   | "confirm-fade"
@@ -21,10 +20,8 @@ export type TutorialStepId =
   | "complete";
 
 export const TUTORIAL_STEP_ORDER: readonly TutorialStepId[] = [
-  "welcome",
   "over-under",
   "confirm-pick",
-  "snake",
   "simulate",
   "fades",
   "confirm-fade",
@@ -32,26 +29,14 @@ export const TUTORIAL_STEP_ORDER: readonly TutorialStepId[] = [
   "complete",
 ];
 
-/** Steps as the user counts them; the other managers' fades are part of step 7. */
-export const TUTORIAL_STEP_COUNT = 8;
+/** Steps as the user counts them; the other managers' fades are part of step 5. */
+export const TUTORIAL_STEP_COUNT = 6;
 
 export interface TutorialStep extends TourStep {
   number: number;
-  /**
-   * continue: a button; action: the user's own successful action; automatic: simulation; watch: simulation, then a
-   * button once it is done (so it never flashes by); end: the last step.
-   */
-  advance: "continue" | "action" | "automatic" | "watch" | "end";
+  /** action: the user's own successful action; automatic: simulation; end: the last step. */
+  advance: "action" | "automatic" | "end";
 }
-
-export interface TutorialProgress {
-  welcomed: boolean;
-  snakeExplained: boolean;
-  /** Continued past the other managers' fades. */
-  fadesWatched: boolean;
-}
-
-export const INITIAL_PROGRESS: TutorialProgress = { welcomed: false, snakeExplained: false, fadesWatched: false };
 
 export interface TutorialFacts {
   league: League;
@@ -61,39 +46,32 @@ export interface TutorialFacts {
   hasFadeTarget: boolean;
 }
 
-export function tutorialStep(progress: TutorialProgress, facts: TutorialFacts): TutorialStepId {
+export function tutorialStep(facts: TutorialFacts): TutorialStepId {
   const { draft, fades } = facts.league;
-  if (draft.status === "complete") return progress.fadesWatched ? "complete" : "fade-sim";
+  if (draft.status === "complete") return "complete";
   if (draft.status === "fades") {
     if (fadeFor(fades, TUTORIAL_VIEWER_ID)) return "fade-sim";
     return facts.hasFadeTarget ? "confirm-fade" : "fades";
   }
-  if (!progress.welcomed) return "welcome";
   if (picksForManager(draft, TUTORIAL_VIEWER_ID).length === 0) return facts.hasSelection ? "confirm-pick" : "over-under";
-  return progress.snakeExplained ? "simulate" : "snake";
+  return "simulate";
 }
 
+const FADE_HIT = formatSigned(SCORING.fadeHit, 0);
+const FADE_MISS = formatNumber(SCORING.fadeMiss, 0);
+
 export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
-  welcome: {
-    number: 1,
-    advance: "continue",
-    title: "Welcome to your draft",
-    body: "Welcome to your draft! You'll compete with other managers to predict NBA teams' season win totals. Let's make your first pick.",
-    spotlight: ["draft-status"],
-    interactive: [],
-    continueLabel: "Continue",
-  },
   "over-under": {
-    number: 2,
+    number: 1,
     advance: "action",
-    title: "Over or Under",
-    body: "Each NBA team has a projected win total called its line. Draft OVER if you think they'll finish above it, or UNDER if you think they'll finish below it. Choose any team and side!",
+    title: "Make your first pick",
+    body: "Every NBA team has a line: its projected win total. Choose Over if you think a team will win more games than that, or Under if fewer.",
     details: {
       summary: "How lines work",
       items: [
-        "Lines freeze when the draft starts and stay locked all season.",
-        "Over 41.5 needs at least 42 wins. Under 41.5 needs 41 wins or fewer.",
-        "Different managers can own opposite sides of the same team.",
+        "Lines lock when the draft starts.",
+        "Over 41.5 needs 42 wins or more. Under 41.5 needs 41 or fewer.",
+        "Another manager can take the other side of a team you own.",
         "You can't own both sides of one team.",
       ],
     },
@@ -102,43 +80,33 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
     pointAt: "side-button",
   },
   "confirm-pick": {
-    number: 3,
+    number: 2,
     advance: "action",
-    title: "Confirm your pick",
-    body: "This is your pick! Check the team, direction, and locked win total. When you're ready, confirm it.",
+    title: "Lock it in",
+    body: "Check the team, side and line, then confirm. Changed your mind? Choose another side first.",
     spotlight: ["selection-bar", "selection-panel"],
     interactive: ["selection-bar", "selection-panel", "available-picks"],
     pointAt: "confirm-pick",
   },
-  snake: {
-    number: 4,
-    advance: "continue",
-    title: "A snake draft",
-    body: "Courtline uses a snake draft. Everyone picks once per round, but the order reverses each round. Your next pick comes after the other managers take their turns.",
-    spotlight: ["draft-board"],
-    interactive: ["draft-board"],
-    continueLabel: "Watch the draft",
-  },
   simulate: {
-    number: 5,
+    number: 3,
     advance: "automatic",
-    title: "The rest of the draft",
-    body: "Let's fast-forward through the rest of the draft. We'll make the remaining picks for every manager, including you.",
+    title: "A snake draft",
+    body: "The pick order reverses every round, so the last pick of one round is the first of the next. We'll make the rest of the picks for everyone, you included.",
     spotlight: ["draft-board", "draft-status"],
     interactive: ["draft-board"],
   },
   fades: {
-    number: 6,
+    number: 4,
     advance: "action",
-    title: "Time to fade",
-    body: `Now it's time to fade! A fade is a bet against another manager's pick. If their pick misses, you earn ${SCORING.fadeHit} points. If it hits, you earn ${SCORING.fadeMiss}. Choose any eligible pick to fade.`,
+    title: "Fade a rival's pick",
+    body: `A fade is a bet that another manager's pick will miss. If it misses, you earn ${FADE_HIT}; if it hits, ${FADE_MISS}. Choose a pick to fade.`,
     details: {
       summary: "Fade rules",
       items: [
-        "You can't fade your own pick.",
         "Several managers can fade the same pick.",
-        `A fade earns a flat +${SCORING.fadeHit} or ${SCORING.fadeMiss}, with no margin bonus.`,
-        `If the faded pick pushes (wins land exactly on the line), the fade earns ${SCORING.fadeMiss}.`,
+        `A fade is always ${FADE_HIT} or ${FADE_MISS}, however close the team finishes to its line.`,
+        `If the team lands exactly on its line, the fade earns ${FADE_MISS}.`,
       ],
     },
     spotlight: ["fade-targets"],
@@ -146,29 +114,28 @@ export const TUTORIAL_STEPS: Record<TutorialStepId, TutorialStep> = {
     pointAt: "fade-target",
   },
   "confirm-fade": {
-    number: 7,
+    number: 5,
     advance: "action",
-    title: "Confirm your fade",
-    body: "You're betting that this manager's pick will be wrong. Confirm your fade to finish your draft!",
+    title: "Lock in your fade",
+    body: "You're betting this pick misses. Confirm to finish your draft.",
     spotlight: ["fade-bar", "fade-confirm"],
     interactive: ["fade-bar", "fade-confirm", "fade-targets"],
     pointAt: "confirm-fade",
   },
   "fade-sim": {
-    number: 7,
-    advance: "watch",
-    title: "The other fades",
-    body: "Your fade is locked. Watch the other managers choose theirs, in any order, then continue.",
+    number: 5,
+    advance: "automatic",
+    title: "Everyone fades",
+    body: "Your fade is locked. Now the other managers choose theirs.",
     spotlight: ["fade-status"],
     interactive: [],
-    continueLabel: "Continue",
   },
   complete: {
-    number: 8,
+    number: 6,
     advance: "end",
     title: "Draft complete",
-    body: "Your draft is complete! You've built your roster and chosen a fade. Now let's see how those picks earn points throughout an NBA season.",
-    spotlight: ["draft-status"],
+    body: "Every pick and fade is locked. Next, play out a simulated season and watch your picks score.",
+    spotlight: ["draft-status", "fade-status"],
     interactive: ["draft-status"],
   },
 };

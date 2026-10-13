@@ -4,15 +4,16 @@ import { fadeFor } from "@/lib/fades";
 import type { DraftPick, Fade, League, Side, Team, TeamId } from "@/lib/types";
 import { INITIAL_SEASON_PROGRESS, parseSeasonProgress, type SeasonProgress } from "./season-steps";
 import { applyTutorialCommand } from "./session";
-import type { TutorialProgress } from "./steps";
 
 /** Where the browser keeps this tab's demo (sessionStorage). The scoring walkthrough reads the same key. */
 export const TUTORIAL_STORAGE_KEY = "courtline.tutorial.v1";
 
-/** The demo as the commands that made it. Restoring replays them through the rules, so a bad snapshot is dropped. */
+/**
+ * The demo as the commands that made it. Restoring replays them through the rules, so a bad snapshot is dropped. The
+ * guided draft's step is derived from the league alone; a `progress` field in older snapshots is ignored.
+ */
 export interface TutorialSnapshot {
   v: 1;
-  progress: TutorialProgress;
   /** Every pick in pick order. Each was made by the manager on the clock. */
   picks: Array<{ teamId: TeamId; side: Side }>;
   /** Every fade in the order it was locked. */
@@ -21,14 +22,9 @@ export interface TutorialSnapshot {
   season?: SeasonProgress;
 }
 
-export function snapshotOf(
-  league: League,
-  progress: TutorialProgress,
-  season: SeasonProgress = INITIAL_SEASON_PROGRESS,
-): TutorialSnapshot {
+export function snapshotOf(league: League, season: SeasonProgress = INITIAL_SEASON_PROGRESS): TutorialSnapshot {
   return {
     v: 1,
-    progress,
     picks: league.draft.picks.map(({ teamId, side }) => ({ teamId, side })),
     fades: league.fades.map(({ managerId, targetPickNumber }) => ({ managerId, targetPickNumber })),
     season,
@@ -41,7 +37,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export interface RestoredTutorial {
   league: League;
-  progress: TutorialProgress;
   /** The initial season unless the draft is complete and the stored season progress is valid. */
   season: SeasonProgress;
 }
@@ -49,15 +44,6 @@ export interface RestoredTutorial {
 /** The demo a snapshot describes, or null when it isn't one or any command breaks a rule. */
 export function restoreTutorial(raw: unknown): RestoredTutorial | null {
   if (!isRecord(raw) || raw.v !== 1 || !Array.isArray(raw.picks) || !Array.isArray(raw.fades)) return null;
-  const progress = raw.progress;
-  if (
-    !isRecord(progress) ||
-    typeof progress.welcomed !== "boolean" ||
-    typeof progress.snakeExplained !== "boolean" ||
-    typeof progress.fadesWatched !== "boolean"
-  ) {
-    return null;
-  }
   let league = buildTutorialLeague();
   for (const pick of raw.picks) {
     if (!isRecord(pick) || typeof pick.teamId !== "string" || (pick.side !== "OVER" && pick.side !== "UNDER")) return null;
@@ -76,15 +62,7 @@ export function restoreTutorial(raw: unknown): RestoredTutorial | null {
     league = result.value;
   }
   const season = (league.draft.status === "complete" && parseSeasonProgress(raw.season)) || INITIAL_SEASON_PROGRESS;
-  return {
-    league,
-    progress: {
-      welcomed: progress.welcomed,
-      snakeExplained: progress.snakeExplained,
-      fadesWatched: progress.fadesWatched,
-    },
-    season,
-  };
+  return { league, season };
 }
 
 /** What the scoring walkthrough starts from. */

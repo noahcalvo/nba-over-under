@@ -6,7 +6,6 @@ import { applyTutorialCommand } from "./session";
 import { simulateAll, simulateStep } from "./simulation";
 import { restoreTutorial, snapshotOf, tutorialResult, type TutorialSnapshot } from "./snapshot";
 import { INITIAL_SEASON_PROGRESS, type SeasonProgress } from "./season-steps";
-import { INITIAL_PROGRESS, type TutorialProgress } from "./steps";
 
 const teams = tutorialTeams();
 
@@ -26,56 +25,50 @@ const faded = must(
   applyTutorialCommand(drafted, TUTORIAL_VIEWER_ID, { type: "fade", managerId: TUTORIAL_VIEWER_ID, targetPickNumber: 2 }),
 );
 const complete = simulateAll(faded, teams, "fades");
-const seen: TutorialProgress = { welcomed: true, snakeExplained: true, fadesWatched: false };
 
 describe("season progress in the snapshot", () => {
-  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "draft-standings", "draft-awards", "mid-chart"] };
-  const watched = { ...seen, fadesWatched: true };
+  const midseason: SeasonProgress = { checkpoint: "midseason", seen: ["draft-roster", "mid-chart"] };
   const roundTrip = (snapshot: unknown) => restoreTutorial(JSON.parse(JSON.stringify(snapshot)));
 
   it("keeps the season with a completed draft", () => {
-    expect(roundTrip(snapshotOf(complete, watched, midseason))?.season).toEqual(midseason);
+    expect(roundTrip(snapshotOf(complete, midseason))?.season).toEqual(midseason);
   });
 
   it("starts the season over for snapshots without one or with a broken one", () => {
-    const older: Partial<TutorialSnapshot> = snapshotOf(complete, watched, midseason);
+    const older: Partial<TutorialSnapshot> = snapshotOf(complete, midseason);
     delete older.season;
-    expect(roundTrip(older)).toEqual({ league: complete, progress: watched, season: INITIAL_SEASON_PROGRESS });
-    const broken = { ...snapshotOf(complete, watched), season: { checkpoint: "playoffs", seen: [] } };
+    expect(roundTrip(older)).toEqual({ league: complete, season: INITIAL_SEASON_PROGRESS });
+    const broken = { ...snapshotOf(complete), season: { checkpoint: "playoffs", seen: [] } };
     expect(roundTrip(broken)?.season).toEqual(INITIAL_SEASON_PROGRESS);
   });
 
   it("never carries a season into an unfinished draft", () => {
-    expect(roundTrip(snapshotOf(drafted, seen, midseason))?.season).toEqual(INITIAL_SEASON_PROGRESS);
+    expect(roundTrip(snapshotOf(drafted, midseason))?.season).toEqual(INITIAL_SEASON_PROGRESS);
   });
 });
 
 describe("snapshotOf / restoreTutorial", () => {
-  it("restores the same league and progress at every stage, through JSON", () => {
-    const stages: Array<[League, TutorialProgress]> = [
-      [fresh, INITIAL_PROGRESS],
-      [opened, { welcomed: true, snakeExplained: false, fadesWatched: false }],
-      [midDraft, seen],
-      [drafted, seen],
-      [faded, seen],
-      [complete, { ...seen, fadesWatched: true }],
-    ];
-    for (const [league, progress] of stages) {
-      const stored: unknown = JSON.parse(JSON.stringify(snapshotOf(league, progress)));
-      expect(restoreTutorial(stored)).toEqual({ league, progress, season: INITIAL_SEASON_PROGRESS });
+  it("restores the same league at every stage, through JSON", () => {
+    for (const league of [fresh, opened, midDraft, drafted, faded, complete]) {
+      const stored: unknown = JSON.parse(JSON.stringify(snapshotOf(league)));
+      expect(restoreTutorial(stored)).toEqual({ league, season: INITIAL_SEASON_PROGRESS });
     }
   });
 
+  it("still restores snapshots saved with the old draft progress flags", () => {
+    const older = { ...snapshotOf(faded), progress: { welcomed: true, snakeExplained: true, fadesWatched: false } };
+    expect(restoreTutorial(JSON.parse(JSON.stringify(older)))).toEqual({ league: faded, season: INITIAL_SEASON_PROGRESS });
+  });
+
   it("drops anything that is not a valid tutorial", () => {
-    const good = snapshotOf(opened, seen);
+    const good = snapshotOf(opened);
     const invalid: unknown[] = [
       null,
       42,
       "tutorial",
       {},
       { ...good, v: 2 },
-      { ...good, progress: { welcomed: "yes", snakeExplained: false, fadesWatched: false } },
-      { ...good, progress: { welcomed: true, snakeExplained: true } },
+      { ...good, picks: "PHI" },
       { ...good, picks: [{ teamId: "PHI", side: "SIDEWAYS" }] },
       { ...good, picks: [{ teamId: "PHI", side: "OVER" }, { teamId: "PHI", side: "OVER" }] },
       { ...good, fades: [{ managerId: "m1", targetPickNumber: 1 }] },

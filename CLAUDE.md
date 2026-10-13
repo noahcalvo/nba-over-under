@@ -114,17 +114,19 @@ Next API.
   locked-line pace and wins needed use the frozen line.
 - Guided demo (`/l/demo/draft`, replacing the code-built demo's draft room): an in-memory league (`tutorial`, never
   stored, `isDemo: false` so the rules run) in a real `DraftRoomView`; every command, simulated or not, goes through
-  `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state (`tutorialStep`). Tag tour targets
+  `decideDraftAction` (`applyTutorialCommand`). The step is derived from league state alone (`tutorialStep`): no
+  draft step waits on a Continue; the user's pick, fade and the simulations move it. Tag tour targets
   with `tourTarget(id)` from `src/lib/tour/targets.ts`, never by class or text. State lives in `sessionStorage`
-  (`courtline.tutorial.v1`) as a replayable snapshot (draft commands, draft progress, season progress), read and
+  (`courtline.tutorial.v1`) as a replayable snapshot (draft commands, season progress), read and
   written only through `tutorial-store.ts` (`useSyncExternalStore`), never per-page state or effects: Next keeps left
   routes mounted but hidden (`<Activity>`) and restores their state, so a per-page copy goes stale. ESLint forbids
   server, database and `fetch` use in the demo folders.
 - Guided season (`/l/demo`, `/l/demo/rosters`, `/l/demo/teams/{id}`; `DemoSeason`): the real Overview, Rosters and team
   page fed the completed demo draft (shown as id `demo`, `isDemo: true`), or "Finish the demo draft first". Three
-  checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`. Each checkpoint
-  has an awards step (`draft-awards`, `mid-awards`, `final-awards`; words from `awardsStory`, `awardImpactStory`,
-  `awardChangeStory`). One synthetic
+  checkpoints (Draft complete, Midseason at 41 games, Final results at 82) advanced by `SeasonControl`. Awards are
+  introduced at Midseason, once there are leaders (`mid-awards`), and settled at Final results (`final-awards`); words
+  from `awardsStory`, `awardImpactStory`, `awardChangeStory`. Final results opens on the user's own pick and fade and
+  closes on the final standings (`final-finish`). One synthetic
   82-game W/L sequence per team, seeded by the draft's picks (`simulateSeason`; strength = line + normal spread, never
   favouring anyone); a checkpoint is a prefix of it. The team page gets that log (no dates or opponents, upcoming games
   unplayed), no sportsbook panel, and a "Simulated demo season" note. The step is `seasonStep(progress, page)`: the

@@ -35,9 +35,7 @@ describe("seasonStep", () => {
     };
 
     proceed(overview, "draft-roster");
-    proceed(overview, "draft-standings");
-    proceed(overview, "draft-awards");
-    visit(overview, "draft-advance");
+    visit(overview, "draft-advance"); // no awards step before any game: they arrive at Midseason
     progress = advanceCheckpoint(progress);
 
     visit(overview, "mid-pick");
@@ -49,10 +47,9 @@ describe("seasonStep", () => {
     visit(overview, "mid-advance");
     progress = advanceCheckpoint(progress);
 
-    proceed(overview, "final-standings");
-    proceed(overview, "final-awards");
     proceed(overview, "final-results");
-    proceed(overview, "final-finish");
+    proceed(overview, "final-awards");
+    proceed(overview, "final-finish"); // the final standings close the tour
     expect(at(progress, overview)).toBeNull();
     expect(at(progress, openingTeam)).toBeNull();
 
@@ -79,21 +76,27 @@ describe("seasonStep", () => {
     expect(at(explained, rosters)).toMatchObject({ id: "mid-standings", page: { page: "overview" }, onPage: false });
   });
 
-  it("shows the awards step to progress stored before it existed, at the right place", () => {
-    const stored = parseSeasonProgress({
+  it("resumes progress stored with steps that no longer exist at the right place", () => {
+    // Draft complete's standings and awards steps were folded away: their ids are dropped and the tour carries on.
+    const draft = parseSeasonProgress({ checkpoint: "draft", seen: ["draft-roster", "draft-standings", "draft-awards"] })!;
+    expect(draft.seen).toEqual(["draft-roster"]);
+    expect(id(draft, overview)).toBe("draft-advance");
+    const mid = parseSeasonProgress({
       checkpoint: "midseason",
       seen: ["draft-roster", "draft-standings", "mid-chart", "mid-points", "mid-standings"],
     })!;
-    expect(at(stored, overview)).toMatchObject({ id: "mid-awards", onPage: true });
-    expect(at(markSeen(stored, "mid-awards"), overview)?.id).toBe("mid-advance");
-    const final = parseSeasonProgress({ checkpoint: "final", seen: ["final-standings"] })!;
-    expect(id(final, overview)).toBe("final-awards");
+    expect(at(mid, overview)).toMatchObject({ id: "mid-awards", onPage: true });
+    expect(at(markSeen(mid, "mid-awards"), overview)?.id).toBe("mid-advance");
+    // The final standings now close the tour, after the user's results and the awards.
+    const final = parseSeasonProgress({ checkpoint: "final", seen: ["final-standings", "final-awards", "final-results"] })!;
+    expect(id(final, overview)).toBe("final-finish");
+    expect(id(parseSeasonProgress({ checkpoint: "final", seen: ["final-standings"] })!, overview)).toBe("final-results");
   });
 
   it("keeps the Draft complete and Final results steps on the overview", () => {
     expect(at(INITIAL_SEASON_PROGRESS, openingTeam)).toMatchObject({ id: "draft-roster", onPage: false });
     const final = advanceCheckpoint(advanceCheckpoint(INITIAL_SEASON_PROGRESS));
-    expect(at(final, rosters)).toMatchObject({ id: "final-standings", onPage: false });
+    expect(at(final, rosters)).toMatchObject({ id: "final-results", onPage: false });
   });
 
   it("explored results end the tour on every page", () => {

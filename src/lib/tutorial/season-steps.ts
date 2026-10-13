@@ -8,8 +8,6 @@ import { nextCheckpoint, SEASON_CHECKPOINTS, type SeasonCheckpoint } from "./sea
 
 export type SeasonStepId =
   | "draft-roster"
-  | "draft-standings"
-  | "draft-awards"
   | "draft-advance"
   | "mid-pick"
   | "mid-chart"
@@ -18,15 +16,14 @@ export type SeasonStepId =
   | "mid-standings"
   | "mid-awards"
   | "mid-advance"
-  | "final-standings"
-  | "final-awards"
   | "final-results"
+  | "final-awards"
   | "final-finish";
 
 export const SEASON_STEP_ORDER: Readonly<Record<SeasonCheckpoint, readonly SeasonStepId[]>> = {
-  draft: ["draft-roster", "draft-standings", "draft-awards", "draft-advance"],
+  draft: ["draft-roster", "draft-advance"],
   midseason: ["mid-pick", "mid-chart", "mid-points", "mid-back", "mid-standings", "mid-awards", "mid-advance"],
-  final: ["final-standings", "final-awards", "final-results", "final-finish"],
+  final: ["final-results", "final-awards", "final-finish"],
 };
 
 const STEP_IDS: ReadonlySet<string> = new Set(Object.values(SEASON_STEP_ORDER).flat());

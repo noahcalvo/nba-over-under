@@ -73,8 +73,11 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
   const teamsById = indexTeams(demo.teams);
   const standings: Standings = computeStandings(demo.league, teamsById, basis);
   const { managers } = demo.league;
-  /** The award sentences, the awards' effect on the standings and the user's breakdown (picks, fade, awards, total). */
-  const awardDetails = (extra: readonly string[] = []) => (
+  /**
+   * The award sentences and the awards' effect on the standings; with the breakdown, the user's picks, fade, awards
+   * and total too (at Midseason the standings step just showed it).
+   */
+  const awardDetails = (extra: readonly string[], breakdown: boolean) => (
     <>
       <Lines lines={[...awardsStory(standings.awards, managers, demo.viewerId), ...extra]} />
       <Story
@@ -84,7 +87,7 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
           managers,
           demo.viewerId,
         )}
-        rows={standingsStory(standings, managers, demo.viewerId).rows}
+        rows={breakdown ? standingsStory(standings, managers, demo.viewerId).rows : []}
       />
     </>
   );
@@ -106,15 +109,13 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
       );
     }
     case "mid-awards":
-      return awardDetails();
+      return awardDetails([], false);
     case "final-awards": {
       // The same season cut at Midseason: what the projections said then.
       const midTeams = indexTeams(teamsAt(demo.teams, demo.season, checkpointGames("midseason")));
       const midseason = computeStandings(demo.league, midTeams, "projected").awards;
-      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId));
+      return awardDetails(awardChangeStory(midseason, standings.awards, managers, demo.viewerId), true);
     }
-    case "final-standings":
-      return <Story summary={standingsStory(standings, demo.league.managers, demo.viewerId).summary} rows={[]} />;
     case "final-results": {
       const pick = pickStory(demo.openingPick, openingTeam, "final");
       const fade = fadeStory(viewerRow, demo.league.managers);
@@ -130,17 +131,20 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
     }
     case "final-finish":
       return (
-        <div className="flex flex-col gap-2">
-          <Button onClick={() => demo.seen("final-finish")}>Explore results</Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" onClick={demo.replay}>
-              Replay demo
-            </Button>
-            <Link href="/" className={buttonClasses("secondary")}>
-              Create league
-            </Link>
+        <>
+          <p className="text-sm font-semibold text-fog-50">{standingsStory(standings, managers, demo.viewerId).summary}</p>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => demo.seen("final-finish")}>Explore results</Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" onClick={demo.replay}>
+                Replay demo
+              </Button>
+              <Link href="/" className={buttonClasses("secondary")}>
+                Create league
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       );
     default:
       return null;

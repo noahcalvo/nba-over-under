@@ -2,8 +2,8 @@
 export const TUTORIAL = {
   managerCount: 4,
   rounds: 11,
-  /** Delay between simulated picks while the user watches the rest of the draft. */
-  pickIntervalMs: 160,
+  /** Delay between simulated picks while the user watches the rest of the draft (and reads how the snake works). */
+  pickIntervalMs: 250,
   /** Delay between the other managers' simulated fades. */
   fadeIntervalMs: 700,
 } as const;

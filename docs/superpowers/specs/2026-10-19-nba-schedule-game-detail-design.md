@@ -1,18 +1,18 @@
 # NBA Schedule & Game Detail — design
 
-**Status:** approved design, 2026-10-19. Source brief: `courtline-nba-schedule-game-detail-spec.md` (the proposed
+**Status:** approved design, 2026-10-19 (revised the same day: player-level routes, every league, challenge stakes). Source brief: `courtline-nba-schedule-game-detail-spec.md` (the proposed
 feature spec) and the approved dark desktop mockup. Where this document and the brief differ, this document wins; the
 differences are listed under "Decisions taken".
 
 ## Goal
 
 Give managers a Courtline-native place to see NBA games and records and understand **who benefits if a team wins
-tonight** across their leagues. Two read-only screens inside the existing league shell:
+tonight** across all their leagues. Two read-only, player-level screens (not inside any one league):
 
-1. **NBA schedule** (`/l/{leagueId}/nba/schedule`): one game day's regular-season games, plus conference standings
-   with last-5 form.
-2. **Game detail** (`/l/{leagueId}/nba/games/{gameId}`): one game, its pre-game moneylines with market-implied win
-   chances, and every pick and fade on either team in the viewer's same-season leagues.
+1. **NBA schedule** (`/nba`): one game day's regular-season games, plus conference standings with last-5 form.
+2. **Game detail** (`/nba/games/{gameId}`): one game, its pre-game moneylines with market-implied win chances, every
+   pick and fade on either team in every league this browser holds a seat in for the season, and the viewer's own
+   30/30 Challenge side.
 
 Courtline's competition stays full-season team wins. Nothing here changes scoring, drafting, fades, league state or the
 guided demo. No spreads or game totals appear anywhere.
@@ -27,8 +27,12 @@ guided demo. No spreads or game totals appear anywhere.
    posture the app already takes for records and season lines; accepted by the product owner.
 2. **Odds are shown pre-game only.** A live, final, postponed or canceled game shows "Odds closed at tip-off" (live,
    final) or nothing (postponed, canceled), never a win chance.
-3. **Hidden in the guided demo.** `/l/demo` has no NBA schedule nav item, and `/l/demo/nba/*` is a 404. The demo's
-   simulated season is never connected to real fixtures.
+3. **Player-level, not league-level.** The pages live at `/nba`, outside `/l/{leagueId}`, in their own shell (the
+   `/challenge` precedent). No league, player or seat id is in the URL: the server identifies the viewer from the
+   existing `courtline_session` cookie (httpOnly random token, stored hashed), exactly as the home page's "Your leagues"
+   and the challenge's `getViewerEntry` do. No new cookie. The brief's active-league and spectator cases don't exist.
+   The guided demo league is never a session seat, so it never appears; its league nav has no NBA schedule item, and the
+   demo's simulated season is never connected to real fixtures.
 4. **Game day = US Eastern date** (ESPN's and the NBA's game day). Tip-off times show in the viewer's time zone,
    formatted on the client.
 5. **"You" is not a colour.** Over and the accent are the same lime (`--color-over` = `--color-accent`), so the brief's
@@ -40,6 +44,16 @@ guided demo. No spreads or game totals appear anywhere.
    (regular season only), already read for standings form.
 8. **No live auto-refresh.** Scores update on reload (60 s cache on the current game days).
 9. **Specs and plans** live in `docs/superpowers/` again (recreated after `3aee8cb`).
+10. **Season** = `LINES.season` (the season new leagues draft and the challenge runs; 2026–27), as `NBA_SCHEDULE.season`.
+    Leagues with another `seasonLabel` are left out (their picks are about other games).
+11. **Everyone in your leagues, you highlighted.** Each league card lists every retained pick and fade on either team,
+    with the viewer's own rows marked "You", plus a "Your stakes" summary of only the viewer's rows across leagues and
+    the challenge.
+12. **The 30/30 Challenge counts.** The viewer's own saved challenge side on either team appears as its own group. Only
+    the viewer's entry, never other entrants'.
+13. **Team links** go to a page that belongs to where the position is: in a league card, that league's team page
+    (`/l/{id}/teams/{team}`); in the challenge group, `/challenge/teams/{team}`. Team names in the schedule, standings
+    and game header are plain text (no league to link into).
 
 ## Data sources (verified 2026-10-19, the day before opening night)
 
@@ -48,7 +62,7 @@ guided demo. No spreads or game totals appear anywhere.
 | Scoreboard | `site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=YYYYMMDD` | one game day: games, status, scores, records, venue, broadcasts, odds |
 | Summary | `…/nba/summary?event={id}` | one game by id: `header.competitions[0]` (same competitor/status shape), `gameInfo.venue`, `pickcenter` odds |
 | Team schedule | existing `gameLogSource` (`espnScheduleUrl`) | last-5 form, next game day |
-| Standings | existing stored `team_records` (`teamInfoFor(league)`) | W–L |
+| Standings | existing stored `team_records` (`loadTeamInfo(db, { isDemo: false, seasonLabel })`) | W–L |
 
 Observed shapes:
 
@@ -75,7 +89,7 @@ pages in `src/app/`, UI in `src/components/`.
 
 ### `src/config/schedule.ts` — `NBA_SCHEDULE`
 
-`source: "ESPN"`, `fetchTimeoutMs: 8000`, `gameDayTimeZone: "America/New_York"`, `currentDayCacheSeconds: 60` (game days
+`season: LINES.season`, `source: "ESPN"`, `fetchTimeoutMs: 8000`, `gameDayTimeZone: "America/New_York"`, `currentDayCacheSeconds: 60` (game days
 within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`, `retrySeconds: 30`, `formGames: 5`,
 `hotWins: 4`, `coldWins: 1`, `dateStripDays: 5`.
 
@@ -123,8 +137,9 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
 - **`game-day.ts`** — `gameDayOf(iso)`, `todayGameDay(now)`, `shiftGameDay(day, n)`, `isGameDay(string)` (strict
   `YYYY-MM-DD`), `espnDate(day)` (`YYYYMMDD`), `dateStrip(day, n)` (n consecutive days centred on `day`).
 - **`interest.ts`** — who cares about a game, built on `teamOwnership()` from `src/lib/team-detail.ts`.
-  - Input: `InterestLeague { league: League; viewerId: string | null }`, the game's two team ids.
-  - Per league: `LeagueInterest { leagueId; leagueName; isActive; state: "not_started" | "none" | "rows"; rows }`.
+  - Input: `InterestLeague { league: League; viewerId: string }` (the viewer always holds a seat), the game's two team
+    ids, and optionally the viewer's `ChallengeStake`.
+  - Per league: `LeagueInterest { leagueId; leagueName; state: "not_started" | "none" | "rows"; rows }`.
     `not_started` when the draft hasn't started (no frozen lines). `none` when no retained pick of either team exists.
   - `InterestRow { kind: "pick" | "fade"; manager: Manager; teamId; side; line; rootingFor: TeamId; isViewer;
     target?: { manager: Manager; teamId; side; line } }`.
@@ -136,12 +151,19 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
     the league is skipped.
   - A person holding interests on both teams (in one league via a pick and a fade, or across leagues) gets every row
     separately; nothing merges or picks a side.
-  - Order: active league first, then other leagues in `listViewerLeagues` order; within a league picks before fades,
-    then by team (away first), then by manager seat.
+  - Order: leagues in `listViewerLeagues` order (most recently joined first); within a league picks before fades, then
+    by team (away first), then by manager seat.
+  - Challenge: `challengeInterest(entry, season, game)` → `ChallengeInterest { entryName; rows: { teamId; side; line:
+    number | null; lineKind: "frozen" | "at_pick" | "unavailable"; rootingFor }[] }`, one row per team of the game the
+    entry picked (always both, since entries cover all 30). Line: the frozen line once `season.frozen` is stored (a team
+    in `frozen.missing` → "unavailable"); before that, the entry's `lineAtPick` ("at_pick"; null → "unavailable").
+    Rooting as for a pick. No entry, or an entry for another season → no challenge group.
+  - `yourStakes(interests, challenge)` → only the viewer's rows (league picks, league fades, challenge sides), each with
+    where it lives, for the summary at the top of the panel.
   - `rootingSplit(interests, game)` → for each team, the number of rows rooting for it and the distinct managers (for
     "If the Spurs win: 3 interests").
-  - `gameInterestSummary(interests)` → `{ managers: { leagueId, manager }[] (distinct), count, viewerInvolved }` for the
-    schedule row.
+  - `gameInterestSummary(interests, challenge)` → `{ managers: { leagueId, manager }[] (distinct), count,
+    viewerInvolved }` for the schedule row (the challenge side counts toward `viewerInvolved` and `count`).
 
 ### `src/server/` (server-only)
 
@@ -152,34 +174,42 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
   - `readGameDay(season, day)` → `ScheduleRead`; `readGame(season, id)` → `GameRead` (ESPN 4xx for an unknown id →
     `notFound`). Never reject; `FeedError` messages reach the page, anything else is logged and replaced with a generic
     message. `readAt` is when Courtline read ESPN (shown as freshness; ESPN gives no timestamp).
-  - `readTeamForms(league)` → for all 30 teams, `readGameLog` results (existing cached source); used for standings form,
-    team context and next game day.
-- **`game-interest.ts`** — `loadInterestLeagues(active: League)`: the active league (viewer from `getViewerId`, may be
-  null for a spectator) plus each `listViewerLeagues()` league with the same `seasonLabel`, loaded with `findLeague`
-  (React `cache`), viewer = that seat's manager id. Never the demo league. Returns only `League` objects already
-  readable through their URLs; no sessions, tokens or links.
+  - `readTeamForms()` → for all 30 teams, `readGameLog({ isDemo: false, seasonLabel: NBA_SCHEDULE.season }, team)`
+    (existing cached source); used for standings form, team context and next game day.
+- **`game-interest.ts`**
+  - `loadInterestLeagues()`: each `listViewerLeagues()` league whose `seasonLabel` is `NBA_SCHEDULE.season`, loaded
+    with `findLeague` (React `cache`), viewer = that seat's manager id. A league that fails to load is skipped. Returns
+    only `League` objects the viewer can already open; no sessions, tokens or links reach the client.
+  - `loadChallengeStake()`: `getViewerEntry(db)` plus `loadChallengeSeason(db, CHALLENGE.seasonYear)` — read-only.
+    It never calls `prepareChallenge` (no schedule sync, no freeze, no FanDuel read). Skipped when
+    `CHALLENGE.seasonYear` isn't the schedule's season.
+  - One React-`cache`d loader per request; the schedule page and game page both use it.
 - **`nba-pages.ts`** — page loaders that return plain data plus promises for the streamed panels, like `loadTeamPage`.
 
-### Routes (`src/app/l/[leagueId]/nba/`)
+### Routes (`src/app/nba/`)
 
-- `schedule/page.tsx` — `searchParams.date` (invalid or missing → Eastern today). Season from
-  `seasonEndYear(league.seasonLabel)`.
+- `layout.tsx` — `NbaShell`.
+- `page.tsx` (the schedule) — `searchParams.date` (invalid or missing → Eastern today), `view`, `conf`.
 - `games/[gameId]/page.tsx` — `searchParams.date` only feeds the back link (missing → the game's own day).
-- Both: Suspense pattern from the team page, `unstable_dynamicStaleTime = 60`, demo league → `notFound()`. A game whose
-  read says `notFound` → `notFound()`; a failed read → an in-page "Couldn't load this game" alert with the back link.
+- Both: the Suspense pattern from the team page, `unstable_dynamicStaleTime = 60`. A game whose read says `notFound` →
+  `notFound()`; a failed read → an in-page "Couldn't load this game" alert with the back link.
 
-### Navigation (`src/components/shell/`)
+### Shell and navigation
 
-- `navItems(leagueId)` returns `{ primary: NavItem[]; secondary: NavItem[] }`: primary is Overview, Rosters, Settings;
-  secondary is Draft room, NBA schedule. `NavItem` gains an optional `activePrefix`; `isActive` also matches any path
-  under it. NBA schedule: `href /l/{id}/nba/schedule`,
-  label "NBA schedule", short label "NBA", `CalendarDays` icon, `exact: false`, `activePrefix: /l/{id}/nba` (so game pages keep it
-  active).
-- The demo league id omits the NBA item. The prerendered skeleton (`navItems("")`) shows all five; in the demo the nav
-  settles to four once the league streams in.
-- Sidebar: primary, separator, secondary. Draft room keeps its Clock trailing icon.
+- **`NbaShell`** (`src/components/nba/NbaShell.tsx`, modelled on `ChallengeShell`): fixed `lg+` sidebar with the logo,
+  the season label, and nav: Home (`/`), NBA schedule (`/nba`, active on every `/nba` path), 30/30 Challenge
+  (`/challenge`); then a **Your leagues** list (streamed, `listViewerLeagues`, each linking to `/l/{id}`; hidden when
+  empty). Below `lg`: the sticky top bar with the compact logo, and a bottom tab bar Home / Schedule / Challenge (3
+  columns). The frame itself reads no data, so it prerenders; only the league list streams.
+- **League shell** (`src/components/shell/`): `navItems(leagueId)` returns `{ primary: NavItem[]; secondary: NavItem[] }`:
+  primary is Overview, Rosters, Settings; secondary is Draft room and **NBA schedule** (`href: "/nba"`, label "NBA
+  schedule", short label "NBA", `CalendarDays` icon). It is a link out of the league shell, so it is never active there.
+  The sidebar renders primary, separator, secondary (Draft room keeps its Clock trailing icon). The demo league id omits
+  the NBA item; the prerendered skeleton (`navItems("")`) shows all five, and in the demo the nav settles to four once
+  the league streams in.
 - Bottom nav: column count follows the item count (`grid-cols-4` / `grid-cols-5` as literal classes). Check 320 px and
   375 px for clipping, 44 px touch targets and the safe-area padding.
+- **Home page**: an "NBA schedule" link panel next to the 30/30 Challenge panel.
 
 ## UI
 
@@ -194,25 +224,25 @@ Existing tokens and primitives only (`Panel`, `SegmentedControl`, `SidePill`, `M
 - `xl+`: games panel (left, wider) and standings panel (right). Below `xl`: a `SegmentedControl` Games / Standings
   (games first; choice kept in the URL as `?view=standings` so it survives reloads); the date strip stays above both.
 - **Games panel**: heading with the long date. One row per game, sorted by tip-off:
-  - The row is a link to the game page (`?date=` kept). Team names are `TeamLink`s to the league's team page that never trigger the row link: the row link is a
-    stretched overlay and the team links sit above it in the stacking order (no nested anchors, no click handlers).
+  - The whole row is one link to the game page (`?date=` kept); team names are plain text.
   - Each team: logo, name, record (from stored records).
   - Time column: local tip-off for scheduled; `statusDetail` plus scores for live (marked "Live") and final; "Postponed"
     / "Canceled" badges.
   - Odds column: `oddsState` "open" → "SAS +130 (42%)" per team, favourite emphasised; "unavailable" → "Odds
     unavailable"; "closed"/"none" → nothing.
   - League interest: up to 3 `ManagerAvatar`s + "+n" from `gameInterestSummary`, with an accessible label ("5 picks and
-    fades in your leagues"). A row the viewer is involved in gets the accent border and a "You" marker.
+    fades in your leagues"). A row the viewer is involved in (league or challenge) gets the accent border and a "You"
+    marker. Hidden when the viewer has no leagues and no challenge entry.
   - Empty day: "No regular-season games on {date}." plus "Next game day: {date} →" when `nextGameDay` finds one.
   - Feed error: `Alert` with the error; the standings still render.
-- **Standings panel**: West / East `SegmentedControl` (defaults to West, as in the mockup; kept as `?conf=east`). Columns `#`, team (logo + `TeamLink`), W, L, PCT (`.750` style, "—" with no games), Last 5 (W/L chips with
+- **Standings panel**: West / East `SegmentedControl` (defaults to West, as in the mockup; kept as `?conf=east`). Columns `#`, team (logo + name), W, L, PCT (`.750` style, "—" with no games), Last 5 (W/L chips with
   text, newest last) and the heat icon with its text label (visually hidden text for screen readers, `title` for
   hover). Form streams in; while loading or on failure the Last 5 cell shows "—" / "Form unavailable" once, and W–L stay.
 
 ### Game page
 
-- Back link "← Back to schedule" to `/l/{id}/nba/schedule?date={day}`.
-- **Header**: away team left, "at", home team right; each with logo, full name, record and a link to the team page.
+- Back link "← Back to schedule" to `/nba?date={day}`.
+- **Header**: away team left, "at", home team right; each with logo, full name and record.
   Centre: long date, local tip-off, status (`statusDetail` or score for live/final), venue and broadcasts only when
   present.
 - **Odds panel** ("Moneyline · win chance"): two tiles, `+130 (42%)` / `−155 (58%)`, the higher chance emphasised (accent
@@ -222,15 +252,24 @@ Existing tokens and primitives only (`Panel`, `SegmentedControl`, `SidePill`, `M
 - **Who's on this game?** (largest panel, full width on mobile, left two-thirds on `xl+`):
   - Intro line: "An Over gains from its team winning; an Under gains from its team losing. A fade roots against the pick
     it fades."
-  - One card per league (active first) with a trophy icon, name, and "{n} managers on this game".
-  - Each row: avatar, manager name (or "You" badge + name), team logo + name, `SidePill`, frozen line, and "Rooting for
-    {Team}". Fade rows: a "Fade" badge and "Fading {Manager}'s {Team} {Over|Under} {line}".
-  - Empty states: `not_started` "The draft hasn't started."; `none` "No one in this league has drafted either team's
-    Over or Under."; spectator of the active league with no seated leagues → the active league only, no "You"; no
-    leagues at all can't happen (the active league always shows).
+  - **Your stakes** (top, only when the viewer has any): one compact line per viewer row, e.g. "Spurs Over 40.5 · Alex's
+    League → rooting for Spurs", "Fading Jordan's Wolves Under 47.5 · Roto Kings → rooting for Wolves", "Spurs Under
+    41.5 · 30/30 Challenge → rooting for Wolves". Conflicting stakes are all listed; nothing is netted.
+  - One card per league (most recently joined first) with a trophy icon, the league name linking to `/l/{id}`, and "{n}
+    managers on this game".
+  - Each row: avatar, manager name (or "You" badge + name), team logo + name (linking to that league's team page),
+    `SidePill`, that league's frozen line, and "Rooting for {Team}". Fade rows: a "Fade" badge and "Fading {Manager}'s
+    {Team} {Over|Under} {line}".
+  - **30/30 Challenge** card (after the leagues, when the viewer has an entry): the entry name, and per team the
+    `SidePill`, the line labelled "Frozen line" / "Line when picked" / "Line unavailable", "Rooting for {Team}", and
+    the team linking to `/challenge/teams/{team}`.
+  - Empty states: per league, `not_started` "The draft hasn't started." and `none` "No one in this league has drafted
+    either team's Over or Under."; no same-season leagues and no challenge entry → "Join or create a league to see
+    who's on this game." with a link to `/`.
 - **Team context** (right column on `xl+`, below on mobile), one block per team: record, conference position (`#` from
   `conferenceTable`, "3rd in West" style), last 5 chips, heat badge with text, "If the {Team} win: {n} interests"
-  from `rootingSplit`, and "Season page →" to the team page. Then **Recent games** with a team switcher: last 5 completed
+  from `rootingSplit`, and the team's season page in each of the viewer's leagues ("Spurs in Alex's League →"; none
+  without leagues). Then **Recent games** with a team switcher: last 5 completed
   games with date, opponent logo, home/away and W/L (no scores: the game log has none). Form failure → "Recent games
   unavailable" here; the rest of the page is unaffected.
 
@@ -250,7 +289,9 @@ Each feed only empties its own panel:
 | Game summary read | "Couldn't load this game" with back link; 404 only for an unknown id or another season |
 | Odds | "Odds unavailable"; nothing else changes |
 | Game logs (form) | "Form unavailable" / "Recent games unavailable"; W–L, records and interests remain |
-| League load for another league | that league is skipped |
+| One league's load | that league is skipped |
+| No session, or no seats this season | schedule, standings and odds as usual; interests show the join prompt |
+| Challenge read | the challenge card is left out; leagues unaffected |
 
 No synthetic fixture, invented odds, invented ranking or fake freshness anywhere.
 
@@ -264,16 +305,19 @@ No synthetic fixture, invented odds, invented ranking or fake freshness anywhere
   malformed payloads), odds maths (+110/+110 → 50/50, +130/−155 → 42/58, sum is always 100, invalid quotes),
   `oddsState`, form and heat thresholds, conference ordering and "—", next game day, game-day helpers (Eastern date
   across midnight UTC and DST), interests (Over/Under rooting both teams, fades on Over and Under, several fades on one
-  pick, voided picks excluded, open seats, not started, multi-league, same person conflicting), `feed-cache`, nav items
-  (groups, demo omits NBA, active on game pages).
-- **UI checks** in the browser pane: date navigation, tabs, active nav on both pages, keyboard focus on rows and team
+  pick, voided picks excluded, open seats, not started, multi-league, same person conflicting), challenge stakes
+  (frozen, before the freeze, missing frozen line, null line at pick, other season), your stakes, `feed-cache`, league
+  nav items (groups, NBA links to `/nba`, demo omits it), NBA shell nav (active on `/nba` and game pages).
+- **UI checks** in the browser pane: date navigation, tabs, active nav on both pages, a browser with no session (no
+  interests), a browser with two seated leagues and a challenge entry, keyboard focus on rows and team
   links, 375 px and 1440 px with no horizontal scroll, bottom nav at 320/375 px.
 - `npm test && npm run lint && npm run typecheck && npm run build`; desktop and mobile screenshots for review.
 
 ## Out of scope
 
 Live auto-refresh, play-by-play, player stats, spreads, game totals, injuries, favourites, notifications, official
-tiebreakers, new auth, any scoring change, changes to the draft, fades or the guided demo.
+tiebreakers, new auth, any scoring change, changes to the draft, fades, the challenge or the guided demo. Other
+entrants' challenge picks. Leagues from other seasons.
 
 ## Known limits
 
@@ -282,3 +326,5 @@ tiebreakers, new auth, any scoring change, changes to the draft, fades or the gu
   `otherDayCacheSeconds` old).
 - Caches are per server instance; standings form costs up to 30 cached team-schedule reads per cold instance.
 - Game day is the Eastern date; a viewer far from US time zones may see a game listed under the previous local day.
+- Interests follow the browser session, like everything else in Courtline: another browser of the same person sees
+  only the seats claimed there.

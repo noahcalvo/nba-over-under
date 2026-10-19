@@ -2,8 +2,9 @@ import "server-only";
 import { NBA_SCHEDULE } from "@/config/schedule";
 import { loadTeamInfo } from "@/db/records";
 import { dateStrip, todayGameDay } from "@/lib/nba-schedule/game-day";
-import { challengeInterest, interestSummary, leagueInterests, type InterestSummary } from "@/lib/nba-schedule/interest";
+import type { InterestSummary } from "@/lib/nba-schedule/interest";
 import { resolveScheduleParams, type ScheduleParams } from "@/lib/nba-schedule/params";
+import { gameSummaries } from "@/lib/nba-schedule/summaries";
 import type { ScheduleRead } from "@/lib/nba-schedule/types";
 import { seasonEndYear } from "@/lib/records/season";
 import type { TeamInfo } from "@/lib/types";
@@ -39,17 +40,19 @@ async function stakesOrNone(): Promise<PlayerStakes> {
   }
 }
 
+/** The day's games and who is on them. Never rejects: a failure building the interest column only hides that column. */
 async function loadGames(day: string): Promise<ScheduleGames> {
   const [read, stakes] = await Promise.all([readGameDay(day), stakesOrNone()]);
-  const summaries: Record<string, InterestSummary> = {};
-  for (const game of read.day?.games ?? []) {
-    const teams = { awayId: game.away.teamId, homeId: game.home.teamId };
-    summaries[game.id] = interestSummary(
-      leagueInterests(stakes.leagues, teams),
-      challengeInterest(stakes.challenge, SEASON_YEAR, teams),
-    );
+  try {
+    return {
+      read,
+      summaries: gameSummaries(read.day?.games ?? [], stakes, SEASON_YEAR),
+      hasStakes: stakes.leagues.length > 0 || stakes.challenge !== null,
+    };
+  } catch (error) {
+    console.error("Game interest failed", error);
+    return { read, summaries: {}, hasStakes: false };
   }
-  return { read, summaries, hasStakes: stakes.leagues.length > 0 || stakes.challenge !== null };
 }
 
 /** The schedule page's data for the raw query parameters. Standings (stored records) are awaited; the feeds are not. */
@@ -57,13 +60,16 @@ export async function loadSchedulePage(raw: { date?: string; view?: string; conf
   const db = await getDb();
   const now = new Date();
   const params = resolveScheduleParams(raw, now);
+  // The feeds start now and stream; only the stored standings are awaited.
+  const games = loadGames(params.day);
+  const forms = readTeamForms();
   const teams = await loadTeamInfo(db, { isDemo: false, seasonLabel: NBA_SCHEDULE.season });
   return {
     ...params,
     today: todayGameDay(now),
     strip: dateStrip(params.day, NBA_SCHEDULE.dateStripDays),
     teams,
-    games: loadGames(params.day),
-    forms: readTeamForms(),
+    games,
+    forms,
   };
 }

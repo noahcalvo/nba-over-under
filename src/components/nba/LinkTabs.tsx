@@ -15,7 +15,7 @@ export function LinkTabs({ ariaLabel, options }: { ariaLabel: string; options: L
           key={option.href}
           href={option.href}
           aria-current={option.active ? "page" : undefined}
-          className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
+          className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
             option.active ? "bg-accent text-accent-ink" : "text-fog-300 hover:text-fog-50"
           }`}
         >

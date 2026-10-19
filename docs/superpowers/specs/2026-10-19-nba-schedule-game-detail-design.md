@@ -33,8 +33,10 @@ guided demo. No spreads or game totals appear anywhere.
    and the challenge's `getViewerEntry` do. No new cookie. The brief's active-league and spectator cases don't exist.
    The guided demo league is never a session seat, so it never appears; its league nav has no NBA schedule item, and the
    demo's simulated season is never connected to real fixtures.
-4. **Game day = US Eastern date** (ESPN's and the NBA's game day). Tip-off times show in the viewer's time zone,
-   formatted on the client.
+4. **One time zone: US Central (`America/Chicago`).** Most players are in Minnesota. Game days, "Today", and every
+   tip-off time and read time use Central time, labelled "CT" (e.g. "7:00 PM CT"). Formatted on the server, so there is
+   no client time-zone handling and no hydration mismatch. NBA tip-offs fall between late morning and 9:30 PM CT, so the
+   Central date matches ESPN's (Eastern) game day for every regular-season game.
 5. **"You" is not a colour.** Over and the accent are the same lime (`--color-over` = `--color-accent`), so the brief's
    "lime You" would erase Over/Under meaning. Viewer rows get an accent left border plus a "You" text badge; Over and
    Under keep the existing `SidePill`.
@@ -89,7 +91,7 @@ pages in `src/app/`, UI in `src/components/`.
 
 ### `src/config/schedule.ts` — `NBA_SCHEDULE`
 
-`season: LINES.season`, `source: "ESPN"`, `fetchTimeoutMs: 8000`, `gameDayTimeZone: "America/New_York"`, `currentDayCacheSeconds: 60` (game days
+`season: LINES.season`, `source: "ESPN"`, `fetchTimeoutMs: 8000`, `timeZone: "America/Chicago"`, `timeZoneLabel: "CT"`, `currentDayCacheSeconds: 60` (game days
 within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`, `retrySeconds: 30`, `formGames: 5`,
 `hotWins: 4`, `coldWins: 1`, `dateStripDays: 5`.
 
@@ -99,7 +101,7 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
   - `GameStatus = "scheduled" | "live" | "final" | "postponed" | "canceled"`.
   - `NbaGameSide { teamId: TeamId; score: number | null; winner: boolean }`.
   - `GameOdds { book: string; away: number; home: number }` (American odds, integers, never 0).
-  - `NbaGame { id; season; tipoff: string (ISO); gameDay: string (YYYY-MM-DD, Eastern); status; statusDetail: string;
+  - `NbaGame { id; season; tipoff: string (ISO); gameDay: string (YYYY-MM-DD, Central); status; statusDetail: string;
     away: NbaGameSide; home: NbaGameSide; venue: string | null; broadcasts: string[]; odds: GameOdds | null }`.
   - `GameDay { season; day; games: NbaGame[] }` (games sorted by tip-off, then id).
   - Reads for pages never reject: `ScheduleRead { day: GameDay | null; source; readAt: string | null; error: string | null }`,
@@ -114,7 +116,7 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
   - Both competitors must resolve to two different teams of the 30, one home and one away, else `FeedError`.
   - Odds: parsed only when the first odds entry has a provider name and both `close.odds` parse to valid American odds
     (`/^[+-]?\d+$/`, |value| ≥ 100); otherwise `odds: null`. Malformed odds never fail the game.
-  - `gameDay` is the Eastern date of `tipoff`. A scoreboard event whose game day differs from the requested day is
+  - `gameDay` is the Central date of `tipoff`. A scoreboard event whose game day differs from the requested day is
     still kept (ESPN's day is authoritative for that request).
   - Malformed payload structure (no `events` array, competition missing, unparseable date) → `FeedError` whose message
     is safe to show, like `parseEspnSchedule`.
@@ -133,7 +135,7 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
   - `conferenceTable(teams, conference)` → rows `{ rank, team, wins, losses, pct: number | null }`: sorted by win
     percentage (desc; teams with 0 games after every team with games), then wins (desc), then full team name. `pct` is
     null with 0 games (shown "—"). Rank is the row position, labelled `#`, never "seed".
-  - `nextGameDay(logs, afterDay)` → the earliest Eastern game day after `afterDay` across the given game logs, or null.
+  - `nextGameDay(logs, afterDay)` → the earliest Central game day after `afterDay` across the given game logs, or null.
 - **`game-day.ts`** — `gameDayOf(iso)`, `todayGameDay(now)`, `shiftGameDay(day, n)`, `isGameDay(string)` (strict
   `YYYY-MM-DD`), `espnDate(day)` (`YYYYMMDD`), `dateStrip(day, n)` (n consecutive days centred on `day`).
 - **`interest.ts`** — who cares about a game, built on `teamOwnership()` from `src/lib/team-detail.ts`.
@@ -189,7 +191,7 @@ within one day of today), `otherDayCacheSeconds: 900`, `summaryCacheSeconds: 60`
 ### Routes (`src/app/nba/`)
 
 - `layout.tsx` — `NbaShell`.
-- `page.tsx` (the schedule) — `searchParams.date` (invalid or missing → Eastern today), `view`, `conf`.
+- `page.tsx` (the schedule) — `searchParams.date` (invalid or missing → today in Central time), `view`, `conf`.
 - `games/[gameId]/page.tsx` — `searchParams.date` only feeds the back link (missing → the game's own day).
 - Both: the Suspense pattern from the team page, `unstable_dynamicStaleTime = 60`. A game whose read says `notFound` →
   `notFound()`; a failed read → an in-page "Couldn't load this game" alert with the back link.
@@ -226,7 +228,7 @@ Existing tokens and primitives only (`Panel`, `SegmentedControl`, `SidePill`, `M
 - **Games panel**: heading with the long date. One row per game, sorted by tip-off:
   - The whole row is one link to the game page (`?date=` kept); team names are plain text.
   - Each team: logo, name, record (from stored records).
-  - Time column: local tip-off for scheduled; `statusDetail` plus scores for live (marked "Live") and final; "Postponed"
+  - Time column: tip-off in CT for scheduled; `statusDetail` plus scores for live (marked "Live") and final; "Postponed"
     / "Canceled" badges.
   - Odds column: `oddsState` "open" → "SAS +130 (42%)" per team, favourite emphasised; "unavailable" → "Odds
     unavailable"; "closed"/"none" → nothing.
@@ -243,7 +245,7 @@ Existing tokens and primitives only (`Panel`, `SegmentedControl`, `SidePill`, `M
 
 - Back link "← Back to schedule" to `/nba?date={day}`.
 - **Header**: away team left, "at", home team right; each with logo, full name and record.
-  Centre: long date, local tip-off, status (`statusDetail` or score for live/final), venue and broadcasts only when
+  Centre: long date, tip-off in CT, status (`statusDetail` or score for live/final), venue and broadcasts only when
   present.
 - **Odds panel** ("Moneyline · win chance"): two tiles, `+130 (42%)` / `−155 (58%)`, the higher chance emphasised (accent
   border), an info tooltip "Estimated win chance from both moneylines, with sportsbook margin removed.", and
@@ -273,11 +275,11 @@ Existing tokens and primitives only (`Panel`, `SegmentedControl`, `SidePill`, `M
   games with date, opponent logo, home/away and W/L (no scores: the game log has none). Form failure → "Recent games
   unavailable" here; the rest of the page is unaffected.
 
-### Local time
+### Times
 
-`LocalTime` client component: renders an Eastern-time string from the server snapshot (with "ET") and the viewer's
-local format after hydration via `useSyncExternalStore` (server snapshot ≠ client snapshot is the supported pattern,
-no hydration mismatch).
+`src/lib/format.ts` gains `formatGameTime(iso)` ("7:00 PM CT"), `formatGameDate(day)` ("Fri, Oct 31") and
+`formatReadTime(iso)`, all with `Intl.DateTimeFormat` fixed to `NBA_SCHEDULE.timeZone`. Server-rendered; no client
+time-zone code.
 
 ## Error handling
 
@@ -303,8 +305,8 @@ No synthetic fixture, invented odds, invented ranking or fake freshness anywhere
   observable (live, postponed, canceled, Cup final, bad odds).
 - **Unit**: parsers (season and type filter, Cup final, statuses, scores, two-team checks, odds parsing and rejection,
   malformed payloads), odds maths (+110/+110 → 50/50, +130/−155 → 42/58, sum is always 100, invalid quotes),
-  `oddsState`, form and heat thresholds, conference ordering and "—", next game day, game-day helpers (Eastern date
-  across midnight UTC and DST), interests (Over/Under rooting both teams, fades on Over and Under, several fades on one
+  `oddsState`, form and heat thresholds, conference ordering and "—", next game day, game-day helpers (Central date
+  across midnight UTC and DST), time formatting in CT, interests (Over/Under rooting both teams, fades on Over and Under, several fades on one
   pick, voided picks excluded, open seats, not started, multi-league, same person conflicting), challenge stakes
   (frozen, before the freeze, missing frozen line, null line at pick, other season), your stakes, `feed-cache`, league
   nav items (groups, NBA links to `/nba`, demo omits it), NBA shell nav (active on `/nba` and game pages).
@@ -325,6 +327,6 @@ entrants' challenge picks. Leagues from other seasons.
 - ESPN gives no odds timestamp; freshness shown is Courtline's read time (at most `currentDayCacheSeconds` /
   `otherDayCacheSeconds` old).
 - Caches are per server instance; standings form costs up to 30 cached team-schedule reads per cold instance.
-- Game day is the Eastern date; a viewer far from US time zones may see a game listed under the previous local day.
+- Every time is Central; a viewer elsewhere converts in their head (the label says CT).
 - Interests follow the browser session, like everything else in Courtline: another browser of the same person sees
   only the seats claimed there.

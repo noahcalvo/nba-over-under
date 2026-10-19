@@ -1,0 +1,2849 @@
+{
+ "events": [
+  {
+   "id": "401909834",
+   "date": "2026-10-21T23:00Z",
+   "name": "Atlanta Hawks at Orlando Magic",
+   "shortName": "ATL @ ORL",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909834",
+     "date": "2026-10-21T23:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3432",
+      "fullName": "Kia Center",
+      "address": {
+       "city": "Orlando",
+       "state": "FL"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "19",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "19",
+        "location": "Orlando",
+        "name": "Magic",
+        "abbreviation": "ORL",
+        "displayName": "Orlando Magic",
+        "shortDisplayName": "Magic",
+        "isActive": true,
+        "venue": {
+         "id": "3432"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "1",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "1",
+        "location": "Atlanta",
+        "name": "Hawks",
+        "abbreviation": "ATL",
+        "displayName": "Atlanta Hawks",
+        "shortDisplayName": "Hawks",
+        "isActive": true,
+        "venue": {
+         "id": "1827"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 7:00 PM EDT",
+       "shortDetail": "10/21 - 7:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T23:00Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1,
+        "displayName": "DraftKings"
+       },
+       "details": "ORL -2.5",
+       "overUnder": 235.5,
+       "spread": -2.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "1",
+         "abbreviation": "ATL",
+         "name": "Hawks",
+         "displayName": "Atlanta Hawks"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "19",
+         "abbreviation": "ORL",
+         "name": "Magic",
+         "displayName": "Orlando Magic"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-142"
+         },
+         "open": {
+          "odds": "-135"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+120"
+         },
+         "open": {
+          "odds": "+114"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-2.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "-2.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+2.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "+2.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o235.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "o232.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u235.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "u232.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 7:00 PM EDT",
+     "shortDetail": "10/21 - 7:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909835",
+   "date": "2026-10-21T23:00Z",
+   "name": "Milwaukee Bucks at Washington Wizards",
+   "shortName": "MIL @ WSH",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909835",
+     "date": "2026-10-21T23:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1823",
+      "fullName": "Capital One Arena",
+      "address": {
+       "city": "Washington",
+       "state": "DC"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "27",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "27",
+        "location": "Washington",
+        "name": "Wizards",
+        "abbreviation": "WSH",
+        "displayName": "Washington Wizards",
+        "shortDisplayName": "Wizards",
+        "isActive": true,
+        "venue": {
+         "id": "1823"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "15",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "15",
+        "location": "Milwaukee",
+        "name": "Bucks",
+        "abbreviation": "MIL",
+        "displayName": "Milwaukee Bucks",
+        "shortDisplayName": "Bucks",
+        "isActive": true,
+        "venue": {
+         "id": "2099"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 7:00 PM EDT",
+       "shortDetail": "10/21 - 7:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "home",
+       "names": [
+        "MNMT"
+       ]
+      },
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T23:00Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "WSH -4.5",
+       "overUnder": 238.5,
+       "spread": -4.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "15",
+         "abbreviation": "MIL",
+         "name": "Bucks",
+         "displayName": "Milwaukee Bucks"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "27",
+         "abbreviation": "WSH",
+         "name": "Wizards",
+         "displayName": "Washington Wizards"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-198"
+         },
+         "open": {
+          "odds": "-238"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+164"
+         },
+         "open": {
+          "odds": "+195"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-4.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "-6.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+4.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "+6.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o238.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "o238.5",
+          "odds": "-105"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u238.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "u238.5",
+          "odds": "-115"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 7:00 PM EDT",
+     "shortDetail": "10/21 - 7:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909091",
+   "date": "2026-10-21T23:30Z",
+   "name": "Minnesota Timberwolves at Miami Heat",
+   "shortName": "MIN @ MIA",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909091",
+     "date": "2026-10-21T23:30Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3438",
+      "fullName": "Kaseya Center",
+      "address": {
+       "city": "Miami",
+       "state": "FL"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "14",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "14",
+        "location": "Miami",
+        "name": "Heat",
+        "abbreviation": "MIA",
+        "displayName": "Miami Heat",
+        "shortDisplayName": "Heat",
+        "isActive": true,
+        "venue": {
+         "id": "3438"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "16",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "16",
+        "location": "Minnesota",
+        "name": "Timberwolves",
+        "abbreviation": "MIN",
+        "displayName": "Minnesota Timberwolves",
+        "shortDisplayName": "Timberwolves",
+        "isActive": true,
+        "venue": {
+         "id": "2029"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 7:30 PM EDT",
+       "shortDetail": "10/21 - 7:30 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T23:30Z",
+     "broadcast": "ESPN",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "MIA -1.5",
+       "overUnder": 243.5,
+       "spread": -1.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "16",
+         "abbreviation": "MIN",
+         "name": "Timberwolves",
+         "displayName": "Minnesota Timberwolves"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "14",
+         "abbreviation": "MIA",
+         "name": "Heat",
+         "displayName": "Miami Heat"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-115"
+         },
+         "open": {
+          "odds": "-155"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "-105"
+         },
+         "open": {
+          "odds": "+130"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-1.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "-3.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+1.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "+3.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o243.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "o236.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u243.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "u236.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 7:30 PM EDT",
+     "shortDetail": "10/21 - 7:30 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909836",
+   "date": "2026-10-21T23:30Z",
+   "name": "Charlotte Hornets at Brooklyn Nets",
+   "shortName": "CHA @ BKN",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909836",
+     "date": "2026-10-21T23:30Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3559",
+      "fullName": "Barclays Center",
+      "address": {
+       "city": "Brooklyn",
+       "state": "NY"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "17",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "17",
+        "location": "Brooklyn",
+        "name": "Nets",
+        "abbreviation": "BKN",
+        "displayName": "Brooklyn Nets",
+        "shortDisplayName": "Nets",
+        "isActive": true,
+        "venue": {
+         "id": "1826"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "30",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "30",
+        "location": "Charlotte",
+        "name": "Hornets",
+        "abbreviation": "CHA",
+        "displayName": "Charlotte Hornets",
+        "shortDisplayName": "Hornets",
+        "isActive": true,
+        "venue": {
+         "id": "1893"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 7:30 PM EDT",
+       "shortDetail": "10/21 - 7:30 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T23:30Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "BKN -1.5",
+       "overUnder": 219.5,
+       "spread": -1.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "30",
+         "abbreviation": "CHA",
+         "name": "Hornets",
+         "displayName": "Charlotte Hornets"
+        },
+        "favoriteAtOpen": true
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "17",
+         "abbreviation": "BKN",
+         "name": "Nets",
+         "displayName": "Brooklyn Nets"
+        },
+        "favoriteAtOpen": false
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-112"
+         },
+         "open": {
+          "odds": "+142"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "-108"
+         },
+         "open": {
+          "odds": "-170"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-1.5",
+          "odds": "-102"
+         },
+         "open": {
+          "line": "+4.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+1.5",
+          "odds": "-118"
+         },
+         "open": {
+          "line": "-4.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o219.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "o226.5",
+          "odds": "-105"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u219.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "u226.5",
+          "odds": "-115"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 7:30 PM EDT",
+     "shortDetail": "10/21 - 7:30 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909837",
+   "date": "2026-10-21T23:30Z",
+   "name": "Chicago Bulls at Toronto Raptors",
+   "shortName": "CHI @ TOR",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909837",
+     "date": "2026-10-21T23:30Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1838",
+      "fullName": "Scotiabank Arena",
+      "address": {
+       "city": "Toronto",
+       "state": "ON"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "28",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "28",
+        "location": "Toronto",
+        "name": "Raptors",
+        "abbreviation": "TOR",
+        "displayName": "Toronto Raptors",
+        "shortDisplayName": "Raptors",
+        "isActive": true,
+        "venue": {
+         "id": "1838"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "4",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "4",
+        "location": "Chicago",
+        "name": "Bulls",
+        "abbreviation": "CHI",
+        "displayName": "Chicago Bulls",
+        "shortDisplayName": "Bulls",
+        "isActive": true,
+        "venue": {
+         "id": "1847"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 7:30 PM EDT",
+       "shortDetail": "10/21 - 7:30 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T23:30Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "TOR -9.5",
+       "overUnder": 236.5,
+       "spread": -9.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "4",
+         "abbreviation": "CHI",
+         "name": "Bulls",
+         "displayName": "Chicago Bulls"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "28",
+         "abbreviation": "TOR",
+         "name": "Raptors",
+         "displayName": "Toronto Raptors"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-395"
+         },
+         "open": {
+          "odds": "-345"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+310"
+         },
+         "open": {
+          "odds": "+275"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-9.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "-8.5",
+          "odds": "-115"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+9.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "+8.5",
+          "odds": "-105"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o236.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "o235.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u236.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "u235.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 7:30 PM EDT",
+     "shortDetail": "10/21 - 7:30 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909838",
+   "date": "2026-10-22T00:00Z",
+   "name": "Utah Jazz at Memphis Grizzlies",
+   "shortName": "UTAH @ MEM",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909838",
+     "date": "2026-10-22T00:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1392",
+      "fullName": "FedExForum",
+      "address": {
+       "city": "Memphis",
+       "state": "TN"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "29",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "29",
+        "location": "Memphis",
+        "name": "Grizzlies",
+        "abbreviation": "MEM",
+        "displayName": "Memphis Grizzlies",
+        "shortDisplayName": "Grizzlies",
+        "isActive": true,
+        "venue": {
+         "id": "1392"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "26",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "26",
+        "location": "Utah",
+        "name": "Jazz",
+        "abbreviation": "UTAH",
+        "displayName": "Utah Jazz",
+        "shortDisplayName": "Jazz",
+        "isActive": true,
+        "venue": {
+         "id": "3093"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 8:00 PM EDT",
+       "shortDetail": "10/21 - 8:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T00:00Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "MEM -1.5",
+       "overUnder": 241.5,
+       "spread": -1.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "26",
+         "abbreviation": "UTAH",
+         "name": "Jazz",
+         "displayName": "Utah Jazz"
+        },
+        "favoriteAtOpen": true
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "29",
+         "abbreviation": "MEM",
+         "name": "Grizzlies",
+         "displayName": "Memphis Grizzlies"
+        },
+        "favoriteAtOpen": false
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-118"
+         },
+         "open": {
+          "odds": "+124"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "-102"
+         },
+         "open": {
+          "odds": "-148"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-1.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "+2.5",
+          "odds": "-102"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+1.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "-2.5",
+          "odds": "-118"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o241.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "o241.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u241.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "u241.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 8:00 PM EDT",
+     "shortDetail": "10/21 - 8:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909839",
+   "date": "2026-10-22T00:00Z",
+   "name": "Indiana Pacers at New Orleans Pelicans",
+   "shortName": "IND @ NO",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909839",
+     "date": "2026-10-22T00:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "985",
+      "fullName": "Smoothie King Center",
+      "address": {
+       "city": "New Orleans",
+       "state": "LA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "3",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "3",
+        "location": "New Orleans",
+        "name": "Pelicans",
+        "abbreviation": "NO",
+        "displayName": "New Orleans Pelicans",
+        "shortDisplayName": "Pelicans",
+        "isActive": true,
+        "venue": {
+         "id": "985"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "11",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "11",
+        "location": "Indiana",
+        "name": "Pacers",
+        "abbreviation": "IND",
+        "displayName": "Indiana Pacers",
+        "shortDisplayName": "Pacers",
+        "isActive": true,
+        "venue": {
+         "id": "2183"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 8:00 PM EDT",
+       "shortDetail": "10/21 - 8:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T00:00Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "IND -3.5",
+       "overUnder": 240.5,
+       "spread": 3.5,
+       "awayTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "11",
+         "abbreviation": "IND",
+         "name": "Pacers",
+         "displayName": "Indiana Pacers"
+        },
+        "favoriteAtOpen": true
+       },
+       "homeTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "3",
+         "abbreviation": "NO",
+         "name": "Pelicans",
+         "displayName": "New Orleans Pelicans"
+        },
+        "favoriteAtOpen": false
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "+136"
+         },
+         "open": {
+          "odds": "+145"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "-162"
+         },
+         "open": {
+          "odds": "-175"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "+3.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "+4.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "-3.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "-4.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o240.5",
+          "odds": "-108"
+         },
+         "open": {
+          "line": "o240.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u240.5",
+          "odds": "-112"
+         },
+         "open": {
+          "line": "u240.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 8:00 PM EDT",
+     "shortDetail": "10/21 - 8:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909840",
+   "date": "2026-10-22T00:30Z",
+   "name": "Dallas Mavericks at Houston Rockets",
+   "shortName": "DAL @ HOU",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909840",
+     "date": "2026-10-22T00:30Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1394",
+      "fullName": "Toyota Center (Houston)",
+      "address": {
+       "city": "Houston",
+       "state": "TX"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "10",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "10",
+        "location": "Houston",
+        "name": "Rockets",
+        "abbreviation": "HOU",
+        "displayName": "Houston Rockets",
+        "shortDisplayName": "Rockets",
+        "isActive": true,
+        "venue": {
+         "id": "1394"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "6",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "6",
+        "location": "Dallas",
+        "name": "Mavericks",
+        "abbreviation": "DAL",
+        "displayName": "Dallas Mavericks",
+        "shortDisplayName": "Mavericks",
+        "isActive": true,
+        "venue": {
+         "id": "516"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 8:30 PM EDT",
+       "shortDetail": "10/21 - 8:30 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T00:30Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "HOU -8.5",
+       "overUnder": 230.5,
+       "spread": -8.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "6",
+         "abbreviation": "DAL",
+         "name": "Mavericks",
+         "displayName": "Dallas Mavericks"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "10",
+         "abbreviation": "HOU",
+         "name": "Rockets",
+         "displayName": "Houston Rockets"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-375"
+         },
+         "open": {
+          "odds": "-340"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+295"
+         },
+         "open": {
+          "odds": "+270"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-8.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "-8.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+8.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "+8.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o230.5",
+          "odds": "-102"
+         },
+         "open": {
+          "line": "o226.5",
+          "odds": "-115"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u230.5",
+          "odds": "-118"
+         },
+         "open": {
+          "line": "u226.5",
+          "odds": "-105"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 8:30 PM EDT",
+     "shortDetail": "10/21 - 8:30 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909092",
+   "date": "2026-10-22T02:00Z",
+   "name": "Golden State Warriors at Los Angeles Lakers",
+   "shortName": "GS @ LAL",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909092",
+     "date": "2026-10-22T02:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "1841",
+      "fullName": "crypto.com Arena",
+      "address": {
+       "city": "Los Angeles",
+       "state": "CA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "13",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "13",
+        "location": "Los Angeles",
+        "name": "Lakers",
+        "abbreviation": "LAL",
+        "displayName": "Los Angeles Lakers",
+        "shortDisplayName": "Lakers",
+        "isActive": true,
+        "venue": {
+         "id": "1841"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "9",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "9",
+        "location": "Golden State",
+        "name": "Warriors",
+        "abbreviation": "GS",
+        "displayName": "Golden State Warriors",
+        "shortDisplayName": "Warriors",
+        "isActive": true,
+        "venue": {
+         "id": "2465"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 10:00 PM EDT",
+       "shortDetail": "10/21 - 10:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T02:00Z",
+     "broadcast": "ESPN",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "LAL -6.5",
+       "overUnder": 234.5,
+       "spread": -6.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "9",
+         "abbreviation": "GS",
+         "name": "Warriors",
+         "displayName": "Golden State Warriors"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "13",
+         "abbreviation": "LAL",
+         "name": "Lakers",
+         "displayName": "Los Angeles Lakers"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-225"
+         },
+         "open": {
+          "odds": "-205"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+185"
+         },
+         "open": {
+          "odds": "+170"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-6.5",
+          "odds": "-102"
+         },
+         "open": {
+          "line": "-5.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+6.5",
+          "odds": "-118"
+         },
+         "open": {
+          "line": "+5.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o234.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "o231.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u234.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "u231.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 10:00 PM EDT",
+     "shortDetail": "10/21 - 10:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909841",
+   "date": "2026-10-22T02:00Z",
+   "name": "Phoenix Suns at Portland Trail Blazers",
+   "shortName": "PHX @ POR",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909841",
+     "date": "2026-10-22T02:00Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "3423",
+      "fullName": "Moda Center",
+      "address": {
+       "city": "Portland",
+       "state": "OR"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "22",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "22",
+        "location": "Portland",
+        "name": "Trail Blazers",
+        "abbreviation": "POR",
+        "displayName": "Portland Trail Blazers",
+        "shortDisplayName": "Trail Blazers",
+        "isActive": true,
+        "venue": {
+         "id": "3423"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "21",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "21",
+        "location": "Phoenix",
+        "name": "Suns",
+        "abbreviation": "PHX",
+        "displayName": "Phoenix Suns",
+        "shortDisplayName": "Suns",
+        "isActive": true,
+        "venue": {
+         "id": "1949"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 10:00 PM EDT",
+       "shortDetail": "10/21 - 10:00 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T02:00Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "POR -3.5",
+       "overUnder": 232.5,
+       "spread": -3.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "21",
+         "abbreviation": "PHX",
+         "name": "Suns",
+         "displayName": "Phoenix Suns"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "22",
+         "abbreviation": "POR",
+         "name": "Trail Blazers",
+         "displayName": "Portland Trail Blazers"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-166"
+         },
+         "open": {
+          "odds": "-170"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+140"
+         },
+         "open": {
+          "odds": "+142"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-3.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "-4.5",
+          "odds": "-110"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+3.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "+4.5",
+          "odds": "-110"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o232.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "o236.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u232.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "u236.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 10:00 PM EDT",
+     "shortDetail": "10/21 - 10:00 PM EDT"
+    }
+   }
+  },
+  {
+   "id": "401909842",
+   "date": "2026-10-22T02:30Z",
+   "name": "Sacramento Kings at LA Clippers",
+   "shortName": "SAC @ LAC",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909842",
+     "date": "2026-10-22T02:30Z",
+     "attendance": 0,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": false,
+     "recent": false,
+     "venue": {
+      "id": "10642",
+      "fullName": "Intuit Dome",
+      "address": {
+       "city": "Inglewood",
+       "state": "CA"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "12",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "12",
+        "location": "LA",
+        "name": "Clippers",
+        "abbreviation": "LAC",
+        "displayName": "LA Clippers",
+        "shortDisplayName": "Clippers",
+        "isActive": true,
+        "venue": {
+         "id": "1841"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "23",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "23",
+        "location": "Sacramento",
+        "name": "Kings",
+        "abbreviation": "SAC",
+        "displayName": "Sacramento Kings",
+        "shortDisplayName": "Kings",
+        "isActive": true,
+        "venue": {
+         "id": "2247"
+        }
+       },
+       "score": "0",
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0,
+      "displayClock": "0.0",
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Wed, October 21st at 10:30 PM EDT",
+       "shortDetail": "10/21 - 10:30 PM EDT"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "away",
+       "names": [
+        "NBA League Pass"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-22T02:30Z",
+     "broadcast": "",
+     "odds": [
+      {
+       "provider": {
+        "id": "100",
+        "name": "DraftKings",
+        "priority": 1
+       },
+       "details": "LAC -4.5",
+       "overUnder": 228.5,
+       "spread": -4.5,
+       "awayTeamOdds": {
+        "favorite": false,
+        "underdog": true,
+        "team": {
+         "id": "23",
+         "abbreviation": "SAC",
+         "name": "Kings",
+         "displayName": "Sacramento Kings"
+        },
+        "favoriteAtOpen": false
+       },
+       "homeTeamOdds": {
+        "favorite": true,
+        "underdog": false,
+        "team": {
+         "id": "12",
+         "abbreviation": "LAC",
+         "name": "Clippers",
+         "displayName": "LA Clippers"
+        },
+        "favoriteAtOpen": true
+       },
+       "moneyline": {
+        "displayName": "Moneyline",
+        "shortDisplayName": "ML",
+        "home": {
+         "close": {
+          "odds": "-180"
+         },
+         "open": {
+          "odds": "-155"
+         }
+        },
+        "away": {
+         "close": {
+          "odds": "+150"
+         },
+         "open": {
+          "odds": "+130"
+         }
+        }
+       },
+       "pointSpread": {
+        "displayName": "Spread",
+        "shortDisplayName": "Spread",
+        "home": {
+         "close": {
+          "line": "-4.5",
+          "odds": "-105"
+         },
+         "open": {
+          "line": "-4.5",
+          "odds": "-105"
+         }
+        },
+        "away": {
+         "close": {
+          "line": "+4.5",
+          "odds": "-115"
+         },
+         "open": {
+          "line": "+4.5",
+          "odds": "-115"
+         }
+        }
+       },
+       "total": {
+        "displayName": "Total",
+        "shortDisplayName": "Total",
+        "over": {
+         "close": {
+          "line": "o228.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "o230.5",
+          "odds": "-110"
+         }
+        },
+        "under": {
+         "close": {
+          "line": "u228.5",
+          "odds": "-110"
+         },
+         "open": {
+          "line": "u230.5",
+          "odds": "-110"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "status": {
+    "clock": 0,
+    "displayClock": "0.0",
+    "period": 0,
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled",
+     "detail": "Wed, October 21st at 10:30 PM EDT",
+     "shortDetail": "10/21 - 10:30 PM EDT"
+    }
+   }
+  }
+ ]
+}

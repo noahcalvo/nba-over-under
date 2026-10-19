@@ -36,11 +36,15 @@ export function GamePage({ data }: { data: GamePageData }) {
   const { game, teams, forms, stakes } = data;
   const awayId = game.away.teamId;
   const homeId = game.home.teamId;
+  const nameOf = (id: string) => {
+    const team = teams.find((t) => t.id === id);
+    return team ? `${team.city} ${team.name}` : id;
+  };
   return (
     <div className="flex flex-col gap-5">
       <BackLink day={data.backDay} />
       <h1 className="sr-only">
-        {awayId} at {homeId}
+        {nameOf(awayId)} at {nameOf(homeId)}
       </h1>
       <GameHeader game={game} teams={teams} />
       <OddsPanel game={game} teams={teams} source={data.source} readAt={data.readAt} />

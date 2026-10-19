@@ -10,6 +10,7 @@ import {
   heatLabel,
   nextGameDay,
   recentResults,
+  teamForm,
 } from "@/lib/nba-schedule/form";
 
 function game(number: number, result: GameResult | null, date: string | null = null): Game {
@@ -203,5 +204,23 @@ describe("nextGameDay", () => {
     const logs = [log("ATL", ["2026-10-21T23:00Z"])];
     expect(nextGameDay(logs, "2026-10-21")).toBeNull();
     expect(nextGameDay([], "2026-10-21")).toBeNull();
+  });
+});
+
+describe("teamForm", () => {
+  const log = (games: Game[]): GameLog => ({ season: 2027, teamId: "SAS", games });
+
+  it("is missing when the log could not be read", () => {
+    expect(teamForm(undefined, 5)).toEqual({ kind: "missing" });
+  });
+
+  it("is none when the log was read but no game has been played", () => {
+    expect(teamForm(log([]), 5)).toEqual({ kind: "none" });
+    expect(teamForm(log(results(null, null)), 5)).toEqual({ kind: "none" });
+  });
+
+  it("holds the last results otherwise", () => {
+    const form = teamForm(log(results("W", "L", "W")), 2);
+    expect(form).toEqual({ kind: "results", results: results("W", "L", "W").slice(1) });
   });
 });

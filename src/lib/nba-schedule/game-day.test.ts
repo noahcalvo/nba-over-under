@@ -5,6 +5,7 @@ import {
   espnDate,
   gameDayOf,
   isGameDay,
+  isScheduleDay,
   scoreboardTtlSeconds,
   shiftGameDay,
   todayGameDay,
@@ -54,6 +55,28 @@ describe("isGameDay", () => {
     for (const bad of ["2026-02-30", "2026-10-1", "banana", "", null, 20261021, "2026-13-01", "2026-10-32", "2026-00-10", "2026-10-00"]) {
       expect(isGameDay(bad)).toBe(false);
     }
+  });
+});
+
+describe("isScheduleDay", () => {
+  const today = "2026-10-21";
+
+  it("accepts the window's edges: 1947-01-01 through December 31 of next year", () => {
+    expect(isScheduleDay("1947-01-01", today)).toBe(true);
+    expect(isScheduleDay("2027-12-31", today)).toBe(true);
+    expect(isScheduleDay("2026-10-21", today)).toBe(true);
+  });
+
+  it("rejects days outside the window", () => {
+    expect(isScheduleDay("1946-12-31", today)).toBe(false);
+    expect(isScheduleDay("2028-01-01", today)).toBe(false);
+    expect(isScheduleDay("9999-12-31", today)).toBe(false);
+    expect(isScheduleDay("0001-01-01", today)).toBe(false);
+  });
+
+  it("rejects what is not a real date", () => {
+    expect(isScheduleDay("2026-02-30", today)).toBe(false);
+    expect(isScheduleDay(undefined, today)).toBe(false);
   });
 });
 

@@ -1,4 +1,5 @@
 import { LINES } from "@/config/lines";
+import { seasonEndYear } from "@/lib/records/season";
 
 /** The NBA schedule and game detail pages: where games come from, the game-day clock and how long each read is reused. */
 export const NBA_SCHEDULE = {
@@ -26,6 +27,11 @@ export const NBA_SCHEDULE = {
   hotWins: 4,
   /** A team with at most this many wins in its form games counts as cold. */
   coldWins: 1,
+  /** The earliest game day that is read from the source (the league's first season); earlier dates show an empty day. */
+  firstGameDay: "1947-01-01",
   /** How many game days the date strip shows at once. */
   dateStripDays: 5,
 } as const;
+
+/** The schedule season's end year (2027 for "2026–27"), the year ESPN labels its games with. */
+export const NBA_SEASON_YEAR = seasonEndYear(NBA_SCHEDULE.season) ?? 0;

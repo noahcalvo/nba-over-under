@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameStakes } from "@/lib/nba-schedule/game-stakes";
+import { gameStakes, stakesPanelState } from "@/lib/nba-schedule/game-stakes";
 import type { InterestLeague } from "@/lib/nba-schedule/interest";
 import type { League } from "@/lib/types";
 
@@ -37,7 +37,7 @@ function league(): League {
 describe("gameStakes", () => {
   it("assembles leagues, the viewer's rows, the rooting split and the seats", () => {
     const leagues: InterestLeague[] = [{ league: league(), viewerId: "m1" }];
-    const result = gameStakes({ leagues, challenge: null, seated: [{ id: "L1", name: "League One" }] }, 2027, GAME);
+    const result = gameStakes({ leagues, challenge: null, seated: [{ id: "L1", name: "League One" }], failed: false }, 2027, GAME);
     expect(result.leagues).toHaveLength(1);
     expect(result.challenge).toBeNull();
     expect(result.yours.map((s) => [s.kind, s.teamId, s.rootingFor])).toEqual([["pick", "SAS", "SAS"]]);
@@ -47,7 +47,34 @@ describe("gameStakes", () => {
   });
 
   it("is empty for a viewer with nothing", () => {
-    const result = gameStakes({ leagues: [], challenge: null, seated: [] }, 2027, GAME);
-    expect(result).toEqual({ leagues: [], challenge: null, yours: [], split: { SAS: 0, MIN: 0 }, seated: [] });
+    const result = gameStakes({ leagues: [], challenge: null, seated: [], failed: false }, 2027, GAME);
+    expect(result).toEqual({ leagues: [], challenge: null, yours: [], split: { SAS: 0, MIN: 0 }, seated: [], failed: false });
+  });
+
+  it("carries the failed flag", () => {
+    expect(gameStakes({ leagues: [], challenge: null, seated: [], failed: true }, 2027, GAME).failed).toBe(true);
+  });
+});
+
+describe("stakesPanelState", () => {
+  const loadedLeague = [{ league: league(), viewerId: "m1" }] as never;
+  const entry = { entry: {}, frozen: null } as never;
+
+  it("asks to join only when nothing failed and nothing is there", () => {
+    expect(stakesPanelState({ leagues: [], challenge: null, failed: false })).toBe("join");
+  });
+
+  it("reports a failure when nothing loaded", () => {
+    expect(stakesPanelState({ leagues: [], challenge: null, failed: true })).toBe("failed");
+  });
+
+  it("shows what loaded, with a note, when something failed", () => {
+    expect(stakesPanelState({ leagues: loadedLeague, challenge: null, failed: true })).toBe("partial");
+    expect(stakesPanelState({ leagues: [], challenge: entry, failed: true })).toBe("partial");
+  });
+
+  it("shows the content when it loaded cleanly", () => {
+    expect(stakesPanelState({ leagues: loadedLeague, challenge: null, failed: false })).toBe("content");
+    expect(stakesPanelState({ leagues: [], challenge: entry, failed: false })).toBe("content");
   });
 });

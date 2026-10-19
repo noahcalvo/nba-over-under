@@ -20,7 +20,17 @@ export function SchedulePage({ data }: { data: SchedulePageData }) {
   }));
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="NBA Schedule" subtitle={`${NBA_SCHEDULE.season} regular season · times in ${NBA_SCHEDULE.timeZoneLabel}`} />
+      <PageHeader
+        title="NBA Schedule"
+        subtitle={
+          <>
+            Games, standings, and who your leagues are rooting for.
+            <span className="mt-1 block text-xs text-fog-400 sm:text-sm">
+              {NBA_SCHEDULE.season} regular season · times in {NBA_SCHEDULE.timeZoneLabel}
+            </span>
+          </>
+        }
+      />
       <DateStrip params={params} strip={data.strip} today={data.today} />
       <div className="xl:hidden">
         <LinkTabs ariaLabel="Schedule view" options={tabs} />

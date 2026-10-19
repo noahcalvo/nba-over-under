@@ -201,10 +201,11 @@ export function rootingSplit(
   return split;
 }
 
-export function interestSummary(
-  leagues: readonly LeagueInterest[],
-  challenge: ChallengeInterest | null,
-): InterestSummary {
+/**
+ * Who is on a game for the schedule rows: league picks and fades only. The viewer's 30/30 Challenge sides cover every
+ * team, so counting them would mark every game "You"; they show on the game page instead.
+ */
+export function interestSummary(leagues: readonly LeagueInterest[]): InterestSummary {
   const seen = new Set<string>();
   const managers: InterestSummary["managers"] = [];
   let count = 0;
@@ -219,6 +220,5 @@ export function interestSummary(
       managers.push({ leagueId: league.leagueId, manager: row.manager });
     }
   }
-  const challengeRows = challenge?.rows.length ?? 0;
-  return { managers, count: count + challengeRows, viewerInvolved: viewerInvolved || challengeRows > 0 };
+  return { managers, count, viewerInvolved };
 }

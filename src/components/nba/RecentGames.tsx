@@ -5,7 +5,7 @@ import { NBA_SCHEDULE } from "@/config/schedule";
 import { formatGameDayShort } from "@/lib/format";
 import type { Game } from "@/lib/game-log/types";
 import { gameDayOf } from "@/lib/nba-schedule/game-day";
-import { recentResults } from "@/lib/nba-schedule/form";
+import { teamForm, type TeamForm } from "@/lib/nba-schedule/form";
 import type { TeamId, TeamInfo } from "@/lib/types";
 import type { TeamForms } from "@/server/nba-schedule";
 
@@ -32,15 +32,15 @@ function Result({ game, teams }: { game: Game; teams: TeamInfo[] }) {
   );
 }
 
-function TeamList({ team, teams, results }: { team: TeamInfo | undefined; teams: TeamInfo[]; results: Game[] | null }) {
+function TeamList({ team, teams, form }: { team: TeamInfo | undefined; teams: TeamInfo[]; form: TeamForm }) {
   return (
     <div>
       <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-[0.2em] text-fog-400 sm:px-5">{team?.name}</h3>
-      {results === null || results.length === 0 ? (
-        <p className="px-4 py-2 text-sm text-fog-400 sm:px-5">Recent games unavailable</p>
+      {form.kind !== "results" ? (
+        <p className="px-4 py-2 text-sm text-fog-400 sm:px-5">{form.kind === "missing" ? "Recent games unavailable" : "No games yet"}</p>
       ) : (
         <ul>
-          {[...results].reverse().map((game) => (
+          {[...form.results].reverse().map((game) => (
             <Result key={game.number} game={game} teams={teams} />
           ))}
         </ul>
@@ -51,11 +51,11 @@ function TeamList({ team, teams, results }: { team: TeamInfo | undefined; teams:
 
 async function Lists({ awayId, homeId, teams, forms }: { awayId: TeamId; homeId: TeamId; teams: TeamInfo[]; forms: Promise<TeamForms> }) {
   const { logs } = await forms;
-  const last = (id: TeamId) => (logs[id] ? recentResults(logs[id], NBA_SCHEDULE.formGames) : null);
+  const last = (id: TeamId) => teamForm(logs[id], NBA_SCHEDULE.formGames);
   return (
     <div className="divide-y divide-ink-700 pb-2">
-      <TeamList team={teams.find((t) => t.id === awayId)} teams={teams} results={last(awayId)} />
-      <TeamList team={teams.find((t) => t.id === homeId)} teams={teams} results={last(homeId)} />
+      <TeamList team={teams.find((t) => t.id === awayId)} teams={teams} form={last(awayId)} />
+      <TeamList team={teams.find((t) => t.id === homeId)} teams={teams} form={last(homeId)} />
     </div>
   );
 }

@@ -1,33 +1,24 @@
-import {
-  challengeInterest,
-  interestSummary,
-  leagueInterests,
-  type ChallengeStakeInput,
-  type InterestLeague,
-  type InterestSummary,
-} from "@/lib/nba-schedule/interest";
+import { interestSummary, leagueInterests, type InterestLeague, type InterestSummary } from "@/lib/nba-schedule/interest";
 import type { NbaGame } from "@/lib/nba-schedule/types";
 
 /**
- * Who is on each game, by game id. A game whose summary cannot be built (malformed stored data) is left out rather
- * than failing the others; the caller shows no interest for it.
+ * Who is on each game, by game id (league picks and fades; see `interestSummary`). A game whose summary cannot be built
+ * (malformed stored data) is left out rather than failing the others and counted in `skipped`, so the caller can log
+ * it (this module has no logging).
  */
 export function gameSummaries(
   games: readonly NbaGame[],
-  stakes: { leagues: readonly InterestLeague[]; challenge: ChallengeStakeInput | null },
-  season: number,
-): Record<string, InterestSummary> {
+  stakes: { leagues: readonly InterestLeague[] },
+): { summaries: Record<string, InterestSummary>; skipped: number } {
   const summaries: Record<string, InterestSummary> = {};
+  let skipped = 0;
   for (const game of games) {
     try {
       const teams = { awayId: game.away.teamId, homeId: game.home.teamId };
-      summaries[game.id] = interestSummary(
-        leagueInterests(stakes.leagues, teams),
-        challengeInterest(stakes.challenge, season, teams),
-      );
+      summaries[game.id] = interestSummary(leagueInterests(stakes.leagues, teams));
     } catch {
-      // Skipped: this game shows no interest.
+      skipped += 1;
     }
   }
-  return summaries;
+  return { summaries, skipped };
 }

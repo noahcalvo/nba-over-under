@@ -22,9 +22,20 @@ export interface GameStakes {
   /** How many rows root for each of the game's two teams. */
   split: Record<TeamId, number>;
   seated: { id: string; name: string }[];
+  /** True when something the viewer has riding on the game could not be loaded, so what shows may be incomplete. */
+  failed: boolean;
 }
 
-export const NO_STAKES: GameStakes = { leagues: [], challenge: null, yours: [], split: {}, seated: [] };
+export const NO_STAKES: GameStakes = { leagues: [], challenge: null, yours: [], split: {}, seated: [], failed: false };
+
+/** What the "Who's on this game?" panel shows: the leagues and challenge, a note over partial data, an error, or the join prompt. */
+export type StakesPanelState = "content" | "partial" | "failed" | "join";
+
+export function stakesPanelState(stakes: Pick<GameStakes, "leagues" | "challenge" | "failed">): StakesPanelState {
+  const loaded = stakes.leagues.length > 0 || stakes.challenge !== null;
+  if (stakes.failed) return loaded ? "partial" : "failed";
+  return loaded ? "content" : "join";
+}
 
 /** All of one game's stakes in one pass. Throws on malformed stored data; the caller decides how to degrade. */
 export function gameStakes(
@@ -32,6 +43,7 @@ export function gameStakes(
     leagues: readonly InterestLeague[];
     challenge: ChallengeStakeInput | null;
     seated: readonly { id: string; name: string }[];
+    failed: boolean;
   },
   season: number,
   game: GameTeams,
@@ -44,5 +56,6 @@ export function gameStakes(
     yours: yourStakes(leagues, challenge),
     split: rootingSplit(leagues, challenge, game),
     seated: stakes.seated.map((seat) => ({ id: seat.id, name: seat.name })),
+    failed: stakes.failed,
   };
 }

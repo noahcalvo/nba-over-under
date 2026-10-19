@@ -9,7 +9,7 @@ import { oddsState } from "@/lib/nba-schedule/odds";
 import type { NbaGame, NbaGameSide } from "@/lib/nba-schedule/types";
 import type { TeamInfo } from "@/lib/types";
 
-/** The time cell. A scheduled game never shows ESPN's status text (it is Eastern); live games show it, finals say "Final". */
+/** The time cell. A scheduled game never shows ESPN's status text (it is Eastern); live games and finals show it ("Final", "Final/OT"). */
 function StatusCell({ game }: { game: NbaGame }) {
   switch (game.status) {
     case "scheduled":
@@ -17,7 +17,7 @@ function StatusCell({ game }: { game: NbaGame }) {
     case "live":
       return <span className="font-semibold text-accent">Live · {game.statusDetail}</span>;
     case "final":
-      return <span className="font-semibold text-fog-300">Final</span>;
+      return <span className="font-semibold text-fog-300">{game.statusDetail || "Final"}</span>;
     case "postponed":
       return <Badge tone="danger">Postponed</Badge>;
     case "canceled":
@@ -32,7 +32,10 @@ function TeamLine({ side, team, showScore }: { side: NbaGameSide; team: TeamInfo
       <span className={`truncate ${side.winner ? "font-bold text-fog-50" : "text-fog-50"}`}>{team?.name ?? side.teamId}</span>
       {team && <span className="shrink-0 text-xs text-fog-400 tabular-nums">{formatRecord(team.wins, team.losses)}</span>}
       {showScore && side.score !== null && (
-        <span className={`ml-auto shrink-0 pl-2 tabular-nums ${side.winner ? "font-bold text-fog-50" : "text-fog-300"}`}>{side.score}</span>
+        <span className={`ml-auto shrink-0 pl-2 tabular-nums ${side.winner ? "font-bold text-fog-50" : "text-fog-300"}`}>
+          {side.score}
+          {side.winner && <span className="sr-only"> (winner)</span>}
+        </span>
       )}
     </div>
   );

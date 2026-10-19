@@ -43,7 +43,7 @@ export function StandingsPanel({
         <tbody className="tabular-nums">
           {rows.map(({ rank, team, wins, losses, pct }) => (
             <tr key={team.id} className="border-b border-ink-700/60 last:border-0">
-              <td className="py-2 pl-4 pr-1.5 text-right text-fog-400 sm:pl-5">{rank}</td>
+              <td className="py-2 pl-4 pr-1.5 text-right text-fog-400 sm:pl-5">{pct === null ? "–" : rank}</td>
               <td className="px-1.5 py-2">
                 <span className="flex min-w-0 items-center gap-2 text-fog-50">
                   <TeamLogo team={team} size={22} />

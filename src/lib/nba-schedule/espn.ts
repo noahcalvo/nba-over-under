@@ -8,12 +8,15 @@ import type { GameDay, GameOdds, GameStatus, NbaGame, NbaGameSide } from "./type
 // ESPN's public scoreboard and summary JSON (unofficial; keyless). One scoreboard request returns one game day, one
 // summary request one game. Only the 2026-27 style regular season counts; the NBA Cup Championship ("CC") is dropped,
 // as the game log does. Teams match by display name. An event with a team outside our 30 is skipped (it is not our
-// game), but a payload that is shaped wrongly throws a FeedError.
+// game), as is an event of another season or season type, the Cup final or a game in a state we do not know, so one odd
+// event cannot blank a day. A payload that is shaped wrongly (no `events` array, an event that is not an object, a
+// regular-season event without a competition) throws a FeedError.
 
 const API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 const REGULAR_SEASON = 2;
 const CUP_CHAMPIONSHIP = "CC";
-const GAME_ID_PATTERN = /^\d{1,12}$/;
+const GAME_ID_PATTERN = /^\d{1,10}$/;
+const MAX_GAME_ID = 2_147_483_647; // ESPN answers 400 for an event id above int32
 
 export function espnScoreboardUrl(day: string): string {
   return `${API}/scoreboard?dates=${espnDate(day)}`;
@@ -23,9 +26,9 @@ export function espnSummaryUrl(id: string): string {
   return `${API}/summary?event=${id}`;
 }
 
-/** True for a plausible ESPN event id: 1 to 12 digits. Check before building a summary url from outside input. */
+/** True for a plausible ESPN event id: 1 to 10 digits, at most 2147483647. Check before building a summary url from outside input. */
 export function isGameId(value: string): boolean {
-  return GAME_ID_PATTERN.test(value);
+  return GAME_ID_PATTERN.test(value) && Number(value) <= MAX_GAME_ID;
 }
 
 type Json = Record<string, unknown>;
@@ -52,6 +55,8 @@ function problem(feed: "scoreboard" | "summary", detail: string): FeedError {
 interface Source {
   feed: "scoreboard" | "summary";
   id: unknown;
+  /** The season year being read; an event of any other year is not ours. */
+  seasonYear: number;
   season: unknown;
   /** The competition object (`competitors`, `status`, `type`, `date`). */
   competition: unknown;
@@ -62,7 +67,8 @@ interface Source {
   odds: GameOdds | null;
 }
 
-function statusOf(feed: Source["feed"], status: Json): { status: GameStatus; detail: string } {
+/** Null for a state we do not know, so the event is skipped. */
+function statusOf(feed: Source["feed"], status: Json): { status: GameStatus; detail: string } | null {
   const type = asObject(status.type);
   if (!type || typeof type.name !== "string" || typeof type.state !== "string") throw problem(feed, BAD_FORMAT);
   const detail = typeof type.shortDetail === "string" ? type.shortDetail : "";
@@ -71,33 +77,45 @@ function statusOf(feed: Source["feed"], status: Json): { status: GameStatus; det
   if (type.state === "in") return { status: "live", detail };
   if (type.state === "post" && type.completed === true) return { status: "final", detail };
   if (type.state === "pre") return { status: "scheduled", detail };
-  throw problem(feed, `had a game in an unknown state (${type.name})`);
+  return null;
 }
 
-function scoreOf(feed: Source["feed"], value: unknown): number {
+/** A score, or null when it is missing or not a whole number of points. */
+function scoreOf(value: unknown): number | null {
   const score = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
-  if (value === "" || !Number.isInteger(score) || score < 0) throw problem(feed, "had a game without a valid score");
-  return score;
+  return value === "" || !Number.isInteger(score) || score < 0 ? null : score;
+}
+
+/** Who won a finished game: the one competitor ESPN flags, else the higher score, else nobody (a 0–0 forfeit). */
+function winnerIndex(competitors: readonly Json[], scores: readonly (number | null)[]): number | null {
+  const flagged = competitors.flatMap((competitor, i) => (competitor.winner === true ? [i] : []));
+  if (flagged.length === 1) return flagged[0];
+  const [a, b] = scores;
+  if (a === null || b === null || a === b) return null;
+  return a > b ? 0 : 1;
 }
 
 /**
  * The one place a scoreboard event or a summary becomes an `NbaGame`. Null means "not a game we show": another season or
- * season type, the Cup final, or a team outside our 30. Anything shaped wrongly throws.
+ * season type (decided before anything else is checked), the Cup final, a state we do not know, or a team outside our
+ * 30. Anything else shaped wrongly throws.
  */
 function normalizeCompetition(source: Source, resolveTeam: ResolveTeam): NbaGame | null {
   const { feed } = source;
   const season = asObject(source.season);
   if (!season || typeof season.year !== "number" || typeof season.type !== "number") throw problem(feed, BAD_FORMAT);
+  if (season.type !== REGULAR_SEASON || season.year !== source.seasonYear) return null;
   const competition = asObject(source.competition);
   if (!competition) throw problem(feed, BAD_FORMAT);
-  if (season.type !== REGULAR_SEASON) return null;
   if (asObject(competition.type)?.abbreviation === CUP_CHAMPIONSHIP) return null;
 
   const id = nonEmptyString(source.id);
   const dateText = nonEmptyString(competition.date) ?? nonEmptyString(source.fallbackDate);
   const statusObject = asObject(competition.status);
   if (!id || !dateText || !statusObject || Number.isNaN(Date.parse(dateText))) throw problem(feed, BAD_FORMAT);
-  const { status, detail } = statusOf(feed, statusObject);
+  const parsedStatus = statusOf(feed, statusObject);
+  if (!parsedStatus) return null;
+  const { status, detail } = parsedStatus;
 
   const competitors = Array.isArray(competition.competitors) ? competition.competitors : [];
   if (competitors.length !== 2 || !competitors.every(isObject)) throw problem(feed, BAD_FORMAT);
@@ -113,13 +131,10 @@ function normalizeCompetition(source: Source, resolveTeam: ResolveTeam): NbaGame
   if (ids[0] === ids[1]) throw problem(feed, "had a game of a team against itself");
 
   const shown = status === "live" || status === "final";
-  const winners = competitors.filter((competitor) => competitor.winner === true).length;
-  if (status === "final" && winners !== 1) throw problem(feed, "had a finished game without one winner");
-  const side = (competitor: Json, teamId: TeamId): NbaGameSide => ({
-    teamId,
-    score: shown ? scoreOf(feed, competitor.score) : null,
-    winner: status === "final" && competitor.winner === true,
-  });
+  const ordered = [away, home];
+  const scores = ordered.map((competitor) => (shown ? scoreOf(competitor.score) : null));
+  const winner = status === "final" ? winnerIndex(ordered, scores) : null;
+  const side = (index: number, teamId: TeamId): NbaGameSide => ({ teamId, score: scores[index], winner: winner === index });
 
   return {
     id,
@@ -128,8 +143,8 @@ function normalizeCompetition(source: Source, resolveTeam: ResolveTeam): NbaGame
     gameDay: gameDayOf(dateText),
     status,
     statusDetail: detail,
-    away: side(away, ids[0]),
-    home: side(home, ids[1]),
+    away: side(0, ids[0]),
+    home: side(1, ids[1]),
     venue: source.venue,
     broadcasts: source.broadcasts,
     odds: source.odds,
@@ -183,6 +198,7 @@ export function parseScoreboard(payload: unknown, season: number, day: string, r
       {
         feed: "scoreboard",
         id: event.id,
+        seasonYear: season,
         season: event.season,
         competition,
         fallbackDate: event.date,
@@ -192,7 +208,7 @@ export function parseScoreboard(payload: unknown, season: number, day: string, r
       },
       resolveTeam,
     );
-    if (game && game.season === season) games.push(game);
+    if (game) games.push(game);
   }
   games.sort((a, b) => timeOf(a) - timeOf(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return { season, day, games };
@@ -211,6 +227,7 @@ export function parseSummary(payload: unknown, season: number, resolveTeam: Reso
     {
       feed: "summary",
       id: header.id,
+      seasonYear: season,
       season: header.season,
       competition,
       fallbackDate: null,
@@ -220,5 +237,5 @@ export function parseSummary(payload: unknown, season: number, resolveTeam: Reso
     },
     resolveTeam,
   );
-  return game && game.season === season ? game : null;
+  return game;
 }

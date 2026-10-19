@@ -1,23 +1,21 @@
 import "server-only";
-import { NBA_SCHEDULE } from "@/config/schedule";
+import { NBA_SCHEDULE, NBA_SEASON_YEAR } from "@/config/schedule";
 import { TEAM_INFO, teamIdByNickname } from "@/data/teams";
 import { FeedError } from "@/lib/feed-error";
 import { keyedCache } from "@/lib/feed-cache";
 import type { GameLog } from "@/lib/game-log/types";
 import { espnScoreboardUrl, espnSummaryUrl, isGameId, parseScoreboard, parseSummary } from "@/lib/nba-schedule/espn";
-import { isGameDay, scoreboardTtlSeconds, todayGameDay } from "@/lib/nba-schedule/game-day";
+import { isGameDay, isScheduleDay, scoreboardTtlSeconds, todayGameDay } from "@/lib/nba-schedule/game-day";
 import type { GameRead, ScheduleRead } from "@/lib/nba-schedule/types";
-import { seasonEndYear } from "@/lib/records/season";
 import type { TeamId } from "@/lib/types";
 import { fetchFeedJson } from "@/server/feed";
 import { readGameLog } from "@/server/game-log";
 
-const SEASON = seasonEndYear(NBA_SCHEDULE.season) ?? 0;
 const FEED = { source: NBA_SCHEDULE.source, timeoutMs: NBA_SCHEDULE.fetchTimeoutMs };
 const RETRY_MS = NBA_SCHEDULE.retrySeconds * 1000;
 
 const cachedScoreboard = keyedCache(
-  async (day: string) => parseScoreboard(await fetchFeedJson(espnScoreboardUrl(day), FEED), SEASON, day, teamIdByNickname),
+  async (day: string) => parseScoreboard(await fetchFeedJson(espnScoreboardUrl(day), FEED), NBA_SEASON_YEAR, day, teamIdByNickname),
   {
     ttlMs: (day) => scoreboardTtlSeconds(todayGameDay(new Date()), day) * 1000,
     retryMs: RETRY_MS,
@@ -25,7 +23,7 @@ const cachedScoreboard = keyedCache(
 );
 
 const cachedSummary = keyedCache(
-  async (id: string) => parseSummary(await fetchFeedJson(espnSummaryUrl(id), FEED), SEASON, teamIdByNickname),
+  async (id: string) => parseSummary(await fetchFeedJson(espnSummaryUrl(id), FEED), NBA_SEASON_YEAR, teamIdByNickname),
   { ttlMs: () => NBA_SCHEDULE.summaryCacheSeconds * 1000, retryMs: RETRY_MS },
 );
 
@@ -36,10 +34,13 @@ function messageOf(error: unknown, label: string, fallback: string): string {
   return fallback;
 }
 
-/** One game day's games. Never rejects; a failure is `error`. */
+/** One game day's games. Never rejects; a failure is `error`. A date outside the schedule window is an empty day, unread. */
 export async function readGameDay(day: string): Promise<ScheduleRead> {
   if (!isGameDay(day)) {
     return { day: null, source: NBA_SCHEDULE.source, readAt: null, error: "That isn't a valid date." };
+  }
+  if (!isScheduleDay(day, todayGameDay(new Date()))) {
+    return { day: { season: NBA_SEASON_YEAR, day, games: [] }, source: NBA_SCHEDULE.source, readAt: null, error: null };
   }
   try {
     const { value, readAt } = await cachedScoreboard(day);

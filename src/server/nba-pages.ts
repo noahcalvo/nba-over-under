@@ -1,6 +1,6 @@
 import "server-only";
 import { connection } from "next/server";
-import { NBA_SCHEDULE } from "@/config/schedule";
+import { NBA_SCHEDULE, NBA_SEASON_YEAR } from "@/config/schedule";
 import { loadTeamInfo } from "@/db/records";
 import { dateStrip, isGameDay, todayGameDay } from "@/lib/nba-schedule/game-day";
 import { gameStakes, NO_STAKES, type GameStakes } from "@/lib/nba-schedule/game-stakes";
@@ -8,19 +8,16 @@ import type { InterestSummary } from "@/lib/nba-schedule/interest";
 import { resolveScheduleParams, type ScheduleParams } from "@/lib/nba-schedule/params";
 import { gameSummaries } from "@/lib/nba-schedule/summaries";
 import type { NbaGame, ScheduleRead } from "@/lib/nba-schedule/types";
-import { seasonEndYear } from "@/lib/records/season";
 import type { TeamInfo } from "@/lib/types";
 import { getDb } from "@/server/db";
 import { loadPlayerStakes, type PlayerStakes } from "@/server/game-interest";
 import { readGame, readGameDay, readTeamForms, type TeamForms } from "@/server/nba-schedule";
 
-const SEASON_YEAR = seasonEndYear(NBA_SCHEDULE.season) ?? 0;
-
 export interface ScheduleGames {
   read: ScheduleRead;
   /** Who is on each game of the day, by game id. */
   summaries: Record<string, InterestSummary>;
-  /** False when the viewer has no league and no challenge entry for the season, so no interest column is shown. */
+  /** False when the viewer has no league in the season, so no interest column is shown. */
   hasStakes: boolean;
 }
 
@@ -38,7 +35,7 @@ async function stakesOrNone(): Promise<PlayerStakes> {
     return await loadPlayerStakes();
   } catch (error) {
     console.error("Player stakes load failed", error);
-    return { leagues: [], challenge: null, seated: [] };
+    return { leagues: [], challenge: null, seated: [], failed: true };
   }
 }
 
@@ -46,11 +43,10 @@ async function stakesOrNone(): Promise<PlayerStakes> {
 async function loadGames(day: string): Promise<ScheduleGames> {
   const [read, stakes] = await Promise.all([readGameDay(day), stakesOrNone()]);
   try {
-    return {
-      read,
-      summaries: gameSummaries(read.day?.games ?? [], stakes, SEASON_YEAR),
-      hasStakes: stakes.leagues.length > 0 || stakes.challenge !== null,
-    };
+    const games = read.day?.games ?? [];
+    const { summaries, skipped } = gameSummaries(games, stakes);
+    if (skipped > 0) console.error(`Game interest skipped ${skipped} of ${games.length} games`);
+    return { read, summaries, hasStakes: stakes.leagues.length > 0 };
   } catch (error) {
     console.error("Game interest failed", error);
     return { read, summaries: {}, hasStakes: false };
@@ -99,10 +95,10 @@ export type GamePageResult =
 async function loadGameStakes(game: NbaGame): Promise<GameStakes> {
   const stakes = await stakesOrNone();
   try {
-    return gameStakes(stakes, SEASON_YEAR, { awayId: game.away.teamId, homeId: game.home.teamId });
+    return gameStakes(stakes, NBA_SEASON_YEAR, { awayId: game.away.teamId, homeId: game.home.teamId });
   } catch (error) {
     console.error("Game stakes failed", error);
-    return { ...NO_STAKES, seated: stakes.seated };
+    return { ...NO_STAKES, seated: stakes.seated, failed: true };
   }
 }
 

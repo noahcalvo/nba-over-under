@@ -4,7 +4,7 @@ import { formatGameDayLong, formatRecord, formatTimeCT } from "@/lib/format";
 import type { NbaGame, NbaGameSide } from "@/lib/nba-schedule/types";
 import type { TeamInfo } from "@/lib/types";
 
-/** The status line. A scheduled game never shows ESPN's status text (it is Eastern); live games show it, finals say "Final". */
+/** The status line. A scheduled game never shows ESPN's status text (it is Eastern); live games and finals show it ("Final", "Final/OT"). */
 function Status({ game }: { game: NbaGame }) {
   switch (game.status) {
     case "scheduled":
@@ -12,7 +12,7 @@ function Status({ game }: { game: NbaGame }) {
     case "live":
       return <p className="text-lg font-semibold text-accent">Live · {game.statusDetail}</p>;
     case "final":
-      return <p className="text-lg font-semibold text-fog-300">Final</p>;
+      return <p className="text-lg font-semibold text-fog-300">{game.statusDetail || "Final"}</p>;
     case "postponed":
       return <Badge tone="danger">Postponed</Badge>;
     case "canceled":

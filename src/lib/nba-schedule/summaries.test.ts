@@ -30,19 +30,27 @@ const LEAGUE = {
 
 describe("gameSummaries", () => {
   it("builds a summary for each game", () => {
-    const result = gameSummaries([game("1", "SAS", "MIN"), game("2", "BOS", "NYK")], { leagues: [{ league: LEAGUE, viewerId: "m1" }], challenge: null }, 2027);
+    const { summaries: result, skipped } = gameSummaries([game("1", "SAS", "MIN"), game("2", "BOS", "NYK")], { leagues: [{ league: LEAGUE, viewerId: "m1" }] });
+    expect(skipped).toBe(0);
     expect(result["1"]).toMatchObject({ count: 1, viewerInvolved: true });
     expect(result["2"]).toMatchObject({ count: 0, viewerInvolved: false });
   });
 
   it("skips a game whose summary throws and keeps the others", () => {
     const broken = { ...game("2", "BOS", "NYK"), away: null } as unknown as NbaGame;
-    const result = gameSummaries([game("1", "SAS", "MIN"), broken, game("3", "SAS", "BOS")], { leagues: [{ league: LEAGUE, viewerId: "m1" }], challenge: null }, 2027);
-    expect(Object.keys(result)).toEqual(["1", "3"]);
+    const { summaries, skipped } = gameSummaries([game("1", "SAS", "MIN"), broken, game("3", "SAS", "BOS")], { leagues: [{ league: LEAGUE, viewerId: "m1" }] });
+    expect(Object.keys(summaries)).toEqual(["1", "3"]);
+    expect(skipped).toBe(1);
   });
 
   it("returns nothing for a game when a league's stored draft is malformed", () => {
     const bad = { ...LEAGUE, draft: null } as unknown as League;
-    expect(gameSummaries([game("1", "SAS", "MIN")], { leagues: [{ league: bad, viewerId: "m1" }], challenge: null }, 2027)).toEqual({});
+    expect(gameSummaries([game("1", "SAS", "MIN")], { leagues: [{ league: bad, viewerId: "m1" }] })).toEqual({ summaries: {}, skipped: 1 });
+  });
+
+  it("ignores the viewer's challenge entry: it does not mark a game as theirs or add to the count", () => {
+    const stakes = { leagues: [{ league: LEAGUE, viewerId: "m1" }], challenge: { picks: ["BOS", "NYK"] } }; // extra fields are ignored
+    const { summaries } = gameSummaries([game("2", "BOS", "NYK")], stakes);
+    expect(summaries["2"]).toMatchObject({ count: 0, viewerInvolved: false });
   });
 });

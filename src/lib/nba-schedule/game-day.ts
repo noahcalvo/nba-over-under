@@ -39,6 +39,15 @@ export function isGameDay(value: unknown): value is string {
   return new Date(ms).toISOString().slice(0, 10) === value;
 }
 
+/**
+ * True for a game day worth asking the source about: a real date from the league's first day through the end of next
+ * calendar year (relative to `today`). Anything else shows an empty day without a request.
+ */
+export function isScheduleDay(day: unknown, today: string): day is string {
+  if (!isGameDay(day)) return false;
+  return day >= NBA_SCHEDULE.firstGameDay && day <= `${Number(today.slice(0, 4)) + 1}-12-31`;
+}
+
 /** ESPN's scoreboard date parameter: `YYYYMMDD`. */
 export function espnDate(day: string): string {
   return day.replace(/-/g, "");

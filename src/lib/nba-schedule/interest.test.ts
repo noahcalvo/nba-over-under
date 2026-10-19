@@ -280,8 +280,8 @@ describe("rootingSplit and interestSummary", () => {
   });
 
   it("counts rows and de-duplicates managers per league", () => {
-    const summary = interestSummary(interests, challenge);
-    expect(summary.count).toBe(6 + 2);
+    const summary = interestSummary(interests);
+    expect(summary.count).toBe(6);
     expect(summary.managers.map((m) => [m.leagueId, m.manager.id])).toEqual([
       ["L1", "m1"],
       ["L1", "m2"],
@@ -291,17 +291,17 @@ describe("rootingSplit and interestSummary", () => {
     expect(summary.viewerInvolved).toBe(true);
   });
 
-  it("is viewerInvolved through a viewer row, through the challenge alone, and not otherwise", () => {
-    expect(interestSummary(interests, null).viewerInvolved).toBe(true);
+  it("is viewerInvolved through a viewer row only; a challenge entry never counts on the schedule", () => {
+    expect(interestSummary(interests).viewerInvolved).toBe(true);
     const bystander = leagueInterests([input(league({ picks: [pick(1, "m2", "SAS", "OVER")] }), "m1")], GAME);
-    expect(interestSummary(bystander, null).viewerInvolved).toBe(false);
-    expect(interestSummary(bystander, challenge).viewerInvolved).toBe(true);
+    expect(interestSummary(bystander).viewerInvolved).toBe(false);
+    expect(interestSummary(bystander).count).toBe(1);
   });
 
   it("keeps managers distinct per league", () => {
     const a = league({ id: "A", picks: [pick(1, "m1", "SAS", "OVER")] });
     const b = league({ id: "B", picks: [pick(1, "m1", "MIN", "OVER")] });
-    const summary = interestSummary(leagueInterests([input(a), input(b)], GAME), null);
+    const summary = interestSummary(leagueInterests([input(a), input(b)], GAME));
     expect(summary.managers.map((m) => `${m.leagueId}:${m.manager.id}`)).toEqual(["A:m1", "B:m1"]);
   });
 });

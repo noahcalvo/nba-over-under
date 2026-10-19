@@ -6,15 +6,16 @@ import { Panel } from "@/components/ui/Panel";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { NBA_SCHEDULE } from "@/config/schedule";
 import { formatOrdinal, formatRecord } from "@/lib/format";
-import { conferencePosition, heatLabel, recentResults } from "@/lib/nba-schedule/form";
+import { conferencePosition, heatLabel, teamForm } from "@/lib/nba-schedule/form";
 import type { TeamInfo } from "@/lib/types";
 import type { GameStakes } from "@/server/nba-pages";
 import type { TeamForms } from "@/server/nba-schedule";
 
 async function TeamForm({ forms, teamId }: { forms: Promise<TeamForms>; teamId: string }) {
-  const log = (await forms).logs[teamId];
-  const results = log ? recentResults(log, NBA_SCHEDULE.formGames) : [];
-  if (results.length === 0) return <p className="text-sm text-fog-400">Form unavailable</p>;
+  const form = teamForm((await forms).logs[teamId], NBA_SCHEDULE.formGames);
+  if (form.kind === "missing") return <p className="text-sm text-fog-400">Form unavailable</p>;
+  if (form.kind === "none") return <p className="text-sm text-fog-400">No games yet</p>;
+  const { results } = form;
   const label = heatLabel(results);
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fog-300">

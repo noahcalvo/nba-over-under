@@ -20,6 +20,18 @@ export function recentResults(log: GameLog, n: number): Game[] {
   return n > 0 ? played.slice(-n) : [];
 }
 
+/**
+ * A team's form from its game log: `missing` when the log could not be read, `none` when it was read but no game has
+ * been played yet, else the last `n` results.
+ */
+export type TeamForm = { kind: "missing" } | { kind: "none" } | { kind: "results"; results: Game[] };
+
+export function teamForm(log: GameLog | undefined, n: number): TeamForm {
+  if (!log) return { kind: "missing" };
+  const results = recentResults(log, n);
+  return results.length === 0 ? { kind: "none" } : { kind: "results", results };
+}
+
 function winCount(results: readonly Game[]): number {
   return results.filter((game) => game.result === "W").length;
 }

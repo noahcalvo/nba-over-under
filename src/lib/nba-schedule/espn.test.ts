@@ -36,12 +36,14 @@ describe("urls and ids", () => {
     );
   });
 
-  it("accepts only 1 to 12 digits as a game id", () => {
+  it("accepts only 1 to 10 digits, at most 2147483647, as a game id", () => {
     expect(isGameId("401909834")).toBe(true);
     expect(isGameId("abc")).toBe(false);
     expect(isGameId("")).toBe(false);
-    expect(isGameId("1".repeat(12))).toBe(true);
-    expect(isGameId("1".repeat(13))).toBe(false);
+    expect(isGameId("2147483647")).toBe(true);
+    expect(isGameId("2147483648")).toBe(false);
+    expect(isGameId("9999999999")).toBe(false);
+    expect(isGameId("1".repeat(11))).toBe(false);
     expect(isGameId("12 3")).toBe(false);
   });
 });
@@ -195,21 +197,68 @@ describe("parseScoreboard", () => {
     expect(parse21(payload).games[0].broadcasts).toEqual(["ESPN", "NBA League Pass"]);
   });
 
-  it("rejects a final game without exactly one winner", () => {
+  const finalize = (competition: Json) => {
+    competition.status.type = {
+      ...competition.status.type,
+      name: "STATUS_FINAL",
+      state: "post",
+      completed: true,
+      shortDetail: "Final",
+    };
+  };
+
+  it("takes the winner from the scores when a final game has no single winner flag", () => {
     const payload = withFirstCompetition((competition) => {
-      competition.status.type = {
-        ...competition.status.type,
-        name: "STATUS_FINAL",
-        state: "post",
-        completed: true,
-        shortDetail: "Final",
-      };
+      finalize(competition);
+      competition.competitors.find((c: Json) => c.homeAway === "away").score = "110";
+      competition.competitors.find((c: Json) => c.homeAway === "home").score = "104";
+      for (const competitor of competition.competitors) competitor.winner = true; // two flags
+    });
+    expect(parse21(payload).games[0]).toMatchObject({ away: { score: 110, winner: true }, home: { score: 104, winner: false } });
+    const none = withFirstCompetition((competition) => {
+      finalize(competition);
+      competition.competitors.find((c: Json) => c.homeAway === "away").score = "99";
+      competition.competitors.find((c: Json) => c.homeAway === "home").score = "101";
+      for (const competitor of competition.competitors) delete competitor.winner;
+    });
+    expect(parse21(none).games[0]).toMatchObject({ away: { winner: false }, home: { score: 101, winner: true } });
+  });
+
+  it("keeps a final 0-0 game with no winner flags and marks neither side the winner", () => {
+    const payload = withFirstCompetition((competition) => {
+      finalize(competition);
       for (const competitor of competition.competitors) {
-        competitor.score = "100";
-        competitor.winner = true;
+        competitor.score = "0";
+        competitor.winner = false;
       }
     });
-    expect(() => parse21(payload)).toThrow(FeedError);
+    expect(parse21(payload).games[0]).toMatchObject({
+      status: "final",
+      away: { score: 0, winner: false },
+      home: { score: 0, winner: false },
+    });
+  });
+
+  it("shows a null score for a live game whose score is missing or blank", () => {
+    const payload = withFirstCompetition((competition) => {
+      competition.status.type = { ...competition.status.type, name: "STATUS_IN_PROGRESS", state: "in", completed: false, shortDetail: "Q1 9:00" };
+      competition.competitors.find((c: Json) => c.homeAway === "home").score = "";
+      delete competition.competitors.find((c: Json) => c.homeAway === "away").score;
+    });
+    expect(parse21(payload).games[0]).toMatchObject({ status: "live", away: { score: null }, home: { score: null } });
+  });
+
+  it("skips a malformed event from another season or season type before checking its shape", () => {
+    const otherYear = withFirstCompetition((_competition, event) => {
+      event.season = { year: 2026, type: 2 };
+      event.competitions = [{ competitors: "nope", status: null }];
+    });
+    expect(parse21(otherYear).games).toHaveLength(10);
+    const preseason = withFirstCompetition((_competition, event) => {
+      event.season = { year: 2027, type: 1 };
+      event.competitions = [];
+    });
+    expect(parse21(preseason).games).toHaveLength(10);
   });
 
   it("rejects a payload without an events array", () => {
@@ -218,8 +267,18 @@ describe("parseScoreboard", () => {
     expect(() => parse21(null)).toThrow(FeedError);
   });
 
-  it("rejects an unknown status state", () => {
-    expect(() => parse21(setStatus("STATUS_SUSPENDED", "mystery", false, "?"))).toThrow(FeedError);
+  it("skips one event with an unknown status state and keeps the other ten", () => {
+    const games = parse21(setStatus("STATUS_SUSPENDED", "mystery", false, "?")).games;
+    expect(games).toHaveLength(10);
+    expect(games.map((game) => game.id)).not.toContain("401909834");
+  });
+
+  it("still rejects an event whose status is not shaped like a status", () => {
+    expect(() => parse21(withFirstCompetition((competition) => { competition.status = { type: "final" }; }))).toThrow(FeedError);
+  });
+
+  it("still rejects a regular-season event without a competition", () => {
+    expect(() => parse21({ events: [null] })).toThrow(FeedError);
   });
 
   it("rejects an event without a competition or a usable date", () => {

@@ -26,7 +26,7 @@ export interface NbaGame {
   /** The Central calendar date (`YYYY-MM-DD`) the game is counted on. */
   gameDay: string;
   status: GameStatus;
-  /** Short status text from the source, such as "7:30 PM CT" or "Final". */
+  /** ESPN's short status text: "Final", "Final/OT", "Q3 4:12", or for a scheduled game its Eastern time ("10/21 - 7:00 PM EDT"). The UI never shows it for a scheduled game (it uses `tipoff` in CT). */
   statusDetail: string;
   away: NbaGameSide;
   home: NbaGameSide;

@@ -35,6 +35,16 @@ export default function Home() {
           </Link>
         </div>
       </Panel>
+      <Panel title="NBA schedule" bodyClassName="p-4 sm:p-5">
+        <p className="max-w-xl text-fog-300">
+          Tonight&apos;s games, standings, and who in your leagues is rooting for whom.
+        </p>
+        <div className="mt-4">
+          <Link href="/nba" className={buttonClasses("secondary")}>
+            Open the schedule
+          </Link>
+        </div>
+      </Panel>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">
         <CreateLeagueForm />
       </Panel>

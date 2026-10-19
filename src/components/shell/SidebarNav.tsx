@@ -15,30 +15,24 @@ function itemClass(active: boolean): string {
   }`;
 }
 
-function ItemContent({ item, trailing }: { item: NavItem; trailing?: ReactNode }) {
+function ItemContent({ item }: { item: NavItem }) {
   const Icon = item.icon;
   return (
     <>
       <Icon aria-hidden className="size-5 shrink-0" />
       <span className="flex-1">{item.label}</span>
       {!item.ready && <Badge tone="soon">Soon</Badge>}
-      {trailing}
+      {item.clock && <Clock aria-hidden className="size-4 shrink-0" />}
     </>
   );
 }
 
-function NavList({
-  items,
-  render,
-}: {
-  items: NavItem[];
-  render: (item: NavItem, trailing?: ReactNode) => ReactNode;
-}) {
+function NavList({ items, render }: { items: NavItem[]; render: (item: NavItem) => ReactNode }) {
   return (
     <nav aria-label="League" className="flex flex-col gap-1">
-      {items.slice(0, -1).map((item) => render(item))}
+      {items.filter((item) => item.group === "league").map((item) => render(item))}
       <hr className="my-3 border-ink-700" />
-      {render(items[items.length - 1], <Clock aria-hidden className="size-4 shrink-0" />)}
+      {items.filter((item) => item.group === "more").map((item) => render(item))}
     </nav>
   );
 }
@@ -48,7 +42,7 @@ export function SidebarNav({ leagueId }: { leagueId: string }) {
   return (
     <NavList
       items={navItems(leagueId)}
-      render={(item, trailing) => {
+      render={(item) => {
         const active = isActive(item, pathname);
         return (
           <Link
@@ -58,7 +52,7 @@ export function SidebarNav({ leagueId }: { leagueId: string }) {
             aria-current={active ? "page" : undefined}
             className={itemClass(active)}
           >
-            <ItemContent item={item} trailing={trailing} />
+            <ItemContent item={item} />
           </Link>
         );
       }}
@@ -71,9 +65,9 @@ export function SidebarNavSkeleton() {
   return (
     <NavList
       items={navItems("")}
-      render={(item, trailing) => (
+      render={(item) => (
         <span key={item.label} aria-disabled="true" className={itemClass(false)}>
-          <ItemContent item={item} trailing={trailing} />
+          <ItemContent item={item} />
         </span>
       )}
     />

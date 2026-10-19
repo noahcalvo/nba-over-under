@@ -2,10 +2,8 @@
 
 # Courtline — project conventions
 
-NBA season win-total draft league prototype. Specs: `docs/superpowers/specs/2026-10-08-courtline-prototype-design.md`,
-`docs/superpowers/specs/2026-10-08-durable-storage-sessions-design.md`,
-`docs/superpowers/specs/2026-10-19-nba-schedule-game-detail-design.md`. Plans in `docs/superpowers/plans/`
-(`docs/superpowers/` was recreated after `3aee8cb`).
+NBA season win-total draft league prototype. Spec: `docs/superpowers/specs/2026-10-19-nba-schedule-game-detail-design.md`
+(NBA schedule). Plans in `docs/superpowers/plans/`.
 Mockups: `wiremocks/`.
 
 ## Production
@@ -73,7 +71,7 @@ Next API.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
 - `src/components/challenge/` the 30/30 Challenge pages (own shell and nav; `challenge-draft.ts` the local draft store, `use-clock.ts` the countdown clock).
-- `src/components/nba/` the NBA schedule and game pages (own shell `NbaShell` / `NbaNav`; `app/nba/`).
+- `src/components/nba/` the NBA schedule and game pages (own shell `NbaShell` / `NbaNav`; pages in `src/app/nba/`).
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area. `tour/` reusable
   guided-tour overlay; `tutorial/` the guided draft and season (`tutorial-store.ts` is the one shared demo state). `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds
   it `useLeagueDraft`.
@@ -200,14 +198,11 @@ Next API.
     `CHALLENGE_MOCK_TIPOFF=<ISO time>` overrides it to try the open and locked states. Delete `.data/pglite` between
     tries: a passed deadline cannot be moved back.
   - Cron: `GET /api/cron/challenge` (daily 16:00 UTC, `CRON_SECRET`) re-reads the schedule, records the lines and freezes when due.
-- NBA schedule (`/nba`, `/nba/games/{id}`, spec `docs/superpowers/specs/2026-10-19-nba-schedule-game-detail-design.md`, whose "Decisions taken" list is
-  the source of truth): player-level, read-only pages in their own shell (not under `/l/{id}`); the viewer comes only from the
-  `courtline_session` cookie, no league, seat or player id in any URL. Games, scores and moneylines come from ESPN's scoreboard and summary
-  (DraftKings odds, "{provider} via ESPN"); odds show pre-game only, as vig-free win chances (`winChances`), never spreads or totals.
-  Game days, "Today" and every time are US Central (`NBA_SCHEDULE.timeZone`, "CT"), formatted on the server. Interests = every
-  same-season (`NBA_SCHEDULE.season`) league the session holds a seat in (every retained pick and fade on either team shown, the viewer's
-  rows marked "You") plus the viewer's own saved challenge side (`getViewerEntry`, never `prepareChallenge`, never others' entries). Hidden
-  in the demo (no nav item, never a seat). The schedule always reads ESPN (no static mode), so offline it shows the feed error.
+- NBA schedule (`/nba`, `/nba/games/{id}`): player-level, read-only pages in their own shell; the viewer comes only from the `courtline_session`
+  cookie. ESPN scoreboard/summary, DraftKings moneylines shown pre-game only as vig-free win chances; all times US Central ("CT").
+  Interests = every same-season league the session holds a seat in (all picks and fades on either team, the viewer's rows marked "You") plus
+  the viewer's own challenge side (`getViewerEntry`, never `prepareChallenge`); league rows link to that league's team page, challenge rows to
+  `/challenge/teams/{id}`, schedule and standings names are plain text. Hidden in the demo. Always reads ESPN (no static mode): offline shows the feed error.
 - Commissioner = `m1` (`commissionerId`), wherever they sit in the draft order. Only the commissioner starts, pauses and
   resumes, picks for unclaimed seats, manages the league invite and resets seats.
 

@@ -1,6 +1,9 @@
 import type { GameOdds, NbaGame } from "@/lib/nba-schedule/types";
 
 const MINUS = "−";
+
+/** The explanation shown wherever a win chance appears. */
+export const WIN_CHANCE_TOOLTIP = "Estimated win chance from both moneylines, with sportsbook margin removed.";
 const AMERICAN_PATTERN = /^[+-]?\d+$/;
 
 function isAmerican(value: number): boolean {

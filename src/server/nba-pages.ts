@@ -1,16 +1,18 @@
 import "server-only";
+import { connection } from "next/server";
 import { NBA_SCHEDULE } from "@/config/schedule";
 import { loadTeamInfo } from "@/db/records";
-import { dateStrip, todayGameDay } from "@/lib/nba-schedule/game-day";
+import { dateStrip, isGameDay, todayGameDay } from "@/lib/nba-schedule/game-day";
+import { gameStakes, NO_STAKES, type GameStakes } from "@/lib/nba-schedule/game-stakes";
 import type { InterestSummary } from "@/lib/nba-schedule/interest";
 import { resolveScheduleParams, type ScheduleParams } from "@/lib/nba-schedule/params";
 import { gameSummaries } from "@/lib/nba-schedule/summaries";
-import type { ScheduleRead } from "@/lib/nba-schedule/types";
+import type { NbaGame, ScheduleRead } from "@/lib/nba-schedule/types";
 import { seasonEndYear } from "@/lib/records/season";
 import type { TeamInfo } from "@/lib/types";
 import { getDb } from "@/server/db";
 import { loadPlayerStakes, type PlayerStakes } from "@/server/game-interest";
-import { readGameDay, readTeamForms, type TeamForms } from "@/server/nba-schedule";
+import { readGame, readGameDay, readTeamForms, type TeamForms } from "@/server/nba-schedule";
 
 const SEASON_YEAR = seasonEndYear(NBA_SCHEDULE.season) ?? 0;
 
@@ -71,5 +73,68 @@ export async function loadSchedulePage(raw: { date?: string; view?: string; conf
     teams,
     games,
     forms,
+  };
+}
+
+export type { GameStakes };
+
+/** Everything the game page shows. The team forms and the stakes stream as promises that never reject. */
+export interface GamePageData {
+  game: NbaGame;
+  source: string;
+  readAt: string;
+  /** The schedule day the back link returns to. */
+  backDay: string;
+  teams: TeamInfo[];
+  forms: Promise<TeamForms>;
+  stakes: Promise<GameStakes>;
+}
+
+export type GamePageResult =
+  | { kind: "not_found" }
+  | { kind: "error"; message: string; backDay: string }
+  | { kind: "ok"; data: GamePageData };
+
+/** The viewer's stakes in one game. Never rejects: a failed interest computation only empties the stakes panel. */
+async function loadGameStakes(game: NbaGame): Promise<GameStakes> {
+  const stakes = await stakesOrNone();
+  try {
+    return gameStakes(stakes, SEASON_YEAR, { awayId: game.away.teamId, homeId: game.home.teamId });
+  } catch (error) {
+    console.error("Game stakes failed", error);
+    return { ...NO_STAKES, seated: stakes.seated };
+  }
+}
+
+/**
+ * One game for the game page. `dateParam` is the schedule day the visitor came from (only a real date is kept);
+ * without it the back link returns to the game's own day. Unknown ids and other seasons are `not_found`; a failed read
+ * is `error`. The records are awaited; the forms and stakes are not.
+ */
+export async function loadGamePage(id: string, dateParam: string | undefined): Promise<GamePageResult> {
+  await connection();
+  const now = new Date();
+  const read = await readGame(id);
+  if (read.notFound) return { kind: "not_found" };
+  const dateDay = isGameDay(dateParam) ? dateParam : null;
+  if (!read.game) {
+    return { kind: "error", message: read.error ?? "This game couldn't be read.", backDay: dateDay ?? todayGameDay(now) };
+  }
+  const { game } = read;
+  const forms = readTeamForms([game.away.teamId, game.home.teamId]);
+  const stakes = loadGameStakes(game);
+  const db = await getDb();
+  const teams = await loadTeamInfo(db, { isDemo: false, seasonLabel: NBA_SCHEDULE.season });
+  return {
+    kind: "ok",
+    data: {
+      game,
+      source: read.source,
+      readAt: read.readAt ?? now.toISOString(),
+      backDay: dateDay ?? game.gameDay,
+      teams,
+      forms,
+      stakes,
+    },
   };
 }

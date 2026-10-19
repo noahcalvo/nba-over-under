@@ -3,7 +3,9 @@
 # Courtline — project conventions
 
 NBA season win-total draft league prototype. Specs: `docs/superpowers/specs/2026-10-08-courtline-prototype-design.md`,
-`docs/superpowers/specs/2026-10-08-durable-storage-sessions-design.md`. Plans in `docs/superpowers/plans/`.
+`docs/superpowers/specs/2026-10-08-durable-storage-sessions-design.md`,
+`docs/superpowers/specs/2026-10-19-nba-schedule-game-detail-design.md`. Plans in `docs/superpowers/plans/`
+(`docs/superpowers/` was recreated after `3aee8cb`).
 Mockups: `wiremocks/`.
 
 ## Production
@@ -37,7 +39,8 @@ Next API.
   11 rounds), `LEAGUE_LIMITS` (2–12 managers, rounds up to ⌊60 ÷ managers⌋), `SEASON` (demo season label and the previous season shown as "wins"),
   `LINES` (book, drafted season, feed cache timings), `RECORDS` (records source, refresh cooldown, fetch timeout, game-log cache timings), `DRAFT_POLL_INTERVAL_MS`, `ACCESS` (session and invite lifetimes),
   `TUTORIAL`, `TUTORIAL_SEASON` and `TOUR` (`tour.ts`: guided demo size and pacing, simulated season, overlay spacing),
-  `CHALLENGE` (`challenge.ts`: season and season year, lock minutes before tip-off, schedule check interval, name length, tie tolerance).
+  `CHALLENGE` (`challenge.ts`: season and season year, lock minutes before tip-off, schedule check interval, name length, tie tolerance),
+  `NBA_SCHEDULE` (`schedule.ts`: schedule season, source, fetch timeout, Central time zone and label, schedule/summary cache and retry timings, form games and hot/cold thresholds, date strip length).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season awards
   (`awards.ts`), snake draft, formatting, permissions, league commands (`league/commands.ts`: every mutation's
   decision), tokens and link rules (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
@@ -48,6 +51,10 @@ Next API.
   seeded randomness (`random.ts`), the 30/30 Challenge (`challenge/`: save parsing and reference rebasing `picks.ts`, line
   movement `movement.ts`, card grid filters and sorts `grid.ts`, opening game and deadline `schedule.ts`, per-team freeze
   `freeze.ts`, `phase.ts`, entry scoring and ranking `scoring.ts`, `visibility.ts`, page models `board.ts` / `status.ts`),
+  the NBA schedule (`nba-schedule/`: ESPN scoreboard and summary parsing `espn.ts`, vig-free win chances from moneylines `odds.ts`,
+  last-5 form, heat and conference tables `form.ts`, Central game days and the date strip `game-day.ts`, who is on a game
+  `interest.ts` / `game-stakes.ts` / `summaries.ts`, query params `params.ts`), a keyed success/failure/in-flight read cache
+  (`feed-cache.ts`),
   guided demo (`tutorial/`: in-memory league commands, deterministic draft simulation,
   steps, snapshot; the season: `season.ts` simulation, `season-steps.ts` derivation, `season-story.ts` the user's
   numbers, `season-copy.ts` words) and tour layout (`tour/`: target ids, geometry, callout placement).
@@ -61,10 +68,12 @@ Next API.
 - `src/server/` — server-only glue (`import "server-only"`): database singleton, session cookie, league loading, links,
   line source, outside feeds (`feed.ts`), record source (`records.ts`), game-log source (`game-log.ts`), team page
   loader (`team-page.ts`), challenge orchestration (`challenge.ts`: `prepareChallenge`, board loader; `challenge-pages.ts`:
-  results, leaderboard and team loaders), cron auth (`cron.ts`), HTTP helpers.
+  results, leaderboard and team loaders), NBA schedule (`nba-schedule.ts`: cached ESPN scoreboard, summary and team form reads;
+  `game-interest.ts`: the viewer's league and challenge stakes; `nba-pages.ts`: `/nba` and game page loaders), cron auth (`cron.ts`), HTTP helpers.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
 - `src/components/challenge/` the 30/30 Challenge pages (own shell and nav; `challenge-draft.ts` the local draft store, `use-clock.ts` the countdown clock).
+- `src/components/nba/` the NBA schedule and game pages (own shell `NbaShell` / `NbaNav`; `app/nba/`).
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area. `tour/` reusable
   guided-tour overlay; `tutorial/` the guided draft and season (`tutorial-store.ts` is the one shared demo state). `DraftRoomView` renders from a `DraftRoomDriver`; `DraftRoom` feeds
   it `useLeagueDraft`.
@@ -191,6 +200,14 @@ Next API.
     `CHALLENGE_MOCK_TIPOFF=<ISO time>` overrides it to try the open and locked states. Delete `.data/pglite` between
     tries: a passed deadline cannot be moved back.
   - Cron: `GET /api/cron/challenge` (daily 16:00 UTC, `CRON_SECRET`) re-reads the schedule, records the lines and freezes when due.
+- NBA schedule (`/nba`, `/nba/games/{id}`, spec `docs/superpowers/specs/2026-10-19-nba-schedule-game-detail-design.md`, whose "Decisions taken" list is
+  the source of truth): player-level, read-only pages in their own shell (not under `/l/{id}`); the viewer comes only from the
+  `courtline_session` cookie, no league, seat or player id in any URL. Games, scores and moneylines come from ESPN's scoreboard and summary
+  (DraftKings odds, "{provider} via ESPN"); odds show pre-game only, as vig-free win chances (`winChances`), never spreads or totals.
+  Game days, "Today" and every time are US Central (`NBA_SCHEDULE.timeZone`, "CT"), formatted on the server. Interests = every
+  same-season (`NBA_SCHEDULE.season`) league the session holds a seat in (every retained pick and fade on either team shown, the viewer's
+  rows marked "You") plus the viewer's own saved challenge side (`getViewerEntry`, never `prepareChallenge`, never others' entries). Hidden
+  in the demo (no nav item, never a seat). The schedule always reads ESPN (no static mode), so offline it shows the feed error.
 - Commissioner = `m1` (`commissionerId`), wherever they sit in the draft order. Only the commissioner starts, pauses and
   resumes, picks for unclaimed seats, manages the league invite and resets seats.
 

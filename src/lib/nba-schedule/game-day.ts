@@ -34,7 +34,9 @@ export function daysBetween(a: string, b: string): number {
 /** True for a real calendar date written `YYYY-MM-DD`. */
 export function isGameDay(value: unknown): value is string {
   if (typeof value !== "string" || !DAY_PATTERN.test(value)) return false;
-  return new Date(Date.parse(`${value}T12:00:00Z`)).toISOString().slice(0, 10) === value;
+  const ms = Date.parse(`${value}T12:00:00Z`);
+  if (Number.isNaN(ms)) return false;
+  return new Date(ms).toISOString().slice(0, 10) === value;
 }
 
 /** ESPN's scoreboard date parameter: `YYYYMMDD`. */

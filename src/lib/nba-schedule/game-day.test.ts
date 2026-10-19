@@ -50,7 +50,7 @@ describe("isGameDay", () => {
   });
 
   it("rejects anything else", () => {
-    for (const bad of ["2026-02-30", "2026-10-1", "banana", "", null, 20261021]) {
+    for (const bad of ["2026-02-30", "2026-10-1", "banana", "", null, 20261021, "2026-13-01", "2026-10-32", "2026-00-10", "2026-10-00"]) {
       expect(isGameDay(bad)).toBe(false);
     }
   });
@@ -63,6 +63,10 @@ describe("espnDate", () => {
 });
 
 describe("dateStrip", () => {
+  it("puts the extra day before the given day when n is even", () => {
+    expect(dateStrip("2026-10-21", 4)).toEqual(["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22"]);
+  });
+
   it("centres n days on the given day", () => {
     expect(dateStrip("2026-10-21", 5)).toEqual([
       "2026-10-19",

@@ -102,6 +102,8 @@ describe("formatTimeCT", () => {
   it("formats in Central time", () => {
     expect(formatTimeCT("2026-10-21T00:00Z")).toBe("7:00 PM CT");
     expect(formatTimeCT("2026-12-25T17:00Z")).toBe("11:00 AM CT");
+    expect(formatTimeCT("2026-10-20T05:00Z")).toBe("12:00 AM CT");
+    expect(formatTimeCT("2026-10-20T17:00Z")).toBe("12:00 PM CT");
   });
 });
 

@@ -49,3 +49,8 @@ export function dateStrip(day: string, n: number): string[] {
   const start = shiftGameDay(day, -Math.floor(n / 2));
   return Array.from({ length: n }, (_, i) => shiftGameDay(start, i));
 }
+
+/** How long a day's scoreboard is reused: briefly for today and the days next to it (scores change), longer otherwise. */
+export function scoreboardTtlSeconds(today: string, day: string): number {
+  return Math.abs(daysBetween(today, day)) <= 1 ? NBA_SCHEDULE.currentDayCacheSeconds : NBA_SCHEDULE.otherDayCacheSeconds;
+}

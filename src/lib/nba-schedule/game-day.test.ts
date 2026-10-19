@@ -5,6 +5,7 @@ import {
   espnDate,
   gameDayOf,
   isGameDay,
+  scoreboardTtlSeconds,
   shiftGameDay,
   todayGameDay,
 } from "@/lib/nba-schedule/game-day";
@@ -75,5 +76,18 @@ describe("dateStrip", () => {
       "2026-10-22",
       "2026-10-23",
     ]);
+  });
+});
+
+describe("scoreboardTtlSeconds", () => {
+  it("is the short time for today and the days next to it", () => {
+    expect(scoreboardTtlSeconds("2026-10-21", "2026-10-21")).toBe(60);
+    expect(scoreboardTtlSeconds("2026-10-21", "2026-10-20")).toBe(60);
+    expect(scoreboardTtlSeconds("2026-10-21", "2026-10-22")).toBe(60);
+  });
+
+  it("is the long time for any other day", () => {
+    expect(scoreboardTtlSeconds("2026-10-21", "2026-10-19")).toBe(900);
+    expect(scoreboardTtlSeconds("2026-10-21", "2026-10-23")).toBe(900);
   });
 });

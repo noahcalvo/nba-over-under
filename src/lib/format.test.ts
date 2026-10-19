@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   formatDateTimeET,
   formatGameDate,
+  formatGameDayLong,
+  formatGameDayShort,
   formatNumber,
   formatOrdinal,
   formatRecord,
   formatSigned,
+  formatTimeCT,
   formatUpdatedAt,
   NOT_AVAILABLE,
 } from "@/lib/format";
@@ -92,5 +95,24 @@ describe("formatGameDate", () => {
     expect(formatGameDate("2025-10-22T23:00Z")).toBe("Wed, Oct 22");
     // 01:30 UTC on the 17th is still the 16th in New York.
     expect(formatGameDate("2025-12-17T01:30Z")).toBe("Tue, Dec 16");
+  });
+});
+
+describe("formatTimeCT", () => {
+  it("formats in Central time", () => {
+    expect(formatTimeCT("2026-10-21T00:00Z")).toBe("7:00 PM CT");
+    expect(formatTimeCT("2026-12-25T17:00Z")).toBe("11:00 AM CT");
+  });
+});
+
+describe("formatGameDayShort", () => {
+  it("shows the weekday, month and day", () => {
+    expect(formatGameDayShort("2026-10-21")).toBe("Wed, Oct 21");
+  });
+});
+
+describe("formatGameDayLong", () => {
+  it("shows the full weekday, month, day and year", () => {
+    expect(formatGameDayLong("2026-10-21")).toBe("Wednesday, Oct 21, 2026");
   });
 });

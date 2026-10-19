@@ -1,3 +1,5 @@
+import { NBA_SCHEDULE } from "@/config/schedule";
+
 const MINUS = "−";
 
 export const NOT_AVAILABLE = "Not available";
@@ -79,4 +81,48 @@ const GAME_DATE = new Intl.DateTimeFormat("en-US", {
 /** "Wed, Oct 22": a game's date in US Eastern, the same on the server and every browser. */
 export function formatGameDate(iso: string): string {
   return GAME_DATE.format(new Date(iso));
+}
+
+const CENTRAL_TIME = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: NBA_SCHEDULE.timeZone,
+});
+
+/** "7:00 PM CT": a tip-off time in Central, built from parts so the server and every browser render the same text. */
+export function formatTimeCT(iso: string): string {
+  const part = Object.fromEntries(CENTRAL_TIME.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${part.hour}:${part.minute} ${part.dayPeriod} ${NBA_SCHEDULE.timeZoneLabel}`;
+}
+
+const GAME_DAY_SHORT = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+const GAME_DAY_LONG = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// A game day is a calendar date, so it is formatted at noon UTC: the same date in every time zone.
+function partsOf(formatter: Intl.DateTimeFormat, day: string): Record<string, string> {
+  return Object.fromEntries(formatter.formatToParts(new Date(`${day}T12:00:00Z`)).map((p) => [p.type, p.value]));
+}
+
+/** "Wed, Oct 21": a game day (`YYYY-MM-DD`) without a year. */
+export function formatGameDayShort(day: string): string {
+  const part = partsOf(GAME_DAY_SHORT, day);
+  return `${part.weekday}, ${part.month} ${part.day}`;
+}
+
+/** "Wednesday, Oct 21, 2026": a game day (`YYYY-MM-DD`) with its weekday and year. */
+export function formatGameDayLong(day: string): string {
+  const part = partsOf(GAME_DAY_LONG, day);
+  return `${part.weekday}, ${part.month} ${part.day}, ${part.year}`;
 }

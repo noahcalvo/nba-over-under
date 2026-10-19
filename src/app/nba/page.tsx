@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { SchedulePage } from "@/components/nba/SchedulePage";
 import { PageFallback } from "@/components/ui/PageFallback";
+import { loadSchedulePage } from "@/server/nba-pages";
 
 export const metadata: Metadata = { title: "NBA schedule" };
 
@@ -16,7 +18,8 @@ export default function NbaSchedulePage({ searchParams }: PageProps<"/nba">) {
 }
 
 async function Schedule({ searchParams }: { searchParams: PageProps<"/nba">["searchParams"] }) {
-  // date, view and conf are read by the schedule page itself (Task 9).
-  await searchParams;
-  return <h1 className="text-2xl font-bold">NBA schedule</h1>;
+  const query = await searchParams;
+  const first = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
+  const data = await loadSchedulePage({ date: first(query.date), view: first(query.view), conf: first(query.conf) });
+  return <SchedulePage data={data} />;
 }

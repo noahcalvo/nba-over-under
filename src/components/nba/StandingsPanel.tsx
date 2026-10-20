@@ -36,8 +36,8 @@ export function StandingsPanel({
             <th scope="col" className={`${HEAD} !text-left`}>Team</th>
             <th scope="col" className={`${HEAD} w-6`}>W</th>
             <th scope="col" className={`${HEAD} w-6`}>L</th>
-            <th scope="col" className={`${HEAD} w-11`}>PCT</th>
-            <th scope="col" className={`${HEAD} w-[8.25rem] !text-left @md:w-40`}>Last 5</th>
+            <th scope="col" className={`${HEAD} w-[3.75rem] pr-4 @md:w-11 @md:pr-1.5`}>PCT</th>
+            <th scope="col" className={`${HEAD} hidden !text-left @md:table-cell @md:w-40`}>Last 5</th>
           </tr>
         </thead>
         <tbody className="tabular-nums">
@@ -47,16 +47,18 @@ export function StandingsPanel({
               <td className="px-1.5 py-2">
                 <span className="flex min-w-0 items-center gap-2 text-fog-50">
                   <TeamLogo team={team} size={22} />
-                  <span className="truncate font-semibold">
-                    <span className="@md:hidden">{team.id}</span>
-                    <span className="hidden @md:inline">{team.city} {team.name}</span>
-                  </span>
+                  <span className="truncate font-semibold">{team.name}</span>
+                </span>
+                <span className="mt-1.5 block @md:hidden">
+                  <Suspense fallback={<span className="text-fog-400">—</span>}>
+                    <TeamFormCell forms={forms} teamId={team.id} />
+                  </Suspense>
                 </span>
               </td>
               <td className="px-1.5 py-2 text-right text-fog-50">{wins}</td>
               <td className="px-1.5 py-2 text-right text-fog-50">{losses}</td>
-              <td className="px-1.5 py-2 text-right text-fog-300">{formatPct(pct)}</td>
-              <td className="py-2 pl-1.5 pr-2">
+              <td className="py-2 pl-1.5 pr-4 text-right text-fog-300 @md:pr-1.5">{formatPct(pct)}</td>
+              <td className="hidden py-2 pl-1.5 pr-2 @md:table-cell">
                 <Suspense fallback={<span className="text-fog-400">—</span>}>
                   <TeamFormCell forms={forms} teamId={team.id} />
                 </Suspense>

@@ -67,17 +67,17 @@ export function GameRow({
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <div className="flex w-full items-center gap-2 text-sm @lg:w-28 @lg:flex-col @lg:items-start @lg:gap-1.5">
+        <div className="order-1 flex min-w-0 flex-1 items-center gap-2 text-sm @lg:w-28 @lg:flex-none @lg:flex-col @lg:items-start @lg:gap-1.5">
           <StatusCell game={game} />
           {you && <Badge tone="accent">You</Badge>}
         </div>
-        <div className="grid min-w-0 flex-1 grid-flow-col grid-cols-[minmax(0,1fr)_auto] grid-rows-2 gap-x-4 gap-y-1.5">
+        <div className="order-3 grid w-full min-w-0 grid-flow-col grid-cols-[minmax(0,1fr)_auto] grid-rows-2 gap-x-4 gap-y-1.5 @lg:order-2 @lg:w-auto @lg:flex-1">
           <TeamLine side={game.away} team={away} showScore={game.status !== "scheduled"} />
           <TeamLine side={game.home} team={home} showScore={game.status !== "scheduled"} />
           {odds === "open" && game.odds && <OddsPair game={game} odds={game.odds} />}
           {odds === "unavailable" && <span className="row-span-2 self-center text-xs text-fog-400">Odds unavailable</span>}
         </div>
-        {hasStakes && summary && <InterestAvatars summary={summary} />}
+        {hasStakes && summary && <InterestAvatars summary={summary} className="order-2 @lg:order-3" />}
       </div>
     </Link>
   );

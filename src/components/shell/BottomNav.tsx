@@ -22,22 +22,28 @@ function ItemContent({ item }: { item: NavItem }) {
   );
 }
 
-function NavBar({ children }: { children: ReactNode }) {
+/** Five tabs (the league plus the NBA schedule) need five columns; the demo league has four. */
+function columnsClass(count: number): string {
+  return count > 4 ? "grid-cols-5" : "grid-cols-4";
+}
+
+function NavBar({ count, children }: { count: number; children: ReactNode }) {
   return (
     <nav
       aria-label="League"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-700 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
-      <ul className="grid grid-cols-4">{children}</ul>
+      <ul className={`grid ${columnsClass(count)}`}>{children}</ul>
     </nav>
   );
 }
 
 export function BottomNav({ leagueId }: { leagueId: string }) {
   const pathname = usePathname();
+  const items = navItems(leagueId);
   return (
-    <NavBar>
-      {navItems(leagueId).map((item) => {
+    <NavBar count={items.length}>
+      {items.map((item) => {
         const active = isActive(item, pathname);
         return (
           <li key={item.href}>
@@ -58,9 +64,10 @@ export function BottomNav({ leagueId }: { leagueId: string }) {
 
 /** The same tabs before the league is known (the prerendered shell): they look the same but don't link yet. */
 export function BottomNavSkeleton() {
+  const items = navItems("");
   return (
-    <NavBar>
-      {navItems("").map((item) => (
+    <NavBar count={items.length}>
+      {items.map((item) => (
         <li key={item.label}>
           <span aria-disabled="true" className={itemClass(false)}>
             <ItemContent item={item} />

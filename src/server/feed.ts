@@ -19,7 +19,7 @@ export async function fetchFeedJson(url: string, { source, timeoutMs }: { source
       timedOut ? `${source} didn't respond within ${Math.round(timeoutMs / 1000)} s.` : `Couldn't reach ${source}.`,
     );
   }
-  if (!response.ok) throw new FeedError(`${source} returned HTTP ${response.status}.`);
+  if (!response.ok) throw new FeedError(`${source} returned HTTP ${response.status}.`, { status: response.status });
   try {
     return await response.json();
   } catch {

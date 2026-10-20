@@ -1,0 +1,361 @@
+{
+ "header": {
+  "id": "401810831",
+  "season": {
+   "year": 2026,
+   "current": false,
+   "type": 2
+  },
+  "timeValid": true,
+  "competitions": [
+   {
+    "id": "401810831",
+    "date": "2026-03-15T17:00Z",
+    "neutralSite": false,
+    "conferenceCompetition": false,
+    "boxscoreAvailable": true,
+    "commentaryAvailable": false,
+    "liveAvailable": false,
+    "shotChartAvailable": true,
+    "timeoutsAvailable": true,
+    "possessionArrowAvailable": false,
+    "onWatchESPN": true,
+    "recent": false,
+    "wallclockAvailable": true,
+    "boxscoreSource": "full",
+    "playByPlaySource": "full",
+    "competitors": [
+     {
+      "id": "25",
+      "order": 0,
+      "homeAway": "home",
+      "winner": true,
+      "team": {
+       "id": "25",
+       "guid": "bd458c44-2d33-47eb-cebc-35d3d4ac595c",
+       "location": "Oklahoma City",
+       "name": "Thunder",
+       "abbreviation": "OKC",
+       "displayName": "Oklahoma City Thunder"
+      },
+      "score": "116",
+      "linescores": [
+       {
+        "displayValue": "23"
+       },
+       {
+        "displayValue": "24"
+       },
+       {
+        "displayValue": "33"
+       },
+       {
+        "displayValue": "36"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "53-15",
+        "displayValue": "53-15"
+       },
+       {
+        "type": "home",
+        "summary": "29-7",
+        "displayValue": "29-7"
+       },
+       {
+        "type": "vsconf",
+        "summary": "0-0",
+        "displayValue": "0-0"
+       }
+      ],
+      "possession": false
+     },
+     {
+      "id": "16",
+      "order": 1,
+      "homeAway": "away",
+      "winner": false,
+      "team": {
+       "id": "16",
+       "guid": "13f727cb-254d-b484-a337-93fcc0047add",
+       "location": "Minnesota",
+       "name": "Timberwolves",
+       "abbreviation": "MIN",
+       "displayName": "Minnesota Timberwolves"
+      },
+      "score": "103",
+      "linescores": [
+       {
+        "displayValue": "22"
+       },
+       {
+        "displayValue": "31"
+       },
+       {
+        "displayValue": "23"
+       },
+       {
+        "displayValue": "27"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "41-27",
+        "displayValue": "41-27"
+       },
+       {
+        "type": "road",
+        "summary": "19-15",
+        "displayValue": "19-15"
+       },
+       {
+        "type": "vsconf",
+        "summary": "0-0",
+        "displayValue": "0-0"
+       }
+      ],
+      "possession": false
+     }
+    ],
+    "status": {
+     "type": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     }
+    },
+    "broadcasts": [
+     {
+      "type": {
+       "id": "1",
+       "shortName": "TV"
+      },
+      "market": {
+       "id": "1",
+       "type": "National"
+      },
+      "media": {
+       "shortName": "ABC"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": true
+     }
+    ],
+    "series": [
+     {
+      "type": "season",
+      "title": "Regular Season Series",
+      "description": "Regular Season Series",
+      "summary": "Series tied 2-2",
+      "completed": true,
+      "totalCompetitions": 4,
+      "competitors": [
+       {
+        "id": "25",
+        "wins": 2,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2026/teams/25?lang=en&region=us"
+        }
+       },
+       {
+        "id": "16",
+        "wins": 2,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2026/teams/16?lang=en&region=us"
+        }
+       }
+      ],
+      "events": [
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/events/401809806?lang=en&region=us",
+        "id": "401809806"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/events/401810240?lang=en&region=us",
+        "id": "401810240"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/events/401810541?lang=en&region=us",
+        "id": "401810541"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/events/401810831?lang=en&region=us",
+        "id": "401810831"
+       }
+      ],
+      "startDate": "2025-11-27T00:30Z"
+     }
+    ],
+    "boxscoreMinutes": true
+   }
+  ],
+  "league": {
+   "id": "46",
+   "name": "National Basketball Association",
+   "abbreviation": "NBA",
+   "shortName": "NBA",
+   "slug": "nba",
+   "isTournament": false
+  }
+ },
+ "gameInfo": {
+  "venue": {
+   "id": "2559",
+   "guid": "a14f0853-9b43-3800-8e8c-6557f04dd442",
+   "fullName": "Paycom Center",
+   "shortName": "Chesapeake Energy Arena",
+   "address": {
+    "city": "Oklahoma City",
+    "state": "OK"
+   },
+   "grass": false
+  },
+  "attendance": 18203,
+  "officials": [
+   {
+    "fullName": "Sean Corbin",
+    "displayName": "Sean Corbin",
+    "position": {
+     "name": "Referee",
+     "displayName": "Referee",
+     "id": "40"
+    },
+    "order": 1
+   },
+   {
+    "fullName": "Kevin Scott",
+    "displayName": "Kevin Scott",
+    "position": {
+     "name": "Referee",
+     "displayName": "Referee",
+     "id": "40"
+    },
+    "order": 2
+   },
+   {
+    "fullName": "John Butler",
+    "displayName": "John Butler",
+    "position": {
+     "name": "Referee",
+     "displayName": "Referee",
+     "id": "40"
+    },
+    "order": 3
+   }
+  ]
+ },
+ "pickcenter": [
+  {
+   "provider": {
+    "id": "100",
+    "name": "DraftKings",
+    "priority": 1
+   },
+   "details": "OKC -8.5",
+   "overUnder": 227.5,
+   "spread": -8.5,
+   "overOdds": -115,
+   "underOdds": -105,
+   "awayTeamOdds": {
+    "favorite": false,
+    "underdog": true,
+    "moneyLine": 300,
+    "spreadOdds": -102,
+    "team": {
+     "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2026/teams/16?lang=en&region=us"
+    },
+    "teamId": "16",
+    "favoriteAtOpen": false
+   },
+   "homeTeamOdds": {
+    "favorite": true,
+    "underdog": false,
+    "moneyLine": -380,
+    "spreadOdds": -118,
+    "team": {
+     "$ref": "http://sports.core.api.espn.pvt/v2/sports/basketball/leagues/nba/seasons/2026/teams/25?lang=en&region=us"
+    },
+    "teamId": "25",
+    "favoriteAtOpen": true
+   },
+   "moneyline": {
+    "displayName": "Moneyline",
+    "shortDisplayName": "ML",
+    "home": {
+     "close": {
+      "odds": "-380"
+     },
+     "open": {
+      "odds": "-340"
+     }
+    },
+    "away": {
+     "close": {
+      "odds": "+300"
+     },
+     "open": {
+      "odds": "+270"
+     }
+    }
+   },
+   "pointSpread": {
+    "displayName": "Spread",
+    "shortDisplayName": "Spread",
+    "home": {
+     "close": {
+      "line": "-8.5",
+      "odds": "-118"
+     },
+     "open": {
+      "line": "-8.5",
+      "odds": "-115"
+     }
+    },
+    "away": {
+     "close": {
+      "line": "+8.5",
+      "odds": "-102"
+     },
+     "open": {
+      "line": "+8.5",
+      "odds": "-105"
+     }
+    }
+   },
+   "total": {
+    "displayName": "Total",
+    "shortDisplayName": "Total",
+    "over": {
+     "close": {
+      "line": "o227.5",
+      "odds": "-115"
+     },
+     "open": {
+      "line": "o225.5",
+      "odds": "-110"
+     }
+    },
+    "under": {
+     "close": {
+      "line": "u227.5",
+      "odds": "-105"
+     },
+     "open": {
+      "line": "u225.5",
+      "odds": "-110"
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { Logo } from "@/components/shell/Logo";
 import { CHALLENGE } from "@/config/challenge";
+import { ChallengeLeagues } from "./ChallengeLeagues";
 import { ChallengeBottomNav, ChallengeSidebarNav } from "./ChallengeNav";
 
-/** The challenge frame: sidebar from lg, bottom tab bar below it. No data, so it is all prerendered. */
+/**
+ * The challenge frame: sidebar from lg, bottom tab bar below it. Prerendered; only the mobile header's league menu
+ * streams in (it reads the session).
+ */
 export function ChallengeShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
@@ -16,6 +20,9 @@ export function ChallengeShell({ children }: { children: ReactNode }) {
       </aside>
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5 backdrop-blur lg:hidden">
         <Logo compact />
+        <div className="w-44 min-w-0 sm:w-56">
+          <ChallengeLeagues />
+        </div>
       </header>
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">{children}</main>
       <ChallengeBottomNav />

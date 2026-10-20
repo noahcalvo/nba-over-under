@@ -17,8 +17,21 @@ describe("fetchFeedJson", () => {
   it("names the HTTP status of a failed response", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 403 })));
     await expect(fetchFeedJson("https://example.test/x", OPTS)).rejects.toThrow(
-      new FeedError("ESPN returned HTTP 403."),
+      new FeedError("ESPN returned HTTP 403.", { status: 403 }),
     );
+  });
+
+  it("carries the HTTP status on the error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("gone", { status: 404 })));
+    await expect(fetchFeedJson("https://example.test/x", OPTS)).rejects.toMatchObject({
+      name: "FeedError",
+      status: 404,
+    });
+  });
+
+  it("leaves the status empty when no response came", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("fetch failed"))));
+    await expect(fetchFeedJson("https://example.test/x", OPTS)).rejects.toMatchObject({ status: null });
   });
 
   it("explains a timeout", async () => {

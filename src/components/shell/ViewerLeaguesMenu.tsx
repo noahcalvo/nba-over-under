@@ -2,8 +2,11 @@ import { Suspense } from "react";
 import { listViewerLeagues } from "@/server/league";
 import { LeaguesMenu } from "./LeaguesMenu";
 
-/** The mobile header's way into a league: this browser's leagues stream in; until then the menu only links home. */
-export function ChallengeLeagues() {
+/**
+ * The mobile header's way into a league outside a league (the challenge and NBA pages): this browser's leagues stream
+ * in; until then the menu only links home.
+ */
+export function ViewerLeaguesMenu() {
   return (
     <Suspense fallback={<LeaguesMenu leagues={[]} />}>
       <ViewerLeagues />

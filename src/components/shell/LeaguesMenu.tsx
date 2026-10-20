@@ -2,7 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { LeagueMenu, type LeagueSummary } from "@/components/shell/LeagueSwitcher";
+import { LeagueMenu, type LeagueSummary } from "./LeagueSwitcher";
 
 /** The league switcher's menu without a current league: every league this browser holds a seat in. */
 export function LeaguesMenu({ leagues }: { leagues: LeagueSummary[] }) {

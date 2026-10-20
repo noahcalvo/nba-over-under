@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Logo } from "@/components/shell/Logo";
+import { ViewerLeaguesMenu } from "@/components/shell/ViewerLeaguesMenu";
 import { CHALLENGE } from "@/config/challenge";
-import { ChallengeLeagues } from "./ChallengeLeagues";
 import { ChallengeBottomNav, ChallengeSidebarNav } from "./ChallengeNav";
 
 /**
@@ -21,7 +21,7 @@ export function ChallengeShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5 backdrop-blur lg:hidden">
         <Logo compact />
         <div className="w-44 min-w-0 sm:w-56">
-          <ChallengeLeagues />
+          <ViewerLeaguesMenu />
         </div>
       </header>
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">{children}</main>

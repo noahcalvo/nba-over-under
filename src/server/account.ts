@@ -17,7 +17,10 @@ export const getAccount = cache(async (): Promise<Account | null> => {
   const requestHeaders = await headers();
   const auth = await getAuth();
   if (!auth) return null;
-  const session = await auth.api.getSession({ headers: requestHeaders });
+  // Renders never refresh the session: a render can't set the renewed cookie, so a refresh here would extend the
+  // database row while the browser cookie still expired. Renewal happens through the /api/auth/get-session route
+  // handler (the client account menu calls it once on mount when signed in).
+  const session = await auth.api.getSession({ headers: requestHeaders, query: { disableRefresh: true } });
   if (!session) return null;
   const { id, name, email, image } = session.user;
   return { userId: id, name, email, image: image ?? null };

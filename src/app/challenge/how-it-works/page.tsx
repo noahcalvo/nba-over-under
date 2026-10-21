@@ -1,6 +1,5 @@
 import { ChallengePageHeader } from "@/components/challenge/ChallengePageHeader";
 import { Panel } from "@/components/ui/Panel";
-import { ACCESS } from "@/config/access";
 import { CHALLENGE } from "@/config/challenge";
 import { SCORING } from "@/config/scoring";
 import { formatDateTimeET, formatNumber, formatSigned } from "@/lib/format";
@@ -74,9 +73,9 @@ export default function HowItWorksPage() {
       title: "Fair play",
       body: (
         <p>
-          An entry belongs to the browser that saved it. There are no accounts, so one person could enter from several
-          browsers. Clearing your cookies, or not visiting for {ACCESS.sessionIdleDays} days, loses edit access, though the
-          entry still counts and stays on the leaderboard. Other entries&apos; picks stay hidden until the lock.
+          Your entry belongs to your Google account: sign in anywhere to edit it until the deadline. Each account has one
+          entry per season, though one person could still use several accounts. Other entries&apos; picks stay hidden
+          until the lock.
         </p>
       ),
     },

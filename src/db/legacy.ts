@@ -1,4 +1,4 @@
-import { and, eq, isNull, notExists, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, notExists, sql } from "drizzle-orm";
 import { decideLegacySeat, type LegacySeatOutcome } from "@/lib/access/legacy";
 import { succeed } from "@/lib/league/errors";
 import { bindUserSeat, seatHolder } from "./accounts";
@@ -31,7 +31,7 @@ export async function listLegacyItems(db: Db, sessionId: string, season: number)
 export interface LegacyClaimResult {
   seats: { leagueId: string; leagueName: string; managerId: string; outcome: LegacySeatOutcome }[];
   entry: { id: string; displayName: string; outcome: "moved" | "entry_exists" } | null;
-  /** True once the legacy session row is gone: the route then deletes the cookie. */
+  /** True when this run deleted the legacy session row: the route then deletes the cookie. */
   sessionCleared: boolean;
 }
 
@@ -102,7 +102,10 @@ async function claimEntry(db: Db, sessionId: string, userId: string, season: num
 
 /**
  * Moves what a legacy browser session holds into the signed-in account: each seat under its league's lock, then the
- * season's entry. The session row is deleted once nothing references it (no seats, no entry in any season).
+ * season's entry. Conflicts are final: once the run finishes, the session row is deleted unless an entry of another
+ * season still references it. Its cascade drops conflicted `session_seats` rows, and a conflicting entry of this season
+ * loses its session owner (ON DELETE SET NULL), staying on the leaderboard uneditable. A run that throws midway deletes
+ * nothing, so a retry starts from the same state.
  */
 export async function claimLegacy(db: Db, sessionId: string, userId: string, season: number): Promise<LegacyClaimResult> {
   const seats: LegacyClaimResult["seats"] = [];
@@ -111,15 +114,19 @@ export async function claimLegacy(db: Db, sessionId: string, userId: string, sea
     if (claimed) seats.push(claimed);
   }
   const entry = await claimEntry(db, sessionId, userId, season);
-  await db
+  const deleted = await db
     .delete(sessions)
     .where(
       and(
         eq(sessions.id, sessionId),
-        notExists(db.select({ one: sql`1` }).from(sessionSeats).where(eq(sessionSeats.sessionId, sessionId))),
-        notExists(db.select({ one: sql`1` }).from(challengeEntries).where(eq(challengeEntries.ownerSessionId, sessionId))),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(challengeEntries)
+            .where(and(eq(challengeEntries.ownerSessionId, sessionId), ne(challengeEntries.season, season))),
+        ),
       ),
-    );
-  const [remaining] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.id, sessionId));
-  return { seats, entry, sessionCleared: !remaining };
+    )
+    .returning({ id: sessions.id });
+  return { seats, entry, sessionCleared: deleted.length > 0 };
 }

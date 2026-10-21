@@ -108,9 +108,9 @@ describe("claimLegacy", () => {
     expect((await claimLegacy(db, s1, u1, SEASON)).seats).toMatchObject([{ outcome: "moved" }]);
     const second = await claimLegacy(db, s2, u2, SEASON);
     expect(second.seats).toMatchObject([{ managerId: "m2", outcome: "seat_owned" }]);
-    expect(second.sessionCleared).toBe(false);
-    expect(await sessionRows(s2)).toHaveLength(1);
-    expect(await findSession(db, "hash-s2")).not.toBeNull();
+    expect(second.sessionCleared).toBe(true);
+    expect(await sessionRows(s2)).toEqual([]);
+    expect(await findSession(db, "hash-s2")).toBeNull();
     expect(await seatHolder(db, "lg0001", "m2")).toBe(u1);
   });
 
@@ -120,10 +120,10 @@ describe("claimLegacy", () => {
 
     const result = await claimLegacy(db, session, commissioner, SEASON);
     expect(result.seats).toMatchObject([{ managerId: "m2", outcome: "already_joined" }]);
-    expect(result.sessionCleared).toBe(false);
+    expect(result.sessionCleared).toBe(true);
     expect(await seatHolder(db, "lg0001", "m2")).toBeNull();
     expect(await userSeatInLeague(db, commissioner, "lg0001")).toBe("m1");
-    expect(await sessionRows(session)).toHaveLength(1);
+    expect(await sessionRows(session)).toEqual([]);
   });
 
   it("keeps a conflicting entry", async () => {
@@ -137,11 +137,14 @@ describe("claimLegacy", () => {
     );
     if (!own.ok) throw new Error("save failed");
 
+    const before = await loadEntry(db, "legacy01");
+
     const result = await claimLegacy(db, session, user, SEASON);
     expect(result.entry).toEqual({ id: "legacy01", displayName: "Old", outcome: "entry_exists" });
-    expect(result.sessionCleared).toBe(false);
+    expect(result.sessionCleared).toBe(true);
     const [legacy] = await db.select().from(challengeEntries).where(eq(challengeEntries.id, "legacy01"));
-    expect(legacy).toMatchObject({ ownerSessionId: session, ownerUserId: null });
+    expect(legacy).toMatchObject({ ownerSessionId: null, ownerUserId: null });
+    expect(await loadEntry(db, "legacy01")).toEqual(before);
     expect((await loadEntryForUser(db, SEASON, user))?.id).toBe(own.value.id);
   });
 
@@ -169,6 +172,24 @@ describe("claimLegacy", () => {
     const result = await claimLegacy(db, session, user, 2026);
     expect(result).toEqual({ seats: [], entry: null, sessionCleared: false });
     expect(await loadEntryForSession(db, SEASON, session)).not.toBeNull();
+  });
+
+  it("keeps a session that owns another season's entry while moving this season's items", async () => {
+    const user = await createTestUser(db, "Ben");
+    const session = await createSession(db, "hash-s1");
+    await bindSeat(db, session, "lg0001", "m2");
+    await insertLegacyEntry(session);
+    const past = { ok: true as const, game: { tipoff: "2025-10-20T23:30:00.000Z", teams: ["BOS", "NYK"] as [string, string] } };
+    await syncChallengeSchedule(db, 2026, past, at("2025-10-01T00:00:00Z"));
+    await db.insert(challengeEntries).values({ id: "legacy00", season: 2026, ownerSessionId: session, displayName: "Older", createdAt: SAVED_AT, savedAt: SAVED_AT });
+
+    const result = await claimLegacy(db, session, user, SEASON);
+    expect(result.seats).toMatchObject([{ managerId: "m2", outcome: "moved" }]);
+    expect(result.entry).toMatchObject({ id: "legacy01", outcome: "moved" });
+    expect(result.sessionCleared).toBe(false);
+    expect(await findSession(db, "hash-s1")).not.toBeNull();
+    expect(await sessionRows(session)).toEqual([]);
+    expect((await loadEntryForSession(db, 2026, session))?.id).toBe("legacy00");
   });
 
   it("concurrent claims of one seat by two accounts", async () => {

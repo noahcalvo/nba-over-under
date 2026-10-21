@@ -59,7 +59,7 @@ Node 20. The project uses Vitest 4.1; Vitest 5 needs Node ≥ 22.12.
 ## Limitations
 
 - Only Google sign-in. One person can still enter the 30/30 Challenge from several Google accounts.
-- A manager who loses their Google account needs the commissioner to reset the seat; a commissioner who loses theirs cannot get the commissioner seat back, except through an old personal link.
+- A manager who loses their Google account needs the commissioner to reset the seat; a commissioner who loses their Google account cannot recover the commissioner seat: they can't reset their own seat, and an old personal link only works while no account holds the seat.
 - Lines are the prototype's static mock values; team records are mock data too.
 - Rosters, and the scoring and round settings, are not built yet.
 

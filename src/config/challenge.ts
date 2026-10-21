@@ -1,6 +1,6 @@
 import { LINES } from "./lines";
 
-/** The 30/30 Challenge: one entry per browser per season, every team picked, locked before the season's first game. */
+/** The 30/30 Challenge: one entry per Google account per season, every team picked, locked before the season's first game. */
 export const CHALLENGE = {
   /** The season the challenge runs for: the season FanDuel's lines are for. */
   season: LINES.season,

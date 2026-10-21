@@ -9,6 +9,7 @@ JARS=$(mktemp -d)
 trap 'rm -rf "$JARS"' EXIT
 FAILED=0
 RUN=$(date +%s)-$$
+SIGNED_UP=""
 CODE=""
 BODY=""
 
@@ -33,10 +34,12 @@ check() {
 # signup JAR NAME: signs this "browser" up (and in) as a new development account.
 signup() {
   call "$1" POST /api/auth/sign-up/email "{\"name\":\"$2\",\"email\":\"smoke-$RUN-$1@example.com\",\"password\":\"smoke-password-1\"}"
-  if [ "$CODE" = "404" ] || [ "$CODE" = "503" ]; then
-    echo "Development sign-in is off. Start the server with AUTH_DEV_LOGIN=1 (npm run dev) and run this again." >&2
+  # Any refusal of the first sign-up means development sign-in is off (404/503 without auth env, 400 with Google only).
+  if [ -z "$SIGNED_UP" ] && [ "$CODE" != "200" ]; then
+    echo "Development sign-in is off (sign-up answered $CODE). Start the server with AUTH_DEV_LOGIN=1 (npm run dev) and run this again." >&2
     exit 2
   fi
+  SIGNED_UP=1
   check "$2 signs up" 200 '"token"'
 }
 

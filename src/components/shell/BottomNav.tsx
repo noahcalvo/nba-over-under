@@ -22,9 +22,9 @@ function ItemContent({ item }: { item: NavItem }) {
   );
 }
 
-/** Five tabs (the league plus the NBA schedule) need five columns; the demo league has four. */
+/** Six tabs (the league plus the NBA schedule and the 30/30 Challenge) need six columns; the demo league has four. */
 function columnsClass(count: number): string {
-  return count > 4 ? "grid-cols-5" : "grid-cols-4";
+  return count > 4 ? "grid-cols-6" : "grid-cols-4";
 }
 
 function NavBar({ count, children }: { count: number; children: ReactNode }) {

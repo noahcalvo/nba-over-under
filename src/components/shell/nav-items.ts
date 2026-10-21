@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, House, Settings, UserRound, type LucideIcon } from "lucide-react";
+import { CalendarDays, ClipboardList, House, Settings, UserRound, Zap, type LucideIcon } from "lucide-react";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import type { TourTargetId } from "@/lib/tour/targets";
 
@@ -61,17 +61,29 @@ export function navItems(leagueId: string): NavItem[] {
       clock: true,
     },
   ];
-  // /nba sits outside /l/{id}, so the league shell never marks it active. The demo league has no NBA page of its own.
+  // /nba and /challenge sit outside /l/{id}, so the league shell never marks them active. The demo league keeps to
+  // its own pages.
   if (leagueId !== DEMO_LEAGUE_ID) {
-    items.push({
-      href: "/nba",
-      label: "NBA schedule",
-      shortLabel: "NBA",
-      icon: CalendarDays,
-      ready: true,
-      exact: false,
-      group: "more",
-    });
+    items.push(
+      {
+        href: "/nba",
+        label: "NBA schedule",
+        shortLabel: "NBA",
+        icon: CalendarDays,
+        ready: true,
+        exact: false,
+        group: "more",
+      },
+      {
+        href: "/challenge",
+        label: "30/30 Challenge",
+        shortLabel: "30/30",
+        icon: Zap,
+        ready: true,
+        exact: false,
+        group: "more",
+      },
+    );
   }
   return items;
 }

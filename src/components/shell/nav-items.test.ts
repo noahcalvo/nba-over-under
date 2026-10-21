@@ -17,18 +17,23 @@ describe("navItems", () => {
     ]);
   });
 
-  it("lists the league pages, then the draft room and the NBA schedule", () => {
+  it("lists the league pages, then the draft room, the NBA schedule and the 30/30 Challenge", () => {
     expect(navItems("abc234").map((i) => i.label)).toEqual([
       "League overview",
       "Rosters",
       "League settings",
       "Draft room",
       "NBA schedule",
+      "30/30 Challenge",
     ]);
   });
 
-  it("groups the draft room and the NBA schedule under more", () => {
-    expect(navItems("abc234").filter((i) => i.group === "more").map((i) => i.href)).toEqual(["/l/abc234/draft", "/nba"]);
+  it("groups the draft room, the NBA schedule and the 30/30 Challenge under more", () => {
+    expect(navItems("abc234").filter((i) => i.group === "more").map((i) => i.href)).toEqual([
+      "/l/abc234/draft",
+      "/nba",
+      "/challenge",
+    ]);
   });
 
   it("marks only the draft room with the clock", () => {
@@ -39,7 +44,13 @@ describe("navItems", () => {
     expect(navItems(DEMO_LEAGUE_ID).some((i) => i.href === "/nba")).toBe(false);
   });
 
-  it("never marks the NBA schedule active inside a league", () => {
-    expect(isActive(navItems("abc234")[4], "/l/abc234")).toBe(false);
+  it("omits the 30/30 Challenge from the demo league", () => {
+    expect(navItems(DEMO_LEAGUE_ID).some((i) => i.href === "/challenge")).toBe(false);
+  });
+
+  it("never marks the NBA schedule or the 30/30 Challenge active inside a league", () => {
+    const outside = navItems("abc234").filter((i) => i.href === "/nba" || i.href === "/challenge");
+    expect(outside).toHaveLength(2);
+    expect(outside.some((i) => isActive(i, "/l/abc234"))).toBe(false);
   });
 });

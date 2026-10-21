@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import { createLeagueFor } from "@/db/actions";
 import { loadRefresh, loadSeasonRecords, loadTeamInfo, recordStatus, refreshSeasonRecords, seasonsInUse } from "@/db/records";
-import { createSession } from "@/db/sessions";
-import { createTestDb } from "@/db/test-db";
+import { createTestDb, createTestUser } from "@/db/test-db";
 import { TEAM_INFO } from "@/data/teams";
 import { FeedError } from "@/lib/feed-error";
 import type { RecordSource, SeasonRecords } from "@/lib/records/types";
@@ -127,9 +126,9 @@ describe("recordStatus", () => {
 describe("seasonsInUse", () => {
   it("lists each stored league's season once", async () => {
     expect(await seasonsInUse(db)).toEqual([]);
-    const session = await createSession(db, "hash-a");
-    await createLeagueFor(db, session, { displayName: "Ana" });
-    await createLeagueFor(db, session, { displayName: "Ana" });
+    const ana = await createTestUser(db, "Ana");
+    await createLeagueFor(db, ana, { displayName: "Ana" });
+    await createLeagueFor(db, ana, { displayName: "Ana" });
     const seasons = await seasonsInUse(db);
     expect(seasons).toHaveLength(1);
     expect(seasons[0]).toMatch(/^\d{4}–\d{2}$/);

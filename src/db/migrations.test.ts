@@ -4,11 +4,13 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
+import { bindUserSeat } from "@/db/accounts";
 import { runDraftAction } from "@/db/actions";
 import { MIGRATIONS_FOLDER } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import * as schema from "@/db/schema";
 import { seatInLeague } from "@/db/sessions";
+import { createTestUser } from "@/db/test-db";
 
 // Applies the migration files by hand so a league can be stored in the shape the app wrote before 0004.
 const files = readdirSync(MIGRATIONS_FOLDER)
@@ -58,8 +60,13 @@ it("keeps a league stored before league sizes existed: picks, seats and sessions
   expect(league.managers.map((m) => m.displayName)).toEqual(["Ana", "Ben", null, null]);
   expect(await seatInLeague(db, sessionId, "old001")).toBe("m1");
 
-  const faded = await runDraftAction(db, "old001", sessionId, { type: "fade", managerId: "m1", targetPickNumber: 2 }, null);
-  expect(faded.ok).toBe(true);
+  // The legacy session authorizes nothing; once an account holds the seat, the old league plays on.
+  const fadeAsM1 = (userId: string) =>
+    runDraftAction(db, "old001", userId, { type: "fade", managerId: "m1", targetPickNumber: 2 }, null);
+  expect(await fadeAsM1(sessionId)).toEqual({ ok: false, error: "forbidden" });
+  const userId = await createTestUser(db, "Ana");
+  await bindUserSeat(db, userId, "old001", "m1");
+  expect((await fadeAsM1(userId)).ok).toBe(true);
 });
 
 it("keeps leagues, seats and entries stored before accounts", async () => {

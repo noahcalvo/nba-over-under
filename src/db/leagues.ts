@@ -2,9 +2,9 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { fail, type DomainError, type Result } from "@/lib/league/errors";
 import type { DraftPick, League, Manager } from "@/lib/types";
+import { userSeatInLeague } from "./accounts";
 import type { Db, Tx } from "./client";
 import { fades, leagues, managers, picks, sessionSeats } from "./schema";
-import { seatInLeague } from "./sessions";
 
 type LeagueRow = typeof leagues.$inferSelect;
 
@@ -202,7 +202,7 @@ export async function saveLeague(tx: Tx, before: League, after: League): Promise
 export interface LockedLeague {
   tx: Tx;
   league: League;
-  /** This session's seat in the league, read under the lock. Null for spectators and signed-out browsers. */
+  /** The account's seat in the league, read under the lock. Null for spectators and signed-out viewers. */
   actorId: string | null;
 }
 
@@ -219,6 +219,8 @@ const UNIQUE_VIOLATIONS: Readonly<Record<string, DomainError>> = {
   picks_side_unique: "side_taken",
   picks_manager_team_unique: "team_already_held",
   fades_pkey: "fade_locked",
+  user_seats_pkey: "already_joined",
+  user_seats_seat_unique: "seat_owned",
 };
 
 function uniqueViolation(error: unknown): DomainError | null {
@@ -230,14 +232,14 @@ function uniqueViolation(error: unknown): DomainError | null {
 }
 
 /**
- * The only way to write to a league. In one transaction: lock the league row (SELECT … FOR UPDATE), read this
- * session's seat under the lock, load the league, then run `work`. An error result rolls back everything `work`
- * wrote. Writers to one league run one at a time; reads are not blocked.
+ * The only way to write to a league. In one transaction: lock the league row (SELECT … FOR UPDATE), read the
+ * account's seat (`user_seats`) under the lock, load the league, then run `work`. An error result rolls back
+ * everything `work` wrote. Writers to one league run one at a time; reads are not blocked.
  */
 export async function withLockedLeague<T>(
   db: Db,
   leagueId: string,
-  sessionId: string | null,
+  userId: string | null,
   work: (locked: LockedLeague) => Promise<Result<T>>,
 ): Promise<Result<T>> {
   if (leagueId === DEMO_LEAGUE_ID) return fail("demo_league");
@@ -245,7 +247,7 @@ export async function withLockedLeague<T>(
     return await db.transaction(async (tx) => {
       const [row] = await tx.select().from(leagues).where(eq(leagues.id, leagueId)).for("update");
       if (!row) return fail<T>("not_found");
-      const actorId = sessionId ? await seatInLeague(tx, sessionId, leagueId) : null;
+      const actorId = userId ? await userSeatInLeague(tx, userId, leagueId) : null;
       const result = await work({ tx, league: await assemble(tx, row), actorId });
       if (!result.ok) throw new Abort(result.error);
       return result;
@@ -266,7 +268,7 @@ export interface SeatedLeague {
   manager: Manager;
 }
 
-/** The leagues a session holds a seat in, most recently joined first. */
+/** The leagues a legacy browser session holds a seat in, most recently joined first. Read only by the legacy claim. */
 export async function listSessionLeagues(db: Db, sessionId: string): Promise<SeatedLeague[]> {
   const rows = await db
     .select({

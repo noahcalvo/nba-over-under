@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
-import { createTestDb } from "@/db/test-db";
+import { createTestDb, createTestUser } from "@/db/test-db";
 import {
   countEntries,
   databaseNow,
@@ -265,9 +265,10 @@ describe("saveChallengeEntry", () => {
 
 describe("league lines", () => {
   it("are untouched by challenge writes", async () => {
+    const commissioner = await createTestUser(db, "Ana");
     const owner = await createSession(db, "hash-league");
-    await createLeagueFor(db, owner, { leagueName: "Hoops", displayName: "Ana" }, () => "lg0001");
-    const started = await runDraftAction(db, "lg0001", owner, { type: "start" }, STATIC_LINES);
+    await createLeagueFor(db, commissioner, { leagueName: "Hoops", displayName: "Ana" }, () => "lg0001");
+    const started = await runDraftAction(db, "lg0001", commissioner, { type: "start" }, STATIC_LINES);
     expect(started.ok).toBe(true);
     await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
     const saved = await saveChallengeEntry(

@@ -8,7 +8,7 @@ import { seasonEndYear } from "@/lib/records/season";
 import { getViewerEntry } from "@/server/challenge";
 import { getDb } from "@/server/db";
 import { findLeague, listViewerLeagues } from "@/server/league";
-import { getSession } from "@/server/session";
+import { getLegacySession } from "@/server/session";
 
 export interface PlayerStakes {
   leagues: InterestLeague[];
@@ -42,7 +42,7 @@ async function loadChallengeStake(): Promise<{ stake: ChallengeStakeInput | null
  * loaded and the database is not touched. A league or the challenge that fails to load is skipped and sets `failed`.
  */
 export const loadPlayerStakes = cache(async (): Promise<PlayerStakes> => {
-  if (!(await getSession())) return empty();
+  if (!(await getLegacySession())) return empty();
   let seatedLeagues;
   try {
     seatedLeagues = (await listViewerLeagues()).filter((seat) => seat.seasonLabel === NBA_SCHEDULE.season);

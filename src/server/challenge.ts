@@ -26,7 +26,7 @@ import type { TeamId, TeamInfo } from "@/lib/types";
 import { getDb } from "@/server/db";
 import { gameLogSource } from "@/server/game-log";
 import { readLines } from "@/server/lines";
-import { getSession } from "@/server/session";
+import { getLegacySession } from "@/server/session";
 
 // --- Request preparation: schedule, current lines, freeze ---------------------------------------------------------
 
@@ -140,7 +140,7 @@ export function refreshChallenge(): Promise<PreparedChallenge> {
 
 /** This browser's entry for the season. For rendering only: saves authorize under the season lock. */
 export async function getViewerEntry(db: Db): Promise<ChallengeEntry | null> {
-  const session = await getSession();
+  const session = await getLegacySession();
   return session ? loadEntryForSession(db, CHALLENGE.seasonYear, session.id) : null;
 }
 

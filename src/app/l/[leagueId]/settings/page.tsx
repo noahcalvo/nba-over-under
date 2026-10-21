@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { ScoringRulesPanel } from "@/components/settings/ScoringRulesPanel";
 import { SeatsPanel } from "@/components/access/SeatsPanel";
-import { YourAccessPanel } from "@/components/access/YourAccessPanel";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { getLeagueAccess } from "@/server/access";
@@ -71,13 +70,7 @@ async function SettingsBody({ params }: { params: Params }) {
       </Panel>
     );
   }
+  if (viewerId !== league.commissionerId) return null;
   const access = await getLeagueAccess(league, viewerId);
-  return (
-    <>
-      {viewerId === league.commissionerId && (
-        <SeatsPanel league={league} invitePath={access.invitePath} seatInvitePaths={access.seatInvitePaths} />
-      )}
-      <YourAccessPanel leagueId={league.id} personalPath={access.personalPath} />
-    </>
-  );
+  return <SeatsPanel league={league} invitePath={access.invitePath} seatInvitePaths={access.seatInvitePaths} />;
 }

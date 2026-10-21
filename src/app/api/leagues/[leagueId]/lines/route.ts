@@ -1,7 +1,7 @@
 import { TEAM_IDS } from "@/data/teams";
 import { setLineOverrides } from "@/db/actions";
 import { parseLineValues } from "@/lib/lines";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
 import { toLeagueView } from "@/server/league";
@@ -10,7 +10,7 @@ import { toLeagueView } from "@/server/league";
 export async function PUT(request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/lines">) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const { leagueId } = await ctx.params;
   const overrides = parseLineValues((await readJsonBody(request)).overrides, TEAM_IDS);
   if (!overrides) return errorResponse("invalid_line");

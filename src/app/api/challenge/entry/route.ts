@@ -2,7 +2,7 @@ import { CHALLENGE } from "@/config/challenge";
 import { TEAM_IDS } from "@/data/teams";
 import { saveChallengeEntry } from "@/db/challenge";
 import { parseChallengeSave } from "@/lib/challenge/picks";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
 import { prepareChallenge } from "@/server/challenge";
 
@@ -10,7 +10,7 @@ import { prepareChallenge } from "@/server/challenge";
 export async function PUT(request: Request) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const parsed = parseChallengeSave(await readJsonBody(request), TEAM_IDS);
   if (!parsed.ok) return errorResponse(parsed.error);
   const { db, current } = await prepareChallenge();

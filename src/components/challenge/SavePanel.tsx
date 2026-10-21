@@ -13,6 +13,10 @@ export const NAME_INPUT_ID = "challenge-entry-name";
 /** Where "Sign in to save" goes: back to the board, whose local draft is untouched by the round trip. */
 export const SIGN_IN_TO_SAVE_HREF = signInHref("/challenge");
 
+/** Shown instead of Save while this browser's entry from before sign-in waits to move to the account. */
+export const LEGACY_ENTRY_NOTICE = "You have an entry from before sign-in. Move it to your account first.";
+export const MOVE_LEGACY_HREF = "/account";
+
 /** "Saved …", "Unsaved changes" or what stops the save: one line, for the compact bar. */
 export function saveStatusText({ blocker, dirty, savedAt }: { blocker: string | null; dirty: boolean; savedAt: string | null }) {
   if (blocker) return blocker;
@@ -49,6 +53,7 @@ export function SavePanel({
   dirty,
   locked,
   signedIn,
+  legacyEntry,
 }: {
   name: string;
   onName: (name: string) => void;
@@ -64,6 +69,8 @@ export function SavePanel({
   locked: boolean;
   /** Signed out, saving needs an account: the save button becomes a link to sign in. */
   signedIn: boolean;
+  /** Signed in with a legacy entry still to move: Save waits and a link to the account page takes its place. */
+  legacyEntry: boolean;
 }) {
   if (locked) {
     return (
@@ -91,7 +98,14 @@ export function SavePanel({
           className="h-11 rounded-lg border border-ink-600 bg-ink-900 px-3 text-fog-50 placeholder:text-fog-400 focus:border-accent focus:outline-none"
         />
       </label>
-      {signedIn ? (
+      {signedIn && legacyEntry ? (
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-sm text-fog-50">{LEGACY_ENTRY_NOTICE}</p>
+          <Link href={MOVE_LEGACY_HREF} className={buttonClasses("primary")}>
+            Move it to your account
+          </Link>
+        </div>
+      ) : signedIn ? (
         <button type="button" onClick={onSave} disabled={!canSave || saving} className={`${SAVE_BUTTON} disabled:cursor-not-allowed disabled:opacity-40`}>
           {saving ? "Saving…" : label}
           <ArrowRight aria-hidden className="size-5" />

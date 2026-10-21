@@ -1,7 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
 import { cache } from "react";
-import { getAuth } from "@/server/auth";
+import { authAvailability, getAuth } from "@/server/auth";
 
 /** The signed-in Google account (or development sign-in), for rendering and for authorizing writes. */
 export interface Account {
@@ -25,3 +25,8 @@ export const getAccount = cache(async (): Promise<Account | null> => {
   const { id, name, email, image } = session.user;
   return { userId: id, name, email, image: image ?? null };
 });
+
+/** The error a write returns when nobody is signed in: sign-in when it can work, otherwise that it is unavailable. */
+export function signedOutError(): "sign_in_required" | "auth_unavailable" {
+  return authAvailability().available ? "sign_in_required" : "auth_unavailable";
+}

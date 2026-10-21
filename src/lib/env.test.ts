@@ -98,7 +98,7 @@ describe("readAuthConfig", () => {
       BETTER_AUTH_URL: "https://example.com",
       ...GOOGLE,
     });
-    expect(result.ok && result.config.devLogin).toBe(false);
+    expect(result).toMatchObject({ ok: true, config: { devLogin: false } });
     expect(readAuthConfig({ NODE_ENV: "production", AUTH_DEV_LOGIN: "1", BETTER_AUTH_SECRET: SECRET }).ok).toBe(false);
   });
 

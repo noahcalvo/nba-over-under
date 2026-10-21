@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
+import { listLegacyItems } from "@/db/legacy";
 import { createTestDb, createTestUser } from "@/db/test-db";
 import {
   countEntries,
@@ -10,7 +11,6 @@ import {
   listEntries,
   loadChallengeSeason,
   loadEntry,
-  loadEntryForSession,
   loadEntryForUser,
   loadLatestSnapshot,
   overrideChallengeDeadline,
@@ -272,12 +272,12 @@ describe("saveChallengeEntry", () => {
     const legacySession = await createSession(db, "hash-legacy");
     await db.insert(challengeEntries).values({ id: "legacy01", season: SEASON, ownerSessionId: legacySession, displayName: "Old", createdAt: BEFORE, savedAt: BEFORE });
     expect(await loadEntryForUser(db, SEASON, user)).toBeNull();
-    expect((await loadEntryForSession(db, SEASON, legacySession))?.id).toBe("legacy01");
+    expect((await listLegacyItems(db, legacySession, SEASON)).entry?.id).toBe("legacy01");
     const saved = await save();
     if (!saved.ok) throw new Error("save failed");
     expect(saved.value.id).not.toBe("legacy01");
     expect(await listEntries(db, SEASON)).toHaveLength(2);
-    expect((await loadEntryForSession(db, SEASON, legacySession))?.displayName).toBe("Old");
+    expect((await listLegacyItems(db, legacySession, SEASON)).entry?.displayName).toBe("Old");
   });
   it("uses the database clock when no time is given", async () => {
     const past = { ok: true as const, game: { tipoff: "2020-10-20T23:30:00.000Z", teams: ["BOS", "NYK"] as [string, string] } };

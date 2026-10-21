@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { DevSignInForm } from "@/components/account/DevSignInForm";
 import { GoogleSignInButton } from "@/components/account/GoogleSignInButton";
 import { Logo } from "@/components/shell/Logo";
+import { Alert } from "@/components/ui/Alert";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
 import { safeNextPath } from "@/lib/access/next-path";
@@ -24,7 +25,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
 }
 
 async function SignInContent({ searchParams }: { searchParams: PageProps<"/sign-in">["searchParams"] }) {
-  const { next: rawNext } = await searchParams;
+  const { next: rawNext, error } = await searchParams;
   // A repeated ?next= arrives as an array, which is not a path: it falls back to the home page.
   const next = safeNextPath(rawNext);
   if (await getAccount()) redirect(next);
@@ -43,6 +44,8 @@ async function SignInContent({ searchParams }: { searchParams: PageProps<"/sign-
   return (
     <div className="flex flex-col gap-6">
       <Panel title="Sign in" bodyClassName="flex flex-col gap-4 p-4 sm:p-5">
+        {/* Better Auth sends a cancelled or failed Google sign-in back here with ?error=… */}
+        {error !== undefined && <Alert>Sign-in didn&apos;t finish. Try again.</Alert>}
         <GoogleSignInButton next={next} />
       </Panel>
       {devLogin && (

@@ -1,6 +1,6 @@
 import { runDraftAction } from "@/db/actions";
 import { parseDraftAction } from "@/lib/league/parse-action";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
 import { findLeague, toLeagueView } from "@/server/league";
@@ -16,7 +16,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/leagues/[le
 export async function POST(request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/draft">) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const { leagueId } = await ctx.params;
   const action = parseDraftAction(await readJsonBody(request));
   if (!action) return errorResponse("invalid_request");

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   base64url,
   createLinkId,
-  createSessionToken,
   hashSessionToken,
   isSessionToken,
   signLinkId,
@@ -10,19 +9,18 @@ import {
 } from "@/lib/access/tokens";
 
 const SECRET = "test-link-secret-that-is-long-enough";
+/** A legacy session cookie value: 32 bytes in base64url. */
+const TOKEN = base64url(new Uint8Array(32).fill(7));
 
 describe("session tokens", () => {
-  it("are 32 random bytes in base64url", () => {
-    const token = createSessionToken();
-    expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(isSessionToken(token)).toBe(true);
-    expect(createSessionToken()).not.toBe(token);
+  it("accept 32 bytes in base64url", () => {
+    expect(isSessionToken(TOKEN)).toBe(true);
   });
 
   it("rejects malformed cookie values", () => {
     expect(isSessionToken("")).toBe(false);
     expect(isSessionToken("abc")).toBe(false);
-    expect(isSessionToken(`${createSessionToken()}=`)).toBe(false);
+    expect(isSessionToken(`${TOKEN}=`)).toBe(false);
   });
 
   it("hash to a stable hex SHA-256", async () => {

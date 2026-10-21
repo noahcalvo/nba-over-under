@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { CHALLENGE } from "@/config/challenge";
 import { claimLegacy, type LegacyClaimResult } from "@/db/legacy";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin } from "@/server/http";
 import { getLegacySession, SESSION_COOKIE } from "@/server/session";
@@ -15,7 +15,7 @@ const NOTHING: LegacyClaimResult = { seats: [], entry: null, sessionCleared: fal
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const session = await getLegacySession();
   if (!session) return Response.json(NOTHING);
   const result = await claimLegacy(await getDb(), session.id, account.userId, CHALLENGE.seasonYear);

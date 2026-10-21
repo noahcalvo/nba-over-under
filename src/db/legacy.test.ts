@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { seatHolder, userSeatInLeague } from "@/db/accounts";
 import { createLeagueFor } from "@/db/actions";
-import { freezeChallenge, loadEntry, loadEntryForSession, loadEntryForUser, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
+import { freezeChallenge, loadEntry, loadEntryForUser, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import type { Db } from "@/db/client";
 import { claimLegacy, listLegacyItems } from "@/db/legacy";
 import { challengeEntries, challengePicks, sessionSeats } from "@/db/schema";
@@ -60,7 +60,7 @@ describe("claimLegacy", () => {
     await bindSeat(db, session, "lg0001", "m2");
     await bindSeat(db, session, "lg0002", "m3");
     await insertLegacyEntry(session);
-    const before = await loadEntryForSession(db, SEASON, session);
+    const before = await loadEntry(db, "legacy01");
 
     const result = await claimLegacy(db, session, user, SEASON);
 
@@ -171,7 +171,7 @@ describe("claimLegacy", () => {
     await insertLegacyEntry(session);
     const result = await claimLegacy(db, session, user, 2026);
     expect(result).toEqual({ seats: [], entry: null, sessionCleared: false });
-    expect(await loadEntryForSession(db, SEASON, session)).not.toBeNull();
+    expect((await listLegacyItems(db, session, SEASON)).entry).not.toBeNull();
   });
 
   it("keeps a session that owns another season's entry while moving this season's items", async () => {
@@ -189,7 +189,7 @@ describe("claimLegacy", () => {
     expect(result.sessionCleared).toBe(false);
     expect(await findSession(db, "hash-s1")).not.toBeNull();
     expect(await sessionRows(session)).toEqual([]);
-    expect((await loadEntryForSession(db, 2026, session))?.id).toBe("legacy00");
+    expect((await listLegacyItems(db, session, 2026)).entry?.id).toBe("legacy00");
   });
 
   it("concurrent claims of one seat by two accounts", async () => {

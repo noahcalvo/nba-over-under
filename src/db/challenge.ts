@@ -217,15 +217,6 @@ export async function loadEntryForUser(db: Db, season: number, userId: string): 
   return (await withPicks(db, rows))[0] ?? null;
 }
 
-/** A legacy (pre-sign-in) browser session's entry, for the legacy claim only. */
-export async function loadEntryForSession(db: Db, season: number, sessionId: string): Promise<ChallengeEntry | null> {
-  const rows = await db
-    .select()
-    .from(challengeEntries)
-    .where(and(eq(challengeEntries.season, season), eq(challengeEntries.ownerSessionId, sessionId)));
-  return (await withPicks(db, rows))[0] ?? null;
-}
-
 /** Every saved entry of the season, oldest first. Owners' sessions are never read. */
 export async function listEntries(db: Db, season: number): Promise<ChallengeEntry[]> {
   const rows = await db

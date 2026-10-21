@@ -1,6 +1,6 @@
 import { setLeagueConfig } from "@/db/actions";
 import { parseLeagueConfig } from "@/lib/league/config";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
 import { toLeagueView } from "@/server/league";
@@ -9,7 +9,7 @@ import { toLeagueView } from "@/server/league";
 export async function PUT(request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/config">) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const { leagueId } = await ctx.params;
   const config = parseLeagueConfig(await readJsonBody(request));
   if (!config) return errorResponse("invalid_config");

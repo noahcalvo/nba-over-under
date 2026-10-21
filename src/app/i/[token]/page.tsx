@@ -9,11 +9,13 @@ import { buttonClasses } from "@/components/ui/Button";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
 import { signInHref } from "@/lib/access/next-path";
+import { legacySeatIn } from "@/lib/access/legacy";
 import { linkStatus, type LinkKind } from "@/lib/access/links";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
 import { managerLabel } from "@/lib/league/managers";
 import { getAccount } from "@/server/account";
 import { readLinkToken } from "@/server/access";
+import { getLegacyItems } from "@/server/legacy";
 import { findLeague } from "@/server/league";
 import { getViewerId } from "@/server/session";
 
@@ -76,6 +78,8 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
 
   const account = await getAccount();
   const seat = league.managers.find((manager) => manager.id === link.managerId);
+  // A seat this browser held before sign-in moves first: claiming another seat here would make that move fail for good.
+  const legacySeat = account ? legacySeatIn((await getLegacyItems())?.seats, league.id) : undefined;
 
   return (
     <section className="flex flex-col gap-4">
@@ -86,7 +90,17 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
         </p>
       </div>
       <Panel bodyClassName="p-4 sm:p-5">
-        {account ? (
+        {legacySeat ? (
+          <div className="flex flex-col items-start gap-4">
+            <p className="text-fog-300">
+              This browser already holds <span className="font-semibold text-fog-50">{managerLabel(legacySeat.manager)}</span>{" "}
+              in {league.name} from before sign-in.
+            </p>
+            <Link href="/account" className={buttonClasses("primary", "lg")}>
+              Move it to your account
+            </Link>
+          </div>
+        ) : account ? (
           <LinkClaimForm
             token={token}
             kind={link.kind}

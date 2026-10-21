@@ -17,3 +17,16 @@ export function decideLegacySeat(input: {
   if (input.seatHolderId !== null) return "seat_owned";
   return "moved";
 }
+
+/** The legacy seat this browser holds in a league, if any: a link to that league waits until it moves to the account. */
+export function legacySeatIn<T extends { id: string }>(seats: readonly T[] | undefined, leagueId: string): T | undefined {
+  return seats?.find((seat) => seat.id === leagueId);
+}
+
+/**
+ * Whether the 30/30 board holds Save until the legacy entry moves: signed in, no entry on the account this season,
+ * and this browser's legacy session saved one. Saving first would leave two entries, the old one uneditable.
+ */
+export function holdsSaveForLegacyEntry(input: { signedIn: boolean; hasAccountEntry: boolean; hasLegacyEntry: boolean }): boolean {
+  return input.signedIn && !input.hasAccountEntry && input.hasLegacyEntry;
+}

@@ -1,5 +1,5 @@
 import { refreshLeagueRecords } from "@/db/actions";
-import { getAccount } from "@/server/account";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin } from "@/server/http";
 import { recordSource } from "@/server/records";
@@ -8,7 +8,7 @@ import { recordSource } from "@/server/records";
 export async function POST(request: Request, ctx: RouteContext<"/api/leagues/[leagueId]/records/refresh">) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
   const account = await getAccount();
-  if (!account) return errorResponse("sign_in_required");
+  if (!account) return errorResponse(signedOutError());
   const { leagueId } = await ctx.params;
   const result = await refreshLeagueRecords(await getDb(), leagueId, account.userId, recordSource);
   if (!result.ok) return errorResponse(result.error);

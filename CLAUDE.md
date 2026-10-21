@@ -44,7 +44,7 @@ Next API.
   `NBA_SCHEDULE` (`schedule.ts`: schedule season, source, fetch timeout, Central time zone and label, schedule/summary cache and retry timings, form games and hot/cold thresholds, date strip length).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season awards
   (`awards.ts`), snake draft, formatting, permissions, league commands (`league/commands.ts`: every mutation's
-  decision), tokens and link rules (`access/`; `legacy.ts` the legacy seat decision, `next-path.ts` `safeNextPath` / `signInHref`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
+  decision), tokens and link rules (`access/`; `legacy.ts` the legacy seat decision and guards, `next-path.ts` `safeNextPath` / `signInHref`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
   game logs (`game-log/`: ESPN schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window
   and Y axis (`chart-window.ts`), team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest
   market line), feed errors (`feed-error.ts`), league size rules (`league/config.ts`), draft order
@@ -203,7 +203,8 @@ Next API.
     season; a second entry is `entry_exists`), so sign in anywhere to edit it until the deadline. Legacy entries (saved before
     sign-in) keep `owner_session_id` and stay on the leaderboard, uneditable, until their browser moves them through the legacy
     claim (`/account`): only the owner changes, never picks, lines, names or times, whatever the phase; `entry_exists` if the
-    account already has one. One person can still hold several Google accounts. Name required (1–24 characters, not unique), changeable until the deadline.
+    account already has one. Signed in with no entry and a legacy one waiting, the board holds Save and links to `/account`
+    (`legacyEntry`, `holdsSaveForLegacyEntry`). One person can still hold several Google accounts. Name required (1–24 characters, not unique), changeable until the deadline.
     No endpoint takes an entry id for writing (`PUT /api/challenge/entry` saves the caller's own).
   - Unsaved work is a local draft only (`localStorage` `courtline.challenge.draft.v1.{season}`: picks and name, dropped
     once locked; memory when storage refuses a write, until one succeeds); it never reaches the server until Save.
@@ -232,7 +233,7 @@ Next API.
   `0005_challenge`) are separate from leagues. Saves lock the season row `FOR SHARE` and read `clock_timestamp()` after the lock;
   the freeze and schedule changes lock it `FOR UPDATE`, so they serialize with saves.
 - Identity: Google accounts through Better Auth (`src/server/auth.ts`; tables `users`, `auth_sessions`, `auth_accounts`,
-  `auth_verifications`; cookie `courtline.session_token`; migration `0006_accounts`). Seats are `user_seats` rows (one seat per
+  `auth_verifications`; cookie `courtline.session_token`, `__Secure-` prefixed over HTTPS; migration `0006_accounts`). Seats are `user_seats` rows (one seat per
   account per league, one account per seat, `ON DELETE CASCADE`); a viewer is a manager only through their account. Env:
   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET` (≥ 32 chars), `BETTER_AUTH_URL` (falls back to
   `https://$VERCEL_PROJECT_PRODUCTION_URL`; outside production to `http://localhost:3000`, and the secret to a development
@@ -242,9 +243,10 @@ Next API.
   every `ACCESS.sessionRenewHours`; server renders read the session with `disableRefresh` (a render can't set the cookie), and the
   client `AccountMenu` renews it once on mount through `/api/auth/get-session`. Google needs each redirect URI
   (`{origin}/api/auth/callback/google`) registered, so preview deployments can't sign in. Telemetry is off.
-- Sign-in required (401 `sign_in_required`): creating a league, claiming any link, every league mutation, saving a challenge entry,
+- Sign-in required (401 `sign_in_required`, or 503 `auth_unavailable` when sign-in isn't configured: `signedOutError()`): creating a league, claiming any link, every league mutation, saving a challenge entry,
   the legacy claim. Public league pages, `/nba`, the challenge board, leaderboards, entry pages and the guided demo stay open.
-  `/sign-in?next=<path>`: `safeNextPath` accepts only a same-site path, anything else goes to `/`.
+  `/sign-in?next=<path>`: `safeNextPath` accepts only a same-site path, anything else goes to `/`; a cancelled Google sign-in
+  returns there with `?error=` ("Sign-in didn't finish").
 - Legacy session: cookie `courtline_session` (random token; the database stores its SHA-256; tables `sessions`, `session_seats`)
   predates sign-in. No new one is ever created and it authorizes nothing. A signed-in user whose browser still has one sees
   `LegacyNotice` linking to `/account`; `POST /api/account/legacy` (`claimLegacy`) moves, per item, each seat (under that league's
@@ -254,7 +256,8 @@ Next API.
 - Links (`/i/{token}`, HMAC-signed with `LINK_SECRET`): one shared league invite (claims any open seat; `already_joined` when the
   account holds a seat there), a single-use seat invite (issued by a seat reset), and legacy personal links (no longer issued):
   a personal link only binds a seat no account holds (`seat_owned` when another does, `already_joined` for a different seat).
-  A link never moves a seat between accounts. Signed out, `/i/{token}` shows "Sign in with Google to continue". Opening a link
+  A link never moves a seat between accounts. Signed out, `/i/{token}` shows "Sign in with Google to continue"; signed in with a legacy seat in that league
+  (`legacySeatIn`), it links to `/account` instead of the claim form, so the seat moves first. Opening a link
   never changes anything; only the claim POST does. A seat reset unbinds the account and every legacy session from the seat,
   revokes its personal link and invite, and issues a new seat invite: the recovery for a manager who lost their Google account.
 

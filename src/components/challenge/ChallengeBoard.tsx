@@ -32,7 +32,15 @@ import { BoardTitle } from "./ChallengeFallback";
 import { DeadlinePanel } from "./DeadlinePanel";
 import { MovementPanel } from "./MovementPanel";
 import { ProgressPanel } from "./ProgressPanel";
-import { LockedLinks, NAME_INPUT_ID, SIGN_IN_TO_SAVE_HREF, SavePanel, saveStatusText } from "./SavePanel";
+import {
+  LEGACY_ENTRY_NOTICE,
+  LockedLinks,
+  MOVE_LEGACY_HREF,
+  NAME_INPUT_ID,
+  SIGN_IN_TO_SAVE_HREF,
+  SavePanel,
+  saveStatusText,
+} from "./SavePanel";
 import { ScoringReminder } from "./ScoringReminder";
 import { TeamPickCard } from "./TeamPickCard";
 import { useClock } from "./use-clock";
@@ -178,7 +186,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
 
   async function save() {
     const picks = entryPicks(teamIds, working);
-    if (!picks || !canSave || saving) return;
+    if (!picks || !canSave || saving || data.legacyEntry) return;
     setSaving(true);
     setError(null);
     const result = await putEntry({ displayName: name, picks });
@@ -201,7 +209,8 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
   const missing = data.season?.frozen?.missing ?? [];
   const missingNames = data.teams.filter((team) => missing.includes(team.info.id)).map((team) => `the ${team.info.city} ${team.info.name}`);
   const lockedAt = data.season?.frozen?.lockedAt ?? null;
-  const statusText = saveStatusText({ blocker, dirty, savedAt: saved?.savedAt ?? null });
+  const holdForLegacy = data.signedIn && data.legacyEntry;
+  const statusText = holdForLegacy ? LEGACY_ENTRY_NOTICE : saveStatusText({ blocker, dirty, savedAt: saved?.savedAt ?? null });
 
   return (
     <div className="flex flex-col gap-6 pb-24 xl:pb-0">
@@ -343,6 +352,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
                 dirty={dirty}
                 locked={locked}
                 signedIn={data.signedIn}
+                legacyEntry={data.legacyEntry}
               />
             </div>
           </div>
@@ -356,13 +366,19 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
               <p className="font-display text-xl font-bold leading-tight tabular-nums text-fog-50">
                 {selected} / {teamIds.length}
               </p>
-              <p className={`truncate text-xs ${!blocker && !dirty && saved ? "text-accent" : "text-fog-300"}`}>
+              <p
+                className={`text-xs ${holdForLegacy ? "line-clamp-2" : "truncate"} ${!holdForLegacy && !blocker && !dirty && saved ? "text-accent" : "text-fog-300"}`}
+              >
                 {statusText}
               </p>
             </div>
             {!data.signedIn ? (
               <Link href={SIGN_IN_TO_SAVE_HREF} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[65%] leading-tight`}>
                 Sign in to save
+              </Link>
+            ) : holdForLegacy ? (
+              <Link href={MOVE_LEGACY_HREF} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[55%] leading-tight`}>
+                Move it to your account
               </Link>
             ) : reason === "no_name" ? (
               <Button variant="secondary" size="lg" onClick={focusName} className="shrink-0">

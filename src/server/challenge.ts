@@ -17,6 +17,7 @@ import {
   type ScheduleRead,
 } from "@/db/challenge";
 import { loadSeasonRecords } from "@/db/records";
+import { holdsSaveForLegacyEntry } from "@/lib/access/legacy";
 import { challengePhase } from "@/lib/challenge/phase";
 import { needsDeadlineOverride, openingGame, scheduleCheck } from "@/lib/challenge/schedule";
 import type { ChallengeEntry, ChallengePhase, ChallengeSeason } from "@/lib/challenge/types";
@@ -25,6 +26,7 @@ import { withRecords } from "@/lib/records/merge";
 import type { TeamId, TeamInfo } from "@/lib/types";
 import { getAccount } from "@/server/account";
 import { getDb } from "@/server/db";
+import { getLegacyItems } from "@/server/legacy";
 import { gameLogSource } from "@/server/game-log";
 import { readLines } from "@/server/lines";
 
@@ -165,12 +167,20 @@ export interface ChallengeBoardData {
   signedIn: boolean;
   /** The account's name, offered as the leaderboard name until the viewer types or saves one. */
   accountName: string | null;
+  /** Save waits: the account has no entry this season and this browser's entry from before sign-in has not moved. */
+  legacyEntry: boolean;
 }
 
 export async function loadChallengeBoard(): Promise<ChallengeBoardData> {
   const { db, season, current, teams, phase, now } = await prepareChallenge();
   const account = await getAccount();
   const frozen = season?.frozen ?? null;
+  const entry = await getViewerEntry(db);
+  const legacyEntry = holdsSaveForLegacyEntry({
+    signedIn: account !== null,
+    hasAccountEntry: entry !== null,
+    hasLegacyEntry: !entry && Boolean((await getLegacyItems())?.entry),
+  });
   const lineFor = (teamId: TeamId) => (frozen ? frozen.values : current.values)[teamId] ?? null;
   return {
     seasonLabel: CHALLENGE.season,
@@ -181,8 +191,9 @@ export async function loadChallengeBoard(): Promise<ChallengeBoardData> {
     lines: frozen
       ? { book: frozen.source, asOf: frozen.lockedAt, error: null, frozen: true }
       : { book: current.book, asOf: current.asOf, error: current.error, frozen: false },
-    entry: await getViewerEntry(db),
+    entry,
     signedIn: account !== null,
     accountName: account?.name ?? null,
+    legacyEntry,
   };
 }

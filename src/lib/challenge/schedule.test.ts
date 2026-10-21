@@ -5,7 +5,7 @@ import { parseEspnSchedule } from "@/lib/game-log/espn";
 import orl2027 from "@/lib/game-log/espn-schedule-orl-2027.fixture.json";
 import type { GameLog } from "@/lib/game-log/types";
 import { seasonEndYear } from "@/lib/records/season";
-import { challengeDeadline, openingGame, scheduleCheck } from "./schedule";
+import { challengeDeadline, needsDeadlineOverride, openingGame, scheduleCheck } from "./schedule";
 import type { ChallengeSeason, FrozenLines } from "./types";
 
 const log = (teamId: string, games: GameLog["games"]): GameLog => ({ season: 2027, teamId, games });
@@ -52,7 +52,25 @@ describe("challengeDeadline", () => {
   });
 });
 
+describe("needsDeadlineOverride", () => {
+  const now = new Date("2026-10-21T12:00:00.000Z");
+  const override = "2026-10-25T05:00:00.000Z";
+  it("applies a future override that differs from the stored deadline, even a passed one", () => {
+    expect(needsDeadlineOverride({ deadline: "2026-10-20T18:30:00.000Z" }, override, now)).toBe(true);
+    expect(needsDeadlineOverride({ deadline: null }, override, now)).toBe(true);
+    expect(needsDeadlineOverride(null, override, now)).toBe(true);
+  });
+  it("does nothing once stored, once passed, or without one", () => {
+    expect(needsDeadlineOverride({ deadline: override }, override, now)).toBe(false);
+    expect(needsDeadlineOverride({ deadline: "2026-10-20T18:30:00.000Z" }, override, new Date(override))).toBe(false);
+    expect(needsDeadlineOverride({ deadline: "2026-10-20T18:30:00.000Z" }, null, now)).toBe(false);
+  });
+});
+
 describe("CHALLENGE config", () => {
+  it("has a valid deadline override, if any", () => {
+    if (CHALLENGE.deadlineOverride !== null) expect(Number.isNaN(Date.parse(CHALLENGE.deadlineOverride))).toBe(false);
+  });
   it("keeps the season label and its end year in step", () => {
     expect(seasonEndYear(CHALLENGE.season)).toBe(CHALLENGE.seasonYear);
   });

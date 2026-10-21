@@ -4,7 +4,7 @@ import { Panel } from "@/components/ui/Panel";
 import { ACCESS } from "@/config/access";
 import { CHALLENGE } from "@/config/challenge";
 import { SCORING } from "@/config/scoring";
-import { formatNumber, formatSigned } from "@/lib/format";
+import { formatDateTimeET, formatNumber, formatSigned } from "@/lib/format";
 
 export const metadata: Metadata = { title: "How It Works · 30/30 Challenge" };
 
@@ -32,11 +32,18 @@ export default function HowItWorksPage() {
     {
       title: "The deadline",
       body: (
-        <p>
-          Entries lock {CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season tip-off of{" "}
-          {CHALLENGE.season}, read from the NBA schedule. If the opening game moves before the deadline, so does the
-          deadline. After it, entries are read-only.
-        </p>
+        CHALLENGE.deadlineOverride ? (
+          <p>
+            Entries for {CHALLENGE.season} lock {formatDateTimeET(CHALLENGE.deadlineOverride)}, a deadline moved past the
+            opening game. After it, entries are read-only.
+          </p>
+        ) : (
+          <p>
+            Entries lock {CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season tip-off of{" "}
+            {CHALLENGE.season}, read from the NBA schedule. If the opening game moves before the deadline, so does the
+            deadline. After it, entries are read-only.
+          </p>
+        )
       ),
     },
     {

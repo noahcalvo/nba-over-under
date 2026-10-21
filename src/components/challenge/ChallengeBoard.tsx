@@ -202,7 +202,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
         <p className="max-w-3xl text-lg text-fog-300">
           {locked
             ? "Picks are locked. Every entry scores against the same frozen lines."
-            : `Make your Over/Under picks for all 30 NBA teams. Lines update throughout the preseason. You can change your picks until ${CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season game.`}
+            : `Make your Over/Under picks for all 30 NBA teams. Lines update throughout the preseason. You can change your picks until ${CHALLENGE.deadlineOverride ? "the deadline" : `${CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season game`}.`}
         </p>
       </header>
 

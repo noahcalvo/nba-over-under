@@ -12,6 +12,7 @@ import {
   loadEntry,
   loadEntryForSession,
   loadLatestSnapshot,
+  overrideChallengeDeadline,
   recordLineSnapshot,
   saveChallengeEntry,
   syncChallengeSchedule,
@@ -63,6 +64,38 @@ describe("syncChallengeSchedule", () => {
     await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
     const late = await syncChallengeSchedule(db, SEASON, { ok: true, game: { tipoff: "2026-10-22T23:30:00.000Z", teams: [null, null] } }, at("2026-10-20T23:00:00Z"));
     expect(late.deadline).toBe(DEADLINE);
+  });
+});
+
+describe("deadline override", () => {
+  const OVERRIDE = "2026-10-25T05:00:00.000Z";
+  it("stores the override instead of the schedule's deadline", async () => {
+    const season = await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"), OVERRIDE);
+    expect(season).toMatchObject({ deadline: OVERRIDE, openingGame: { tipoff: TIPOFF } });
+  });
+  it("reopens a frozen season, then freezes again at the new deadline with later lines", async () => {
+    await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
+    await recordLineSnapshot(db, SEASON, lines("2026-10-20T22:00:00.000Z", { MIN: 49.5 }));
+    await freezeChallenge(db, SEASON, { now: at("2026-10-21T00:00:00Z") });
+    const reopened = await overrideChallengeDeadline(db, SEASON, OVERRIDE, at("2026-10-21T12:00:00Z"));
+    expect(reopened).toMatchObject({ deadline: OVERRIDE, frozen: null });
+    const session = await createSession(db, "hash-a");
+    const saved = await saveChallengeEntry(db, { season: SEASON, sessionId: session, displayName: "Ana", picks: allPicks("OVER"), currentLines: {} }, { now: at("2026-10-22T12:00:00Z") });
+    expect(saved.ok).toBe(true);
+    await recordLineSnapshot(db, SEASON, lines("2026-10-24T12:00:00.000Z", { MIN: 47.5 }));
+    expect((await freezeChallenge(db, SEASON, { now: at("2026-10-25T04:59:59Z") }))?.frozen).toBeNull();
+    const refrozen = await freezeChallenge(db, SEASON, { now: at(OVERRIDE) });
+    expect(refrozen?.frozen?.values).toEqual({ MIN: 47.5 });
+  });
+  it("changes nothing for a deadline already passed or already stored", async () => {
+    await syncChallengeSchedule(db, SEASON, opening, at("2026-10-13T12:00:00Z"));
+    await freezeChallenge(db, SEASON, { now: at("2026-10-21T00:00:00Z") });
+    const late = await overrideChallengeDeadline(db, SEASON, OVERRIDE, at(OVERRIDE));
+    expect(late.deadline).toBe(DEADLINE);
+    expect(late.frozen).not.toBeNull();
+    const first = await overrideChallengeDeadline(db, SEASON, OVERRIDE, at("2026-10-21T12:00:00Z"));
+    await recordLineSnapshot(db, SEASON, lines("2026-10-22T00:00:00.000Z", { MIN: 47.5 }));
+    expect(await overrideChallengeDeadline(db, SEASON, OVERRIDE, at("2026-10-22T12:00:00Z"))).toEqual(first);
   });
 });
 

@@ -11,13 +11,14 @@ import {
   loadChallengeSeason,
   loadEntryForSession,
   loadLatestSnapshot,
+  overrideChallengeDeadline,
   recordLineSnapshot,
   syncChallengeSchedule,
   type ScheduleRead,
 } from "@/db/challenge";
 import { loadSeasonRecords } from "@/db/records";
 import { challengePhase } from "@/lib/challenge/phase";
-import { openingGame, scheduleCheck } from "@/lib/challenge/schedule";
+import { needsDeadlineOverride, openingGame, scheduleCheck } from "@/lib/challenge/schedule";
 import type { ChallengeEntry, ChallengePhase, ChallengeSeason } from "@/lib/challenge/types";
 import { FeedError } from "@/lib/feed-error";
 import { withRecords } from "@/lib/records/merge";
@@ -52,7 +53,7 @@ async function readOpeningGame(): Promise<ScheduleRead> {
 /** Reads and stores the schedule; one read at a time per server instance. */
 let scheduleSyncInFlight: Promise<ChallengeSeason> | null = null;
 function syncSchedule(db: Db): Promise<ChallengeSeason> {
-  scheduleSyncInFlight ??= (async () => syncChallengeSchedule(db, CHALLENGE.seasonYear, await readOpeningGame(), new Date()))().finally(() => {
+  scheduleSyncInFlight ??= (async () => syncChallengeSchedule(db, CHALLENGE.seasonYear, await readOpeningGame(), new Date(), CHALLENGE.deadlineOverride))().finally(() => {
     scheduleSyncInFlight = null;
   });
   return scheduleSyncInFlight;
@@ -97,7 +98,8 @@ export interface PreparedChallenge {
 }
 
 /**
- * Brings the challenge up to date for this request: reads the schedule when due (after the response when a future
+ * Brings the challenge up to date for this request: applies CHALLENGE.deadlineOverride while it is in the future (reopening
+ * a locked season), reads the schedule when due (after the response when a future
  * deadline is already stored), reads the current lines until the freeze, and stores the freeze once the deadline passed.
  * The save route and the cron start here; pages use the per-request `prepareChallenge`.
  */
@@ -105,6 +107,9 @@ async function prepare(forceSchedule: boolean): Promise<PreparedChallenge> {
   const db = await getDb();
   const now = new Date();
   let season = await loadChallengeSeason(db, CHALLENGE.seasonYear);
+  if (needsDeadlineOverride(season, CHALLENGE.deadlineOverride, now)) {
+    season = await overrideChallengeDeadline(db, CHALLENGE.seasonYear, CHALLENGE.deadlineOverride, now);
+  }
   const check = scheduleCheck(season, now, forceSchedule);
   if (check === "now") season = await syncSchedule(db);
   if (check === "after") {

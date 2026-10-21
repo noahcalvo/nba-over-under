@@ -160,7 +160,10 @@ Next API.
   is the source of truth): a single-player competition beside the leagues. One side for each of the 30 teams, one entry per
   browser session per season (`CHALLENGE.seasonYear`), editable until one global deadline.
   - Deadline = the season's first regular-season tip-off minus `lockMinutesBeforeTipoff` (30), read from ESPN's team
-    schedules (earliest game across the 30; `src/lib/challenge/schedule.ts`), never hardcoded. No deadline read yet →
+    schedules (earliest game across the 30; `src/lib/challenge/schedule.ts`), unless `CHALLENGE.deadlineOverride` (an ISO
+    time; 2026–27: 2026-10-25 00:00 CT) replaces it. A future override is written by the next challenge request
+    (`overrideChallengeDeadline`): it reopens a season that already locked, dropping its freeze, which is taken again at
+    the new deadline from the snapshots before it. No deadline read yet →
     saving is refused (`deadline_unavailable`). Before the stored deadline, each schedule read (at most every
     `scheduleCheckMinutes` while the challenge is used, plus the daily cron) replaces the tip-off; once the stored deadline
     has passed the challenge stays locked, even if a later read moves the opening game. A read that puts the opening game

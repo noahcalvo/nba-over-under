@@ -29,6 +29,21 @@ export function challengeDeadline(tipoff: string, minutesBefore: number = CHALLE
 }
 
 /**
+ * Whether a fixed deadline must be written to the stored season: it is set, still in the future, and differs from the
+ * stored deadline. The stored season may be locked: a future override reopens it.
+ */
+export function needsDeadlineOverride(
+  season: Pick<ChallengeSeason, "deadline"> | null,
+  override: string | null,
+  now: Date,
+): override is string {
+  if (override === null) return false;
+  const time = Date.parse(override);
+  if (Number.isNaN(time) || time <= now.getTime()) return false;
+  return season?.deadline == null || Date.parse(season.deadline) !== time;
+}
+
+/**
  * Whether a request re-reads the season schedule. skip: frozen, past the stored deadline, or checked within
  * CHALLENGE.scheduleCheckMinutes (unless forced). now: no row, or no deadline yet and stale (the page needs it), or
  * forced (the cron). after: a future deadline is stored and the check is stale, so the read runs after the response.

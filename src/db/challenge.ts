@@ -54,9 +54,16 @@ export type ScheduleRead = { ok: true; game: OpeningGame } | { ok: false; error:
 
 /**
  * Stores a schedule read for the season (creating its row): the opening game and deadline on success, only the error
- * on failure. Once the season is locked or its stored deadline has passed, nothing changes any more.
+ * on failure. The deadline is `deadlineOverride` when given, else the tip-off minus the lock window. Once the season is
+ * locked or its stored deadline has passed, nothing changes any more.
  */
-export async function syncChallengeSchedule(db: Db, season: number, read: ScheduleRead, now: Date): Promise<ChallengeSeason> {
+export async function syncChallengeSchedule(
+  db: Db,
+  season: number,
+  read: ScheduleRead,
+  now: Date,
+  deadlineOverride: string | null = null,
+): Promise<ChallengeSeason> {
   return db.transaction(async (tx) => {
     await tx.insert(challengeSeasons).values({ season }).onConflictDoNothing();
     const [row] = await tx.select().from(challengeSeasons).where(eq(challengeSeasons.season, season)).for("update");
@@ -65,12 +72,31 @@ export async function syncChallengeSchedule(db: Db, season: number, read: Schedu
       ? {
           openingTipoff: new Date(read.game.tipoff),
           openingTeams: read.game.teams,
-          deadline: new Date(challengeDeadline(read.game.tipoff)),
+          deadline: new Date(deadlineOverride ?? challengeDeadline(read.game.tipoff)),
           scheduleCheckedAt: now,
           scheduleError: null,
         }
       : { scheduleCheckedAt: now, scheduleError: read.error };
     const [updated] = await tx.update(challengeSeasons).set(set).where(eq(challengeSeasons.season, season)).returning();
+    return toSeason(updated);
+  });
+}
+
+/**
+ * Sets a fixed future deadline (creating the season's row), reopening a locked season: the stored freeze is dropped
+ * and taken again once the new deadline passes. A deadline at or before `now` changes nothing.
+ */
+export async function overrideChallengeDeadline(db: Db, season: number, deadline: string, now: Date): Promise<ChallengeSeason> {
+  return db.transaction(async (tx) => {
+    await tx.insert(challengeSeasons).values({ season }).onConflictDoNothing();
+    const [row] = await tx.select().from(challengeSeasons).where(eq(challengeSeasons.season, season)).for("update");
+    const time = Date.parse(deadline);
+    if (time <= now.getTime() || row.deadline?.getTime() === time) return toSeason(row);
+    const [updated] = await tx
+      .update(challengeSeasons)
+      .set({ deadline: new Date(time), lockedAt: null, frozenLines: null, frozenLineTimes: null, frozenMissing: null, frozenSource: null })
+      .where(eq(challengeSeasons.season, season))
+      .returning();
     return toSeason(updated);
   });
 }

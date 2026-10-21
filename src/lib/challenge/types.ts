@@ -55,7 +55,7 @@ export interface FrozenLines {
 export interface ChallengeSeason {
   season: number;
   openingGame: OpeningGame | null;
-  /** ISO 8601: the opening tip-off minus CHALLENGE.lockMinutesBeforeTipoff. Null until the schedule is read. */
+  /** ISO 8601: CHALLENGE.deadlineOverride, else the opening tip-off minus CHALLENGE.lockMinutesBeforeTipoff. Null until the schedule is read. */
   deadline: string | null;
   scheduleCheckedAt: string | null;
   /** Why the last schedule read failed; null when it succeeded or none was tried. */

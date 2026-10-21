@@ -97,7 +97,11 @@ export function DeadlinePanel({
         <Countdown ms={remaining ?? 0} />
       )}
       <div className="mt-4 flex flex-col gap-1 text-sm text-fog-400">
-        <p>Picks lock {CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season game.</p>
+        <p>
+          {CHALLENGE.deadlineOverride
+            ? "This season's deadline was moved past the opening game."
+            : `Picks lock ${CHALLENGE.lockMinutesBeforeTipoff} minutes before the first regular-season game.`}
+        </p>
         {deadline && (
           <p>
             Deadline: <span className="text-fog-300">{formatDateTimeET(deadline)}</span>

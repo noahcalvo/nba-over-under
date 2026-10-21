@@ -354,7 +354,8 @@ doesn't exist; then `window.location.assign(next)`). `AccountMenu`: signed out �
 `signInHref(pathname + search)`; signed in → avatar (Google `image` via `next/image` `unoptimized` with
 `referrerPolicy="no-referrer"`, falling back to initials like `ManagerAvatar`) + name, a menu (button with
 `aria-expanded`, closes on Escape and outside click) showing the email and "Sign out" (`authClient.signOut()` then
-`router.refresh()`). Shell placement: `AppShell` sidebar bottom and mobile header; `ChallengeShell` / `NbaShell` header
+`router.refresh()`); when signed in it calls `authClient.getSession()` once on mount — server renders read the
+session with refresh disabled, so this route-handler call is what renews the session and its cookie. Shell placement: `AppShell` sidebar bottom and mobile header; `ChallengeShell` / `NbaShell` header
 beside `ViewerLeaguesMenu`. Must fit 375px headers.
 
 - [ ] **Step 1: Write failing tests** for `safeNextPath` (Review Focus 5): `"/l/abc"` kept; `"/challenge?x=1"` kept;

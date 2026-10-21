@@ -161,10 +161,15 @@ export interface ChallengeBoardData {
   teams: BoardTeam[];
   lines: { book: string; asOf: string | null; error: string | null; frozen: boolean };
   entry: ChallengeEntry | null;
+  /** Whether the viewer is signed in: saving needs an account. */
+  signedIn: boolean;
+  /** The account's name, offered as the leaderboard name until the viewer types or saves one. */
+  accountName: string | null;
 }
 
 export async function loadChallengeBoard(): Promise<ChallengeBoardData> {
   const { db, season, current, teams, phase, now } = await prepareChallenge();
+  const account = await getAccount();
   const frozen = season?.frozen ?? null;
   const lineFor = (teamId: TeamId) => (frozen ? frozen.values : current.values)[teamId] ?? null;
   return {
@@ -177,5 +182,7 @@ export async function loadChallengeBoard(): Promise<ChallengeBoardData> {
       ? { book: frozen.source, asOf: frozen.lockedAt, error: null, frozen: true }
       : { book: current.book, asOf: current.asOf, error: current.error, frozen: false },
     entry: await getViewerEntry(db),
+    signedIn: account !== null,
+    accountName: account?.name ?? null,
   };
 }

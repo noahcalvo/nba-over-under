@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { AccountSlot } from "@/components/account/AccountSlot";
+import { LegacyNotice } from "@/components/account/LegacyNotice";
 import { Logo } from "@/components/shell/Logo";
 import { ViewerLeaguesMenu } from "@/components/shell/ViewerLeaguesMenu";
 import { NBA_SCHEDULE } from "@/config/schedule";
@@ -35,7 +36,10 @@ export function NbaShell({ children }: { children: ReactNode }) {
           <AccountSlot placement="header" />
         </div>
       </header>
-      <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">{children}</main>
+      <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
+        <LegacyNotice />
+        {children}
+      </main>
       <NbaBottomNav />
     </div>
   );

@@ -5,13 +5,17 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { LEAGUE_DEFAULTS } from "@/config/league";
 
+/** The name limit the API enforces (DISPLAY_NAME_MAX; not imported to keep the league commands out of the bundle). */
+const DISPLAY_NAME_MAX = 24;
+
 const inputClasses =
   "h-11 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 text-fog-50 placeholder:text-fog-400 focus:border-accent focus:outline-none";
 
-export function CreateLeagueForm() {
+/** `accountName`: the signed-in account's Google name, offered as the manager name. */
+export function CreateLeagueForm({ accountName }: { accountName: string }) {
   const router = useRouter();
   const [leagueName, setLeagueName] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(accountName.slice(0, DISPLAY_NAME_MAX));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -63,7 +67,7 @@ export function CreateLeagueForm() {
           <input
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
-            maxLength={24}
+            maxLength={DISPLAY_NAME_MAX}
             required
             placeholder="Manager 1"
             className={inputClasses}

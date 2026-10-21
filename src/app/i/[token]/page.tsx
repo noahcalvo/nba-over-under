@@ -8,9 +8,11 @@ import { Logo } from "@/components/shell/Logo";
 import { buttonClasses } from "@/components/ui/Button";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
+import { signInHref } from "@/lib/access/next-path";
 import { linkStatus, type LinkKind } from "@/lib/access/links";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
 import { managerLabel } from "@/lib/league/managers";
+import { getAccount } from "@/server/account";
 import { readLinkToken } from "@/server/access";
 import { findLeague } from "@/server/league";
 import { getViewerId } from "@/server/session";
@@ -18,7 +20,7 @@ import { getViewerId } from "@/server/session";
 const TITLES: Record<LinkKind, string> = {
   league_invite: "Join the league",
   seat_invite: "Rejoin your seat",
-  personal: "Sign in",
+  personal: "Add this seat",
 };
 
 // The link preview chat apps show. Like the page, reading the link here changes nothing.
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: PageProps<"/i/[token]">): Pro
   const title =
     link.kind === "league_invite" || !seat
       ? `Join ${league.name} — NBA over/under pick'em`
-      : `Sign in as ${managerLabel(seat)}`;
+      : `Add ${managerLabel(seat)} to your account`;
   const description = `${league.name} • ${league.seasonLabel}. Draft Overs and Unders on every NBA win total.`;
   // A page's openGraph replaces the root's, so name the site-wide card again. The tab keeps the root's "Courtline".
   const images = [{ url: "/opengraph-image", alt: ogImageAlt, ...ogImageSize }];
@@ -72,6 +74,9 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
     redirect(`/l/${league.id}`);
   }
 
+  const account = await getAccount();
+  const seat = league.managers.find((manager) => manager.id === link.managerId);
+
   return (
     <section className="flex flex-col gap-4">
       <div>
@@ -81,12 +86,31 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
         </p>
       </div>
       <Panel bodyClassName="p-4 sm:p-5">
-        <LinkClaimForm
-          token={token}
-          kind={link.kind}
-          league={{ id: league.id, name: league.name, managers: league.managers }}
-          seatId={link.managerId}
-        />
+        {account ? (
+          <LinkClaimForm
+            token={token}
+            kind={link.kind}
+            league={{ id: league.id, name: league.name, managers: league.managers }}
+            seatId={link.managerId}
+            accountName={account.name}
+          />
+        ) : (
+          <div className="flex flex-col items-start gap-4">
+            {link.kind === "personal" && seat ? (
+              <p className="text-fog-300">
+                This link adds <span className="font-semibold text-fog-50">{managerLabel(seat)}</span> in {league.name} to
+                your account.
+              </p>
+            ) : link.kind === "seat_invite" && seat ? (
+              <p className="text-fog-300">Rejoin as {managerLabel(seat)}. The seat&apos;s picks are kept.</p>
+            ) : (
+              <p className="text-fog-300">Join {league.name} as one of its managers.</p>
+            )}
+            <Link href={signInHref(`/i/${token}`)} className={buttonClasses("primary", "lg")}>
+              Sign in with Google to continue
+            </Link>
+          </div>
+        )}
       </Panel>
     </section>
   );

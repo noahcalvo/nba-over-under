@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { AccountSlot } from "@/components/account/AccountSlot";
+import { LegacyNotice } from "@/components/account/LegacyNotice";
 import { BottomNavSkeleton } from "./BottomNav";
 import { CurrentLeagueProvider, type LeagueChrome } from "./CurrentLeague";
 import { LeagueSwitcherSkeleton } from "./LeagueSwitcher";
@@ -38,6 +39,7 @@ export function AppShell({ chrome, children }: { chrome: Promise<LeagueChrome | 
         </div>
       </header>
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
+        <LegacyNotice />
         <CurrentLeagueProvider chrome={chrome}>{children}</CurrentLeagueProvider>
       </main>
       <Suspense fallback={<BottomNavSkeleton />}>

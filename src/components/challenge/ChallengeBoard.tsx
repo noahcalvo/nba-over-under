@@ -1,10 +1,11 @@
 "use client";
 
 import { CalendarClock, Lock, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
 import { CHALLENGE } from "@/config/challenge";
 import {
@@ -31,7 +32,7 @@ import { BoardTitle } from "./ChallengeFallback";
 import { DeadlinePanel } from "./DeadlinePanel";
 import { MovementPanel } from "./MovementPanel";
 import { ProgressPanel } from "./ProgressPanel";
-import { LockedLinks, NAME_INPUT_ID, SavePanel, saveStatusText } from "./SavePanel";
+import { LockedLinks, NAME_INPUT_ID, SIGN_IN_TO_SAVE_HREF, SavePanel, saveStatusText } from "./SavePanel";
 import { ScoringReminder } from "./ScoringReminder";
 import { TeamPickCard } from "./TeamPickCard";
 import { useClock } from "./use-clock";
@@ -96,7 +97,11 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
   const savedPicks = saved?.picks ?? [];
 
   const working: PickMap = draft?.picks ?? (saved ? pickMap(saved.picks) : EMPTY_PICKS);
-  const name = draft?.name ?? saved?.displayName ?? "";
+  // What was typed or saved. The account's name only fills a field that would otherwise be empty, and stops once the
+  // viewer edits the field (clearing it must not bring the name straight back).
+  const typedName = draft?.name ?? saved?.displayName ?? "";
+  const [nameTouched, setNameTouched] = useState(false);
+  const name = typedName !== "" || nameTouched ? typedName : (data.accountName ?? "").slice(0, CHALLENGE.nameMaxLength);
 
   const [filter, setFilter] = useState<TeamFilter>("all");
   const [movedOnly, setMovedOnly] = useState(false);
@@ -114,7 +119,8 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
   const cards = boardCards(data.teams, working, savedPicks);
   const visible = sortTeams(filterTeams(cards, filter, movedOnly), sort);
   const selected = pickCount(teamIds, working);
-  const dirty = !locked && hasUnsavedChanges(saved, working, name);
+  // The offered name alone is not a change: with nothing picked or typed there is nothing to warn about or discard.
+  const dirty = !locked && hasUnsavedChanges(saved, working, typedName);
   const currentLines: Record<TeamId, number> = Object.fromEntries(
     data.teams.flatMap((team) => (team.line === null ? [] : [[team.info.id, team.line]])),
   );
@@ -181,7 +187,9 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
       setSavedOverride(result.entry);
       // Keep anything changed while the request was out; drop the draft the server now holds.
       const current = getDraft(season);
-      writeDraft(season, current && hasUnsavedChanges(result.entry, current.picks, current.name) ? current : null);
+      // A draft that never held a typed name was saved under the offered one.
+      const currentName = current?.name === "" ? result.entry.displayName : (current?.name ?? "");
+      writeDraft(season, current && hasUnsavedChanges(result.entry, current.picks, currentName) ? current : null);
       setAnnouncement(`Saved ${formatDateTimeET(result.entry.savedAt)}`);
       router.refresh();
     } else {
@@ -321,7 +329,10 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
             <div className={!frozen ? "sm:col-span-2 xl:col-span-1" : ""}>
               <SavePanel
                 name={name}
-                onName={(next) => update((base) => ({ ...base, name: next }))}
+                onName={(next) => {
+                  setNameTouched(true);
+                  update((base) => ({ ...base, name: next }));
+                }}
                 canSave={canSave}
                 label={label}
                 blocker={blocker}
@@ -331,6 +342,7 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
                 onDiscard={() => writeDraft(season, null)}
                 dirty={dirty}
                 locked={locked}
+                signedIn={data.signedIn}
               />
             </div>
           </div>
@@ -348,7 +360,11 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
                 {statusText}
               </p>
             </div>
-            {reason === "no_name" ? (
+            {!data.signedIn ? (
+              <Link href={SIGN_IN_TO_SAVE_HREF} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[65%] leading-tight`}>
+                Sign in to save
+              </Link>
+            ) : reason === "no_name" ? (
               <Button variant="secondary" size="lg" onClick={focusName} className="shrink-0">
                 Add your name
               </Button>

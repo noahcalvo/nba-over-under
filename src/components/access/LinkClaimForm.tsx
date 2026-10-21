@@ -10,6 +10,9 @@ import { findManager, managerLabel, openSeats } from "@/lib/league/managers";
 import type { League } from "@/lib/types";
 import { sendJson } from "./send-json";
 
+/** The name limit the API enforces (DISPLAY_NAME_MAX; not imported to keep the league commands out of the bundle). */
+const DISPLAY_NAME_MAX = 24;
+
 const inputClasses =
   "h-11 rounded-lg border border-ink-600 bg-ink-900 px-3 text-fog-50 focus:border-accent focus:outline-none";
 
@@ -21,18 +24,23 @@ export function LinkClaimForm({
   kind,
   league,
   seatId,
+  accountName,
 }: {
   token: string;
   kind: LinkKind;
   league: ClaimLeague;
   /** The link's seat. Null for a league invite. */
   seatId: string | null;
+  /** The signed-in account's Google name: offered as the manager name unless the seat already has one. */
+  accountName: string;
 }) {
   const router = useRouter();
   const seat = findManager(league.managers, seatId);
   const open = openSeats(league.managers);
   const [managerId, setManagerId] = useState(open[0]?.id ?? "");
-  const [displayName, setDisplayName] = useState(kind === "seat_invite" ? (seat?.displayName ?? "") : "");
+  const [displayName, setDisplayName] = useState(
+    kind === "seat_invite" && seat?.displayName ? seat.displayName : accountName.slice(0, DISPLAY_NAME_MAX),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -72,13 +80,13 @@ export function LinkClaimForm({
         <div className="flex items-center gap-3">
           <ManagerAvatar manager={seat} />
           <p className="text-fog-300">
-            This link signs this browser in as <span className="font-semibold text-fog-50">{managerLabel(seat)}</span>{" "}
-            in {league.name}.
+            This link adds <span className="font-semibold text-fog-50">{managerLabel(seat)}</span> in {league.name} to
+            your account.
           </p>
         </div>
         {errorMessage}
         <Button type="submit" size="lg" disabled={pending}>
-          {pending ? "Signing in…" : `Continue as ${managerLabel(seat)}`}
+          {pending ? "Adding…" : "Add to my account"}
         </Button>
       </form>
     );
@@ -128,7 +136,7 @@ export function LinkClaimForm({
         <input
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
-          maxLength={24}
+          maxLength={DISPLAY_NAME_MAX}
           required
           className={inputClasses}
         />

@@ -1,8 +1,10 @@
 import { Suspense } from "react";
+import { YourAccountPanel } from "@/components/account/YourAccountPanel";
 import { ScoringRulesPanel } from "@/components/settings/ScoringRulesPanel";
 import { SeatsPanel } from "@/components/access/SeatsPanel";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Panel } from "@/components/ui/Panel";
+import { getAccount } from "@/server/account";
 import { getLeagueAccess } from "@/server/access";
 import { getLeagueOrNotFound } from "@/server/league";
 import { getViewerId } from "@/server/session";
@@ -62,15 +64,24 @@ async function SettingsBody({ params }: { params: Params }) {
       </Panel>
     );
   }
-  const viewerId = await getViewerId(league.id);
+  const [viewerId, account] = await Promise.all([getViewerId(league.id), getAccount()]);
+  const accountPanel = account && <YourAccountPanel email={account.email} />;
   if (viewerId === null) {
     return (
-      <Panel bodyClassName="p-4 text-fog-300 sm:p-5">
-        Only managers in this league can see its links. Ask your commissioner for the league invite link.
-      </Panel>
+      <>
+        <Panel bodyClassName="p-4 text-fog-300 sm:p-5">
+          Only managers in this league can see its links. Ask your commissioner for the league invite link.
+        </Panel>
+        {accountPanel}
+      </>
     );
   }
-  if (viewerId !== league.commissionerId) return null;
+  if (viewerId !== league.commissionerId) return accountPanel;
   const access = await getLeagueAccess(league, viewerId);
-  return <SeatsPanel league={league} invitePath={access.invitePath} seatInvitePaths={access.seatInvitePaths} />;
+  return (
+    <>
+      <SeatsPanel league={league} invitePath={access.invitePath} seatInvitePaths={access.seatInvitePaths} />
+      {accountPanel}
+    </>
+  );
 }

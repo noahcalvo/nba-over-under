@@ -61,3 +61,40 @@ it("keeps a league stored before league sizes existed: picks, seats and sessions
   const faded = await runDraftAction(db, "old001", sessionId, { type: "fade", managerId: "m1", targetPickNumber: 2 }, null);
   expect(faded.ok).toBe(true);
 });
+
+it("keeps leagues, seats and entries stored before accounts", async () => {
+  const client = new PGlite();
+  for (const file of files.filter((name) => name < "0006")) await apply(client, file);
+
+  await client.query(
+    `insert into leagues (id, name, season_label, commissioner_id, rounds, draft_status) values ('old002', 'Old', '2026–27', 'm1', 11, 'not_started')`,
+  );
+  for (const [seat, name] of ["Ana", "Ben", null, null].entries()) {
+    await client.query(`insert into managers (league_id, id, seat, display_name) values ('old002', $1, $2, $3)`, [
+      `m${seat + 1}`,
+      seat,
+      name,
+    ]);
+  }
+  const session = await client.query<{ id: string }>(
+    `insert into sessions (token_hash, expires_at) values ('hash-old2', now() + interval '30 days') returning id`,
+  );
+  const sessionId = session.rows[0].id;
+  await client.query(`insert into session_seats (session_id, league_id, manager_id) values ($1, 'old002', 'm1')`, [sessionId]);
+  await client.query(`insert into challenge_seasons (season) values (2027)`);
+  await client.query(
+    `insert into challenge_entries (id, season, owner_session_id, display_name, saved_at) values ('entry1', 2027, $1, 'Ana', now())`,
+    [sessionId],
+  );
+
+  for (const file of files.filter((name) => name >= "0006")) await apply(client, file);
+  const db = drizzle({ client, schema });
+
+  const league = (await loadLeague(db, "old002"))!;
+  expect(league).toMatchObject({ id: "old002", name: "Old", draft: { status: "not_started", rounds: 11 } });
+  expect(league.managers.map((m) => m.displayName)).toEqual(["Ana", "Ben", null, null]);
+  expect(await seatInLeague(db, sessionId, "old002")).toBe("m1");
+  const [entry] = await db.select().from(schema.challengeEntries);
+  expect(entry).toMatchObject({ id: "entry1", ownerSessionId: sessionId, ownerUserId: null });
+  expect(await db.select().from(schema.userSeats)).toEqual([]);
+});

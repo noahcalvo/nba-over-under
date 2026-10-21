@@ -6,9 +6,9 @@ import { loadChallengeSeason } from "@/db/challenge";
 import type { ChallengeStakeInput, InterestLeague } from "@/lib/nba-schedule/interest";
 import { seasonEndYear } from "@/lib/records/season";
 import { getViewerEntry } from "@/server/challenge";
+import { getAccount } from "@/server/account";
 import { getDb } from "@/server/db";
 import { findLeague, listViewerLeagues } from "@/server/league";
-import { getLegacySession } from "@/server/session";
 
 export interface PlayerStakes {
   leagues: InterestLeague[];
@@ -37,12 +37,12 @@ async function loadChallengeStake(): Promise<{ stake: ChallengeStakeInput | null
 }
 
 /**
- * What this browser has riding on NBA games: its seats in leagues of the schedule's season and its 30/30 Challenge
- * entry. Read-only (never prepares the challenge: no schedule sync, freeze or line read). Without a session nothing is
+ * What the signed-in account has riding on NBA games: its seats in leagues of the schedule's season and its 30/30 Challenge
+ * entry. Read-only (never prepares the challenge: no schedule sync, freeze or line read). Signed out, nothing is
  * loaded and the database is not touched. A league or the challenge that fails to load is skipped and sets `failed`.
  */
 export const loadPlayerStakes = cache(async (): Promise<PlayerStakes> => {
-  if (!(await getLegacySession())) return empty();
+  if (!(await getAccount())) return empty();
   let seatedLeagues;
   try {
     seatedLeagues = (await listViewerLeagues()).filter((seat) => seat.seasonLabel === NBA_SCHEDULE.season);

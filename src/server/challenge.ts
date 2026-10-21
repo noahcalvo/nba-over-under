@@ -9,7 +9,7 @@ import type { Db } from "@/db/client";
 import {
   freezeChallenge,
   loadChallengeSeason,
-  loadEntryForSession,
+  loadEntryForUser,
   loadLatestSnapshot,
   overrideChallengeDeadline,
   recordLineSnapshot,
@@ -23,10 +23,10 @@ import type { ChallengeEntry, ChallengePhase, ChallengeSeason } from "@/lib/chal
 import { FeedError } from "@/lib/feed-error";
 import { withRecords } from "@/lib/records/merge";
 import type { TeamId, TeamInfo } from "@/lib/types";
+import { getAccount } from "@/server/account";
 import { getDb } from "@/server/db";
 import { gameLogSource } from "@/server/game-log";
 import { readLines } from "@/server/lines";
-import { getLegacySession } from "@/server/session";
 
 // --- Request preparation: schedule, current lines, freeze ---------------------------------------------------------
 
@@ -138,10 +138,10 @@ export function refreshChallenge(): Promise<PreparedChallenge> {
   return prepare(true);
 }
 
-/** This browser's entry for the season. For rendering only: saves authorize under the season lock. */
+/** The signed-in account's entry for the season. For rendering only: saves authorize under the season lock. */
 export async function getViewerEntry(db: Db): Promise<ChallengeEntry | null> {
-  const session = await getLegacySession();
-  return session ? loadEntryForSession(db, CHALLENGE.seasonYear, session.id) : null;
+  const account = await getAccount();
+  return account ? loadEntryForUser(db, CHALLENGE.seasonYear, account.userId) : null;
 }
 
 // --- The board ----------------------------------------------------------------------------------------------------

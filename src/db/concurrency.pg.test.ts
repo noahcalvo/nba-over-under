@@ -7,13 +7,12 @@ import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
 import { TEAM_INFO } from "@/data/teams";
 import { seatHolder } from "@/db/accounts";
-import { listEntries, loadEntryForSession, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
+import { listEntries, loadEntryForUser, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import { claimLink, createLeagueFor, resetSeat, runDraftAction, setDraftOrder, setLeagueConfig } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import { issueLink, listActiveLinks } from "@/db/links";
 import * as schema from "@/db/schema";
-import { createSession } from "@/db/sessions";
 import { createTestUser } from "@/db/test-db";
 import { blockedDraft, confirmsOf } from "@/lib/draft-scenarios";
 import { randomLeagueId } from "@/lib/league/commands";
@@ -47,19 +46,19 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
     return { leagueId, commissioner };
   }
 
-  it("creates one entry when a session saves in parallel for the first time", async () => {
+  it("creates one entry when an account saves in parallel for the first time", async () => {
     const season = 3000 + Math.floor(Math.random() * 20000);
     const tipoff = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     await syncChallengeSchedule(db, season, { ok: true, game: { tipoff, teams: [null, null] } }, new Date());
-    const sessionId = await createSession(db, crypto.randomUUID());
+    const userId = await createTestUser(db, "Ana");
     const picks = Object.fromEntries(TEAM_INFO.map((team) => [team.id, "OVER" as const]));
     const results = await Promise.all(
       Array.from({ length: PARALLEL }, () =>
-        saveChallengeEntry(db, { season, sessionId, displayName: "Ana", picks, currentLines: STATIC_LINES.values }),
+        saveChallengeEntry(db, { season, userId, displayName: "Ana", picks, currentLines: STATIC_LINES.values }),
       ),
     );
     expect(results.every((result) => result.ok)).toBe(true);
-    const entry = await loadEntryForSession(db, season, sessionId);
+    const entry = await loadEntryForUser(db, season, userId);
     expect(entry?.picks).toHaveLength(30);
     expect(await listEntries(db, season)).toHaveLength(1);
     expect(new Set(results.map((result) => (result.ok ? result.value.id : null)))).toEqual(new Set([entry?.id]));

@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChallengeTeamDetail } from "@/components/challenge/ChallengeTeamDetail";
 import { ResultsFallback } from "@/components/challenge/ResultsFallback";
 import { loadChallengeTeam } from "@/server/challenge-pages";
-
-export const metadata: Metadata = { title: "Team · 30/30 Challenge" };
 
 export default function ChallengeTeamPage({ params }: PageProps<"/challenge/teams/[teamId]">) {
   return (

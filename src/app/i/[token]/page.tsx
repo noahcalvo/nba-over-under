@@ -34,9 +34,9 @@ export async function generateMetadata({ params }: PageProps<"/i/[token]">): Pro
       ? `Join ${league.name} — NBA over/under pick'em`
       : `Sign in as ${managerLabel(seat)}`;
   const description = `${league.name} • ${league.seasonLabel}. Draft Overs and Unders on every NBA win total.`;
-  // A page's openGraph replaces the root's, so name the site-wide card again.
+  // A page's openGraph replaces the root's, so name the site-wide card again. The tab keeps the root's "Courtline".
   const images = [{ url: "/opengraph-image", alt: ogImageAlt, ...ogImageSize }];
-  return { title, description, openGraph: { title, description, siteName: "Courtline", images } };
+  return { description, openGraph: { title, description, siteName: "Courtline", images } };
 }
 
 export default function LinkPage({ params }: PageProps<"/i/[token]">) {

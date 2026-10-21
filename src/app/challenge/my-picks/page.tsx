@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ChallengePageHeader } from "@/components/challenge/ChallengePageHeader";
@@ -10,8 +9,6 @@ import { CHALLENGE } from "@/config/challenge";
 import { isLocked } from "@/lib/challenge/phase";
 import { loadMyResults } from "@/server/challenge-pages";
 import { prepareChallenge } from "@/server/challenge";
-
-export const metadata: Metadata = { title: "My Picks · 30/30 Challenge" };
 
 export default function MyPicksPage() {
   return (

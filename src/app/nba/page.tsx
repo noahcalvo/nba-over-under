@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SchedulePage } from "@/components/nba/SchedulePage";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { loadSchedulePage } from "@/server/nba-pages";
-
-export const metadata: Metadata = { title: "NBA schedule" };
 
 /** A revisit within this many seconds reuses the last render instead of waiting for the server (see CLAUDE.md). */
 export const unstable_dynamicStaleTime = 60;

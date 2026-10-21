@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
 import { ChallengePageHeader } from "@/components/challenge/ChallengePageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { ACCESS } from "@/config/access";
 import { CHALLENGE } from "@/config/challenge";
 import { SCORING } from "@/config/scoring";
 import { formatDateTimeET, formatNumber, formatSigned } from "@/lib/format";
-
-export const metadata: Metadata = { title: "How It Works · 30/30 Challenge" };
 
 export default function HowItWorksPage() {
   const margin = formatNumber(SCORING.marginWeight);

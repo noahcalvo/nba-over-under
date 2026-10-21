@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { GameError, GamePage } from "@/components/nba/GamePage";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { loadGamePage } from "@/server/nba-pages";
-
-export const metadata: Metadata = { title: "NBA game" };
 
 /** A revisit within this many seconds reuses the last render instead of waiting for the server (see CLAUDE.md). */
 export const unstable_dynamicStaleTime = 60;

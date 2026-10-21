@@ -36,6 +36,10 @@ const STATUS: Record<ApiError, number> = {
   deadline_unavailable: 503,
   incomplete_entry: 400,
   invalid_picks: 400,
+  sign_in_required: 401,
+  seat_owned: 409,
+  entry_exists: 409,
+  auth_unavailable: 503,
 };
 
 export function errorResponse(error: ApiError): Response {

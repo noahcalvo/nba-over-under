@@ -1,6 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
+import { onTestFinished } from "vitest";
 import { MIGRATIONS_FOLDER, type Db } from "./client";
 import * as schema from "./schema";
 import { users } from "./schema";
@@ -14,11 +15,13 @@ async function migratedTemplate(): Promise<PGlite> {
   return client;
 }
 
-/** A fresh, migrated, in-memory database. */
+/** A fresh, migrated, in-memory database, closed when the test that asked for it finishes. */
 export async function createTestDb(): Promise<Db> {
   template ??= migratedTemplate();
   // clone() is typed as the PGlite interface but returns a PGlite instance.
   const client = (await (await template).clone()) as PGlite;
+  // An open PGlite holds its WebAssembly memory for the life of the worker, which adds up across a file's tests.
+  onTestFinished(() => client.close());
   return drizzle({ client, schema });
 }
 

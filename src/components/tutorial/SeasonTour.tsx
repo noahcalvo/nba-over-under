@@ -113,7 +113,7 @@ function StepDetails({ step, demo }: { step: SeasonStepState; demo: DemoSeasonSe
               <Button variant="secondary" onClick={demo.replay}>
                 Replay demo
               </Button>
-              <Link href="/" className={buttonClasses("secondary")}>
+              <Link href="/home" className={buttonClasses("secondary")}>
                 Create league
               </Link>
             </div>

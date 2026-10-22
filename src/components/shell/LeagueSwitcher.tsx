@@ -76,7 +76,7 @@ export function LeagueMenu({
         </ul>
       )}
       <Link
-        href="/"
+        href="/home"
         onClick={onNavigate}
         className="block rounded-md px-3 py-2 text-sm font-semibold text-link hover:bg-ink-800"
       >

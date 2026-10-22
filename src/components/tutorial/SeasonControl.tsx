@@ -93,7 +93,7 @@ export function SeasonControl({
             <RotateCcw aria-hidden className="size-4" />
             Replay demo
           </Button>
-          <Link href="/" className={buttonClasses("secondary", "sm")}>
+          <Link href="/home" className={buttonClasses("secondary", "sm")}>
             Create league
           </Link>
         </div>

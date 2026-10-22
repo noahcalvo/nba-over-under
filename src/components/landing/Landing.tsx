@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import { SignInLink } from "@/components/account/SignInLink";
 import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { buttonClasses } from "@/components/ui/Button";
@@ -11,7 +11,13 @@ import { managerLabel } from "@/lib/league/managers";
 import { getAccount } from "@/server/account";
 import { listViewerLeagues } from "@/server/league";
 
-/** The home page's panels: what Courtline is, the challenge, the schedule, creating a league, your leagues, the demo. */
+/** The viewer's leagues, read once per request: `/`'s redirect, Your leagues and the demo panel all ask. */
+export const viewerLeagues = cache(listViewerLeagues);
+
+/**
+ * The home page's panels: what Courtline is, the challenge, the schedule (signed in), your leagues, creating a league,
+ * and the demo (until you hold a seat).
+ */
 export function Landing() {
   return (
     <>
@@ -36,35 +42,20 @@ export function Landing() {
           </Link>
         </div>
       </Panel>
-      <Panel title="NBA schedule" bodyClassName="p-4 sm:p-5">
-        <p className="max-w-xl text-fog-300">
-          Tonight&apos;s games, standings, and who in your leagues is rooting for whom.
-        </p>
-        <div className="mt-4">
-          <Link href="/nba" className={buttonClasses("secondary")}>
-            Open the schedule
-          </Link>
-        </div>
-      </Panel>
+      <Suspense fallback={null}>
+        <NbaSchedule />
+      </Suspense>
+      <Suspense fallback={null}>
+        <YourLeagues />
+      </Suspense>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">
         <Suspense fallback={<div aria-busy className="h-40 animate-pulse rounded-lg bg-ink-800/60" />}>
           <CreateLeague />
         </Suspense>
       </Panel>
       <Suspense fallback={null}>
-        <YourLeagues />
+        <Demo />
       </Suspense>
-      <Panel title="Just looking?" bodyClassName="p-4 sm:p-5">
-        <Link
-          href={`/l/${DEMO_LEAGUE_ID}/draft`}
-          className="inline-flex items-center gap-2 font-semibold text-link hover:text-fog-50"
-        >
-          Try the demo <ArrowRight aria-hidden className="size-4" />
-        </Link>
-        <p className="mt-1 text-sm text-fog-400">
-          A guided draft: make a pick and a fade yourself, and we simulate the other managers. Nothing is saved.
-        </p>
-      </Panel>
     </>
   );
 }
@@ -82,7 +73,7 @@ async function CreateLeague() {
 }
 
 async function YourLeagues() {
-  const leagues = await listViewerLeagues();
+  const leagues = await viewerLeagues();
   if (leagues.length === 0) return null;
   return (
     <Panel title="Your leagues">
@@ -102,6 +93,39 @@ async function YourLeagues() {
           </li>
         ))}
       </ul>
+    </Panel>
+  );
+}
+
+async function NbaSchedule() {
+  if (!(await getAccount())) return null;
+  return (
+    <Panel title="NBA schedule" bodyClassName="p-4 sm:p-5">
+      <p className="max-w-xl text-fog-300">
+        Tonight&apos;s games, standings, and who in your leagues is rooting for whom.
+      </p>
+      <div className="mt-4">
+        <Link href="/nba" className={buttonClasses("secondary")}>
+          Open the schedule
+        </Link>
+      </div>
+    </Panel>
+  );
+}
+
+async function Demo() {
+  if ((await viewerLeagues()).length > 0) return null;
+  return (
+    <Panel title="Just looking?" bodyClassName="p-4 sm:p-5">
+      <Link
+        href={`/l/${DEMO_LEAGUE_ID}/draft`}
+        className="inline-flex items-center gap-2 font-semibold text-link hover:text-fog-50"
+      >
+        Try the demo <ArrowRight aria-hidden className="size-4" />
+      </Link>
+      <p className="mt-1 text-sm text-fog-400">
+        A guided draft: make a pick and a fade yourself, and we simulate the other managers. Nothing is saved.
+      </p>
     </Panel>
   );
 }

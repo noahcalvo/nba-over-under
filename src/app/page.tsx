@@ -2,10 +2,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AccountSlot } from "@/components/account/AccountSlot";
 import { LegacyNotice } from "@/components/account/LegacyNotice";
-import { Landing } from "@/components/landing/Landing";
+import { Landing, viewerLeagues } from "@/components/landing/Landing";
 import { Logo } from "@/components/shell/Logo";
 import { PageFallback } from "@/components/ui/PageFallback";
-import { listViewerLeagues } from "@/server/league";
 
 /** Signed in with a seat somewhere: straight to the most recently joined league. Otherwise the home page (/home). */
 export default function Home() {
@@ -23,7 +22,7 @@ export default function Home() {
 }
 
 async function HomeOrLeague() {
-  const [latest] = await listViewerLeagues();
+  const [latest] = await viewerLeagues();
   if (latest) redirect(`/l/${latest.id}`);
   return (
     <>

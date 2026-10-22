@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath, signInHref } from "./next-path";
+import { safeNextPath, signInHref, startSignInHref } from "./next-path";
 
 describe("safeNextPath", () => {
   it.each(["/l/abc", "/challenge?x=1", "/", "/i/tok?x=1#top"])("keeps %s", (path) => {
@@ -34,5 +34,11 @@ describe("safeNextPath", () => {
 describe("signInHref", () => {
   it("encodes the destination", () => {
     expect(signInHref("/i/tok?x=1")).toBe("/sign-in?next=%2Fi%2Ftok%3Fx%3D1");
+  });
+});
+
+describe("startSignInHref", () => {
+  it("starts Google sign-in, remembering where to return to", () => {
+    expect(startSignInHref("/i/tok?x=1")).toBe("/sign-in/start?next=%2Fi%2Ftok%3Fx%3D1");
   });
 });

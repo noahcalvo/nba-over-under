@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { AccountSlot } from "@/components/account/AccountSlot";
 import { LegacyClaim } from "@/components/account/LegacyClaim";
 import { Logo } from "@/components/shell/Logo";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
-import { signInHref } from "@/lib/access/next-path";
+import { startSignInHref } from "@/lib/access/next-path";
 import { managerLabel } from "@/lib/league/managers";
 import { getAccount } from "@/server/account";
 import { getLegacyItems } from "@/server/legacy";
@@ -15,7 +16,10 @@ export const metadata: Metadata = { title: "Account" };
 export default function AccountPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-8 px-4 py-10 sm:py-16">
-      <Logo />
+      <header className="flex items-center justify-between gap-3">
+        <Logo />
+        <AccountSlot placement="header" />
+      </header>
       <Suspense fallback={<PageFallback label="Loading…" />}>
         <AccountContent />
       </Suspense>
@@ -25,7 +29,7 @@ export default function AccountPage() {
 
 async function AccountContent() {
   const account = await getAccount();
-  if (!account) redirect(signInHref("/account"));
+  if (!account) redirect(startSignInHref("/account"));
   const legacy = await getLegacyItems();
   const items = legacy && {
     seats: legacy.seats.map((league) => ({

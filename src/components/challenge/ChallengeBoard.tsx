@@ -4,6 +4,7 @@ import { CalendarClock, Lock, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { SignInLink } from "@/components/account/SignInLink";
 import { Alert } from "@/components/ui/Alert";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
@@ -37,7 +38,7 @@ import {
   LockedLinks,
   MOVE_LEGACY_HREF,
   NAME_INPUT_ID,
-  SIGN_IN_TO_SAVE_HREF,
+  SIGN_IN_TO_SAVE_NEXT,
   SavePanel,
   saveStatusText,
 } from "./SavePanel";
@@ -373,9 +374,9 @@ export function ChallengeBoard({ data }: { data: ChallengeBoardData }) {
               </p>
             </div>
             {!data.signedIn ? (
-              <Link href={SIGN_IN_TO_SAVE_HREF} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[65%] leading-tight`}>
+              <SignInLink next={SIGN_IN_TO_SAVE_NEXT} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[65%] leading-tight`}>
                 Sign in to save
-              </Link>
+              </SignInLink>
             ) : holdForLegacy ? (
               <Link href={MOVE_LEGACY_HREF} className={`${buttonClasses("primary", "lg")} min-w-0 max-w-[55%] leading-tight`}>
                 Move it to your account

@@ -20,7 +20,7 @@ export async function WhoIsOnPanel({ teams, stakes }: { teams: TeamInfo[]; stake
       {state === "failed" ? (
         <p className="text-sm text-fog-300">{"Couldn't load your leagues' picks."}</p>
       ) : state === "join" ? (
-        <Link href="/" className="text-sm font-semibold text-link hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        <Link href="/home" className="text-sm font-semibold text-link hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
           {"Join or create a league to see who's on this game."}
         </Link>
       ) : (

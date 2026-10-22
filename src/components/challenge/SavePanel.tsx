@@ -2,16 +2,16 @@
 
 import { ArrowRight, Lock } from "lucide-react";
 import Link from "next/link";
+import { SignInLink } from "@/components/account/SignInLink";
 import { buttonClasses } from "@/components/ui/Button";
 import { CHALLENGE } from "@/config/challenge";
-import { signInHref } from "@/lib/access/next-path";
 import { formatDateTimeET } from "@/lib/format";
 import { RAIL_PANEL } from "./rail-panel";
 
 export const NAME_INPUT_ID = "challenge-entry-name";
 
-/** Where "Sign in to save" goes: back to the board, whose local draft is untouched by the round trip. */
-export const SIGN_IN_TO_SAVE_HREF = signInHref("/challenge");
+/** Where "Sign in to save" returns to: the board, whose local draft is untouched by the round trip. */
+export const SIGN_IN_TO_SAVE_NEXT = "/challenge";
 
 /** Shown instead of Save while this browser's entry from before sign-in waits to move to the account. */
 export const LEGACY_ENTRY_NOTICE = "You have an entry from before sign-in. Move it to your account first.";
@@ -111,10 +111,10 @@ export function SavePanel({
           <ArrowRight aria-hidden className="size-5" />
         </button>
       ) : (
-        <Link href={SIGN_IN_TO_SAVE_HREF} className={SAVE_BUTTON}>
+        <SignInLink next={SIGN_IN_TO_SAVE_NEXT} className={SAVE_BUTTON}>
           Sign in to save
           <ArrowRight aria-hidden className="size-5" />
-        </Link>
+        </SignInLink>
       )}
       <div className="flex min-h-6 flex-col gap-1 text-sm">
         {blocker && <p className="text-fog-300">{blocker}</p>}

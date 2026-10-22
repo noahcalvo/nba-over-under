@@ -248,8 +248,13 @@ Next API.
   (`VERCEL_URL` fallback) with `productionURL` = `BETTER_AUTH_URL`. Without it previews can't sign in. Telemetry is off.
 - Sign-in required (401 `sign_in_required`, or 503 `auth_unavailable` when sign-in isn't configured: `signedOutError()`): creating a league, claiming any link, every league mutation, saving a challenge entry,
   the legacy claim. Public league pages, `/nba`, the challenge board, leaderboards, entry pages and the guided demo stay open.
-  `/sign-in?next=<path>`: `safeNextPath` accepts only a same-site path, anything else goes to `/`; a cancelled Google sign-in
-  returns there with `?error=` ("Sign-in didn't finish").
+  Every "Sign in" goes straight to Google through `GET /sign-in/start?next=<path>` (`SignInLink`, a plain `<a>`: a prefetching
+  `<Link>` there would start a sign-in, so ESLint restricts `startSignInHref` to it); without Google (development sign-in, or
+  sign-in unavailable) it falls back to `/sign-in?next=<path>`. `safeNextPath` accepts only a same-site path, anything else
+  goes to `/`; a cancelled Google sign-in returns to `/sign-in` with `?error=` ("Sign-in didn't finish").
+- Home: `/` sends a signed-in account with a seat to its most recently joined league (`listViewerLeagues()[0]`); everyone
+  else gets the home page. `/home` always shows it (the league switcher's "All leagues & create league"); both render
+  `Landing` with the account menu in the header.
 - Legacy session: cookie `courtline_session` (random token; the database stores its SHA-256; tables `sessions`, `session_seats`)
   predates sign-in. No new one is ever created and it authorizes nothing. A signed-in user whose browser still has one sees
   `LegacyNotice` linking to `/account`; `POST /api/account/legacy` (`claimLegacy`) moves, per item, each seat (under that league's

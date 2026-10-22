@@ -2,13 +2,12 @@
 
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { buttonClasses } from "@/components/ui/Button";
-import { signInHref } from "@/lib/access/next-path";
 import type { Account } from "@/server/account";
 import { authClient } from "./auth-client";
+import { SignInLink } from "./SignInLink";
 
 export type AccountPlacement = "sidebar" | "header";
 
@@ -55,21 +54,20 @@ function AccountAvatar({ account }: { account: Account }) {
  * it, so this route-handler call is what renews the session and its cookie.
  */
 export function AccountMenu({ account, placement }: { account: Account | null; placement: AccountPlacement }) {
-  if (!account) return <SignInLink placement={placement} />;
+  if (!account) return <SignInButton placement={placement} />;
   return <SignedInMenu account={account} placement={placement} />;
 }
 
-function SignInLink({ placement }: { placement: AccountPlacement }) {
+function SignInButton({ placement }: { placement: AccountPlacement }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
-  const href = signInHref(search ? `${pathname}?${search}` : pathname);
   return (
-    <Link
-      href={href}
+    <SignInLink
+      next={search ? `${pathname}?${search}` : pathname}
       className={`${buttonClasses("secondary", "md")} ${placement === "sidebar" ? "w-full" : "shrink-0"}`}
     >
       Sign in
-    </Link>
+    </SignInLink>
   );
 }
 

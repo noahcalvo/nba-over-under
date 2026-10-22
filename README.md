@@ -41,6 +41,7 @@ Accounts use [Better Auth](https://www.better-auth.com/) with Google as the only
    several; a wildcard needs a fixed prefix, so `*.vercel.app` is refused), and set it, the Google pair, `BETTER_AUTH_SECRET`
    (the same value) and `BETTER_AUTH_URL` (the production origin) for **both** Production and Preview. Nothing more is
    registered with Google. Previews then sign in on their own URL; without `AUTH_PREVIEW_HOSTS` they can't sign in.
+   Production must already run this sign-in code: until then a preview's Google callback lands on production's 404.
    A preview that shares the production database creates real accounts and sessions in it. Without these variables the site still serves every page (the server log says what is missing), but `/sign-in` reports that sign-in isn't available and nothing can be created or saved. Outside production the secret and URL fall back to development values, so only the Google pair (or `AUTH_DEV_LOGIN=1`) is needed locally. Browsers that held seats or a 30/30 entry from before sign-in see a notice that links to `/account`, where one button moves them to the signed-in account.
 
 ## Commands

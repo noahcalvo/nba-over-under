@@ -12,8 +12,8 @@ describe("nbaNavItems", () => {
     expect(nbaNavItems().map((item) => item.href)).toEqual(["/", "/nba", "/challenge"]);
   });
 
-  it("names the bottom tabs", () => {
-    expect(nbaNavItems().map((item) => item.shortLabel)).toEqual(["Home", "Schedule", "Challenge"]);
+  it("names the bottom tabs: the challenge is in the mobile top bar instead", () => {
+    expect(nbaNavItems().filter((item) => !item.sidebarOnly).map((item) => item.shortLabel)).toEqual(["Home", "Schedule"]);
   });
 });
 

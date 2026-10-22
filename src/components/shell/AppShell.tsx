@@ -3,9 +3,11 @@ import { AccountSlot } from "@/components/account/AccountSlot";
 import { LegacyNotice } from "@/components/account/LegacyNotice";
 import { BottomNavSkeleton } from "./BottomNav";
 import { CurrentLeagueProvider, type LeagueChrome } from "./CurrentLeague";
+import { GlobalNav } from "./GlobalNav";
 import { LeagueSwitcherSkeleton } from "./LeagueSwitcher";
 import { Logo } from "./Logo";
-import { BottomNavSlot, LeagueSwitcherSlot, SidebarNavSlot } from "./ShellSlots";
+import { MobileHeader } from "./MobileHeader";
+import { BottomNavSlot, GlobalNavSlot, LeagueSwitcherSlot, SidebarNavSlot } from "./ShellSlots";
 import { SidebarNavSkeleton } from "./SidebarNav";
 
 /**
@@ -13,6 +15,7 @@ import { SidebarNavSkeleton } from "./SidebarNav";
  * stream in, and the page renders at once (each page has its own loading state).
  */
 export function AppShell({ chrome, children }: { chrome: Promise<LeagueChrome | null>; children: ReactNode }) {
+  const account = <AccountSlot placement="tab" />;
   return (
     <div className="min-h-dvh">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col gap-6 border-r border-ink-700 bg-ink-900 px-4 py-6 lg:flex">
@@ -27,23 +30,24 @@ export function AppShell({ chrome, children }: { chrome: Promise<LeagueChrome | 
           <AccountSlot placement="sidebar" />
         </div>
       </aside>
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5 backdrop-blur lg:hidden">
-        <Logo compact />
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="w-28 min-w-0 min-[400px]:w-44 sm:w-56">
-            <Suspense fallback={<LeagueSwitcherSkeleton compact />}>
-              <LeagueSwitcherSlot chrome={chrome} compact />
-            </Suspense>
-          </div>
-          <AccountSlot placement="header" />
-        </div>
-      </header>
+      <MobileHeader
+        leagues={
+          <Suspense fallback={<LeagueSwitcherSkeleton compact />}>
+            <LeagueSwitcherSlot chrome={chrome} compact />
+          </Suspense>
+        }
+        nav={
+          <Suspense fallback={<GlobalNav />}>
+            <GlobalNavSlot chrome={chrome} />
+          </Suspense>
+        }
+      />
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
         <LegacyNotice />
         <CurrentLeagueProvider chrome={chrome}>{children}</CurrentLeagueProvider>
       </main>
-      <Suspense fallback={<BottomNavSkeleton />}>
-        <BottomNavSlot chrome={chrome} />
+      <Suspense fallback={<BottomNavSkeleton account={account} />}>
+        <BottomNavSlot chrome={chrome} account={account} />
       </Suspense>
     </div>
   );

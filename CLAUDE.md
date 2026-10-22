@@ -288,6 +288,10 @@ Next API.
 - Logos: `TeamLogo` loads `https://cdn.nba.com/logos/nba/{nbaId}/global/D/logo.svg` and falls back to `TeamBadge`.
   NBA logos are trademarks — licensing check required before any public launch.
 - Unfinished pages render `NotBuiltYet`; their nav items show "Soon".
+- Navigation works the same in every shell (league, `/challenge`, `/nba`): from `lg` a sidebar with the section's pages,
+  a way into the leagues (the league switcher, or the "Your leagues" list) and the account at the bottom; below `lg` the top bar (`MobileHeader`) is for
+  general navigation (the league menu, then `GlobalNav`: NBA and 30/30, hidden in the demo league) and the bottom tab
+  bar for the section's own pages, ending with the account (`AccountSlot placement="tab"`).
 - Responsive: `lg+` sidebar, below `lg` a bottom tab bar; `xl+` two-column panels; tables switch to cards by container
   width (`@container`, `@xl:` / `@2xl:`). Wide content (the draft board) scrolls inside its own container. The page
   must never scroll horizontally — check 375px and 1440px.

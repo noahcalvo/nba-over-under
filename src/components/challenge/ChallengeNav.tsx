@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { challengeNavItems, isChallengeNavActive } from "./nav-items";
 
 function sidebarItemClass(active: boolean): string {
@@ -56,26 +56,26 @@ function SidebarNav({ pathname }: { pathname: string }) {
   );
 }
 
-export function ChallengeBottomNav() {
+export function ChallengeBottomNav({ account }: { account: ReactNode }) {
   return (
-    <Suspense fallback={<BottomNav pathname={UNKNOWN_PATH} />}>
-      <CurrentBottomNav />
+    <Suspense fallback={<BottomNav pathname={UNKNOWN_PATH} account={account} />}>
+      <CurrentBottomNav account={account} />
     </Suspense>
   );
 }
 
-function CurrentBottomNav() {
-  return <BottomNav pathname={usePathname()} />;
+function CurrentBottomNav({ account }: { account: ReactNode }) {
+  return <BottomNav pathname={usePathname()} account={account} />;
 }
 
-function BottomNav({ pathname }: { pathname: string }) {
+function BottomNav({ pathname, account }: { pathname: string; account: ReactNode }) {
   const items = challengeNavItems().filter((item) => !item.sidebarOnly);
   return (
     <nav
       aria-label="Challenge"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-700 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {items.map((item) => {
           const active = isChallengeNavActive(item, pathname);
           const Icon = item.icon;
@@ -88,6 +88,7 @@ function BottomNav({ pathname }: { pathname: string }) {
             </li>
           );
         })}
+        <li>{account}</li>
       </ul>
     </nav>
   );

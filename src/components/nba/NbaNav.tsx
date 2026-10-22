@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { isNbaNavActive, nbaNavItems } from "./nav-items";
 
 function sidebarItemClass(active: boolean): string {
@@ -52,37 +52,40 @@ function SidebarNav({ pathname }: { pathname: string }) {
   );
 }
 
-export function NbaBottomNav() {
+export function NbaBottomNav({ account }: { account: ReactNode }) {
   return (
-    <Suspense fallback={<BottomNav pathname={UNKNOWN_PATH} />}>
-      <CurrentBottomNav />
+    <Suspense fallback={<BottomNav pathname={UNKNOWN_PATH} account={account} />}>
+      <CurrentBottomNav account={account} />
     </Suspense>
   );
 }
 
-function CurrentBottomNav() {
-  return <BottomNav pathname={usePathname()} />;
+function CurrentBottomNav({ account }: { account: ReactNode }) {
+  return <BottomNav pathname={usePathname()} account={account} />;
 }
 
-function BottomNav({ pathname }: { pathname: string }) {
+function BottomNav({ pathname, account }: { pathname: string; account: ReactNode }) {
   return (
     <nav
       aria-label="NBA"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-700 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       <ul className="grid grid-cols-3">
-        {nbaNavItems().map((item) => {
-          const active = isNbaNavActive(item, pathname);
-          const Icon = item.icon;
-          return (
-            <li key={item.href}>
-              <Link href={item.href} aria-current={active ? "page" : undefined} className={tabClass(active)}>
-                <Icon aria-hidden className="size-5" />
-                <span>{item.shortLabel}</span>
-              </Link>
-            </li>
-          );
-        })}
+        {nbaNavItems()
+          .filter((item) => !item.sidebarOnly)
+          .map((item) => {
+            const active = isNbaNavActive(item, pathname);
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={tabClass(active)}>
+                  <Icon aria-hidden className="size-5" />
+                  <span>{item.shortLabel}</span>
+                </Link>
+              </li>
+            );
+          })}
+        <li>{account}</li>
       </ul>
     </nav>
   );

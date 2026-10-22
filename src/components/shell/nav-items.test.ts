@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
-import { isActive, navItems } from "./nav-items";
+import { globalNavItems, isActive, navItems } from "./nav-items";
 
 describe("navItems", () => {
   it("marks every page ready in a stored league", () => {
@@ -46,6 +46,16 @@ describe("navItems", () => {
 
   it("omits the 30/30 Challenge from the demo league", () => {
     expect(navItems(DEMO_LEAGUE_ID).some((i) => i.href === "/challenge")).toBe(false);
+  });
+
+  it("marks only the NBA schedule and the 30/30 Challenge global (the mobile top bar)", () => {
+    expect(navItems("abc234").filter((i) => i.global).map((i) => i.href)).toEqual(["/nba", "/challenge"]);
+    expect(globalNavItems().map((i) => i.href)).toEqual(["/nba", "/challenge"]);
+  });
+
+  it("leaves four league tabs for the bottom bar, in the demo league too", () => {
+    expect(navItems("abc234").filter((i) => !i.global)).toHaveLength(4);
+    expect(navItems(DEMO_LEAGUE_ID).filter((i) => !i.global)).toHaveLength(4);
   });
 
   it("never marks the NBA schedule or the 30/30 Challenge active inside a league", () => {

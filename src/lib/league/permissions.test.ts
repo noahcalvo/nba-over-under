@@ -23,6 +23,7 @@ function league(status: DraftStatus, pickCount = 0, isDemo = false): DraftAccess
   return {
     isDemo,
     commissionerId: "m1",
+    archivedAt: null,
     managers: MANAGERS,
     draft: {
       status,
@@ -123,5 +124,22 @@ describe("canRefreshRecords", () => {
     expect(canRefreshRecords(league("not_started"), "m2")).toBe(false);
     expect(canRefreshRecords(league("not_started"), null)).toBe(false);
     expect(canRefreshRecords(league("not_started", 0, true), "m1")).toBe(false);
+  });
+});
+
+describe("archived leagues", () => {
+  it("refuses every action in an archived league", () => {
+    const archived = (status: DraftStatus, pickCount = 0): DraftAccess => ({
+      ...league(status, pickCount),
+      archivedAt: "2026-10-22T15:00:00.000Z",
+    });
+    expect(canControlDraft(archived("live"), "m1")).toBe(false);
+    expect(canManageSeats(archived("live"), "m1")).toBe(false);
+    expect(canRefreshRecords(archived("live"), "m1")).toBe(false);
+    expect(canResetSeat(archived("live"), "m1", "m2")).toBe(false);
+    expect(canPickNow(archived("live"), "m1")).toBe(false); // on the clock
+    expect(canPickNow(archived("live", 2), "m1")).toBe(false); // open seat m3
+    expect(canFadeFor(archived("fades", 4), "m2", "m2")).toBe(false);
+    expect(canFadeFor(archived("fades", 4), "m1", "m3")).toBe(false); // open seat
   });
 });

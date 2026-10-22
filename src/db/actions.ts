@@ -239,12 +239,13 @@ export async function refreshLeagueRecords(
 ): Promise<Result<RecordRefreshResult>> {
   if (leagueId === DEMO_LEAGUE_ID) return fail("demo_league");
   const [row] = await db
-    .select({ commissionerId: leagues.commissionerId, seasonLabel: leagues.seasonLabel })
+    .select({ commissionerId: leagues.commissionerId, seasonLabel: leagues.seasonLabel, archivedAt: leagues.archivedAt })
     .from(leagues)
     .where(eq(leagues.id, leagueId));
   if (!row) return fail("not_found");
   const actorId = userId ? await userSeatInLeague(db, userId, leagueId) : null;
-  if (!canRefreshRecords({ isDemo: false, commissionerId: row.commissionerId }, actorId)) return fail("forbidden");
+  const archivedAt = row.archivedAt ? row.archivedAt.toISOString() : null;
+  if (!canRefreshRecords({ isDemo: false, commissionerId: row.commissionerId, archivedAt }, actorId)) return fail("forbidden");
   const season = seasonEndYear(row.seasonLabel);
   if (season === null) return fail("records_unavailable");
   const outcome = await refreshSeasonRecords(db, season, source);

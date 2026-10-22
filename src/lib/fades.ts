@@ -50,7 +50,7 @@ export function applyFade(league: FadeStage, managerId: string, targetPickNumber
 }
 
 /** The seats this viewer can still submit a fade for, in seat order. */
-export function openFadeSeats(league: FadeStage & Pick<League, "isDemo" | "commissionerId">, viewerId: string | null): string[] {
+export function openFadeSeats(league: FadeStage & Pick<League, "isDemo" | "commissionerId" | "archivedAt">, viewerId: string | null): string[] {
   return league.managers
     .filter((manager) => canFadeFor(league, viewerId, manager.id) && !fadeFor(league.fades, manager.id))
     .map((manager) => manager.id);

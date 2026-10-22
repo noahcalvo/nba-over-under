@@ -30,6 +30,8 @@ export type DomainError =
   | "sign_in_required"
   | "seat_owned"
   | "entry_exists"
+  | "archived"
+  | "name_mismatch"
   | DraftError
   | FadeError;
 
@@ -82,6 +84,8 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   sign_in_required: "Sign in with Google to do that.",
   seat_owned: "Another account already holds this seat. Ask your commissioner to reset it.",
   entry_exists: "Your account already has a 30/30 entry this season.",
+  archived: "This league was deleted by its commissioner. It's read-only.",
+  name_mismatch: "Type the league's name exactly as it appears to delete it.",
   invalid_request: "Invalid request.",
   auth_unavailable: "Sign-in isn't available right now.",
 };

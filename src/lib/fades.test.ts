@@ -13,10 +13,11 @@ const MANAGERS: Manager[] = [
 ];
 const TEAMS = ["MIN", "OKC", "BOS", "CLE", "DEN", "LAL", "CHI", "ORL"];
 
-function stage(status: DraftStatus = "fades", fades: Fade[] = []): FadeStage & { isDemo: boolean; commissionerId: string } {
+function stage(status: DraftStatus = "fades", fades: Fade[] = []): FadeStage & { isDemo: boolean; commissionerId: string; archivedAt: string | null } {
   return {
     isDemo: false,
     commissionerId: "m1",
+    archivedAt: null,
     managers: MANAGERS,
     fades,
     draft: {

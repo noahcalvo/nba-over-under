@@ -17,6 +17,7 @@ function league(status: DraftStatus, pickCount = 0): DraftAccess {
   return {
     isDemo: false,
     commissionerId: "m1",
+    archivedAt: null,
     managers: MANAGERS,
     draft: {
       status,

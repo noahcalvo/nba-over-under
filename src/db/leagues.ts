@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { fail, type DomainError, type Result } from "@/lib/league/errors";
 import type { DraftPick, League, Manager } from "@/lib/types";
@@ -110,6 +110,17 @@ export async function insertLeague(tx: Tx, league: League): Promise<boolean> {
     })),
   );
   return true;
+}
+
+/** Archives a locked league: stamps the database time and bumps version. Seats, picks and links stay as they were. */
+export async function markArchived(tx: Tx, league: League): Promise<League> {
+  const version = league.version + 1;
+  const [row] = await tx
+    .update(leagues)
+    .set({ archivedAt: sql`now()`, version })
+    .where(eq(leagues.id, league.id))
+    .returning({ archivedAt: leagues.archivedAt });
+  return { ...league, archivedAt: row.archivedAt!.toISOString(), version };
 }
 
 /** Writes what changed between two versions of a locked league (seats, seat order, rounds, new and voided picks, fades, names, status, lines) and bumps version. */
@@ -284,7 +295,7 @@ export async function listSessionLeagues(db: Db, sessionId: string): Promise<Sea
     .from(sessionSeats)
     .innerJoin(leagues, eq(leagues.id, sessionSeats.leagueId))
     .innerJoin(managers, and(eq(managers.leagueId, sessionSeats.leagueId), eq(managers.id, sessionSeats.managerId)))
-    .where(eq(sessionSeats.sessionId, sessionId))
+    .where(and(eq(sessionSeats.sessionId, sessionId), isNull(leagues.archivedAt)))
     .orderBy(desc(sessionSeats.createdAt));
   return rows.map(({ managerId, seat, displayName, ...league }) => ({
     ...league,

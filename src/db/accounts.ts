@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import type { Db, Tx } from "./client";
 import { leagues, managers, userSeats } from "./schema";
 import type { SeatedLeague } from "./leagues";
@@ -58,7 +58,7 @@ export async function listUserLeagues(db: Db, userId: string): Promise<SeatedLea
     .from(userSeats)
     .innerJoin(leagues, eq(leagues.id, userSeats.leagueId))
     .innerJoin(managers, and(eq(managers.leagueId, userSeats.leagueId), eq(managers.id, userSeats.managerId)))
-    .where(eq(userSeats.userId, userId))
+    .where(and(eq(userSeats.userId, userId), isNull(leagues.archivedAt)))
     .orderBy(desc(userSeats.createdAt));
   return rows.map(({ managerId, seat, displayName, ...league }) => ({
     ...league,

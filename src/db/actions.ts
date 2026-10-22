@@ -6,6 +6,7 @@ import { linkStatus } from "@/lib/access/links";
 import type { DraftCommand } from "@/lib/fades";
 import {
   createLeague,
+  decideArchive,
   decideClaim,
   decideDraftAction,
   decideDraftOrder,
@@ -25,7 +26,7 @@ import type { RecordSource, RecordStatus } from "@/lib/records/types";
 import type { League, LineSet, TeamId } from "@/lib/types";
 import { bindUserSeat, seatHolder, unbindSeatHolder, userSeatInLeague } from "./accounts";
 import type { Db, Tx } from "./client";
-import { insertLeague, saveLeague, withLockedLeague } from "./leagues";
+import { insertLeague, markArchived, saveLeague, withLockedLeague } from "./leagues";
 import { findLink, findLinkAt, issueLink, markSeatInviteUsed, revokeLinks } from "./links";
 import { recordStatus, refreshSeasonRecords } from "./records";
 import { leagues } from "./schema";
@@ -108,6 +109,20 @@ export function setLeagueConfig(
     const decided = decideLeagueConfig(league, actorId, config);
     if (!decided.ok) return fail(decided.error);
     return succeed({ league: await saveLeague(tx, league, decided.value), actorId });
+  });
+}
+
+/** Commissioner: archive the league after typing its name. Archived leagues refuse every later command and leave every list. */
+export function archiveLeague(
+  db: Db,
+  leagueId: string,
+  userId: string | null,
+  confirmName: unknown,
+): Promise<Result<DraftOutcome>> {
+  return withLockedLeague(db, leagueId, userId, async ({ tx, league, actorId }) => {
+    const decided = decideArchive(league, actorId, confirmName);
+    if (!decided.ok) return fail(decided.error);
+    return succeed({ league: await markArchived(tx, league), actorId });
   });
 }
 
@@ -243,8 +258,9 @@ export async function refreshLeagueRecords(
     .from(leagues)
     .where(eq(leagues.id, leagueId));
   if (!row) return fail("not_found");
-  const actorId = userId ? await userSeatInLeague(db, userId, leagueId) : null;
   const archivedAt = row.archivedAt ? row.archivedAt.toISOString() : null;
+  if (archivedAt) return fail("archived");
+  const actorId = userId ? await userSeatInLeague(db, userId, leagueId) : null;
   if (!canRefreshRecords({ isDemo: false, commissionerId: row.commissionerId, archivedAt }, actorId)) return fail("forbidden");
   const season = seasonEndYear(row.seasonLabel);
   if (season === null) return fail("records_unavailable");

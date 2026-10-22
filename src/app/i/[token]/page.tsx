@@ -71,6 +71,17 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
     );
   }
 
+  if (league.archivedAt !== null) {
+    return (
+      <Panel title="League deleted" bodyClassName="flex flex-col items-start gap-4 p-4 sm:p-5">
+        <p className="text-fog-300">This league was deleted by its commissioner.</p>
+        <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
+          View the league
+        </Link>
+      </Panel>
+    );
+  }
+
   const viewerSeat = await getViewerId(league.id);
   if (viewerSeat !== null && (link.kind === "league_invite" || viewerSeat === link.managerId)) {
     redirect(`/l/${league.id}`);

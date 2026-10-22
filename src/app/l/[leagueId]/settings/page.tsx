@@ -66,6 +66,16 @@ async function SettingsBody({ params }: { params: Params }) {
   }
   const [viewerId, account] = await Promise.all([getViewerId(league.id), getAccount()]);
   const accountPanel = account && <YourAccountPanel email={account.email} />;
+  if (league.archivedAt !== null) {
+    return (
+      <>
+        <Panel bodyClassName="p-4 text-fog-300 sm:p-5">
+          This league was deleted. Its links and seats can&apos;t be changed.
+        </Panel>
+        {accountPanel}
+      </>
+    );
+  }
   if (viewerId === null) {
     return (
       <>

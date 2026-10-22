@@ -36,6 +36,7 @@ export function buildDemoLeague(): League {
     isDemo: true,
     commissionerId: "m1",
     version: 1,
+    archivedAt: null,
     managers: DEMO_SEATS.map((id, seat) => ({ id, seat, displayName: null })),
     draft: {
       status: "complete",

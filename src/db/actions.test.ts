@@ -4,6 +4,7 @@ import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
 import { TEAM_INFO } from "@/data/teams";
 import {
+  archiveLeague,
   claimLink,
   claimLinkInLeague,
   createLeagueFor,
@@ -306,6 +307,47 @@ describe("league invite controls", () => {
     expect(invites.every((link) => link.revokedAt !== null)).toBe(true);
     await rotateLeagueInvite(db, LEAGUE, ana);
     await expect(activeLinkId("league_invite")).resolves.toBeTruthy();
+  });
+});
+
+describe("archiveLeague", () => {
+  it("archives the league for its commissioner", async () => {
+    const before = (await loadLeague(db, LEAGUE))!;
+    expect(await archiveLeague(db, LEAGUE, ana, before.name)).toMatchObject({ ok: true });
+    const after = (await loadLeague(db, LEAGUE))!;
+    expect(after.archivedAt).not.toBeNull();
+    expect(after.version).toBe(before.version + 1);
+  });
+
+  it("refuses other managers, spectators and the wrong name", async () => {
+    await joinAs(ben, "m2", "Ben");
+    expect(await archiveLeague(db, LEAGUE, ben, "Hoops")).toEqual({ ok: false, error: "forbidden" });
+    expect(await archiveLeague(db, LEAGUE, cal, "Hoops")).toEqual({ ok: false, error: "forbidden" });
+    expect(await archiveLeague(db, LEAGUE, ana, "nope")).toEqual({ ok: false, error: "name_mismatch" });
+    expect((await loadLeague(db, LEAGUE))!.archivedAt).toBeNull();
+  });
+
+  it("a second archive is refused and keeps the first time", async () => {
+    await archiveLeague(db, LEAGUE, ana, "Hoops");
+    const first = (await loadLeague(db, LEAGUE))!;
+    expect(await archiveLeague(db, LEAGUE, ana, "Hoops")).toEqual({ ok: false, error: "archived" });
+    const second = (await loadLeague(db, LEAGUE))!;
+    expect(second.archivedAt).toBe(first.archivedAt);
+    expect(second.version).toBe(first.version);
+  });
+
+  it("refuses a pick after the league is archived", async () => {
+    await runDraftAction(db, LEAGUE, ana, { type: "start" }, STATIC_LINES);
+    await archiveLeague(db, LEAGUE, ana, "Hoops");
+    expect(await confirm(ana, 1, "MIN", "OVER")).toEqual({ ok: false, error: "archived" });
+    expect(await db.select().from(picks)).toEqual([]);
+  });
+
+  it("refuses claiming a link and refreshing records once archived", async () => {
+    await archiveLeague(db, LEAGUE, ana, "Hoops");
+    expect(await joinAs(ben, "m2", "Ben")).toEqual({ ok: false, error: "archived" });
+    const source: RecordSource = { name: "ESPN", fetch: async () => { throw new Error("not reached"); } };
+    expect(await refreshLeagueRecords(db, LEAGUE, ana, source)).toEqual({ ok: false, error: "archived" });
   });
 });
 

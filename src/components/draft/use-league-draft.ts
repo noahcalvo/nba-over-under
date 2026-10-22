@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DRAFT_POLL_INTERVAL_MS } from "@/config/league";
 import type { DraftCommand } from "@/lib/fades";
 import type { LeagueConfig } from "@/lib/league/config";
@@ -30,7 +30,15 @@ export function useLeagueDraft(initial: LeagueView): DraftRoomDriver {
     }
   }, [endpoint, accept]);
 
-  const shouldPoll = !view.league.isDemo && view.league.draft.status !== "complete";
+  // The layout banner is server-rendered: when the league turns archived, refresh once so it appears.
+  const archived = view.league.archivedAt !== null;
+  const wasArchived = useRef(archived);
+  useEffect(() => {
+    if (archived && !wasArchived.current) router.refresh();
+    wasArchived.current = archived;
+  }, [archived, router]);
+
+  const shouldPoll = !view.league.isDemo && view.league.draft.status !== "complete" && !archived;
   useEffect(() => {
     if (!shouldPoll) return;
     const timer = window.setInterval(() => {

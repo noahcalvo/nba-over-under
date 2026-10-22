@@ -30,6 +30,7 @@ function league(overrides: Partial<League> & { status?: DraftStatus; picks?: Dra
     isDemo: false,
     commissionerId: "m1",
     version: 1,
+    archivedAt: null,
     managers: [
       { id: "m1", seat: 0, displayName: "Alex" },
       { id: "m2", seat: 1, displayName: "Blake" },

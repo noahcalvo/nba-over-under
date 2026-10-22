@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
+import { ArchivedBanner } from "@/components/shell/ArchivedBanner";
 import { leagueChrome } from "@/server/league";
 
 // Not awaited: the frame is part of the prerendered HTML and every page renders at once with its own loading state;
@@ -6,5 +8,12 @@ import { leagueChrome } from "@/server/league";
 // an unknown league still shows the not-found page.
 export default function LeagueLayout({ params, children }: LayoutProps<"/l/[leagueId]">) {
   const chrome = params.then(({ leagueId }) => leagueChrome(leagueId));
-  return <AppShell chrome={chrome}>{children}</AppShell>;
+  return (
+    <AppShell chrome={chrome}>
+      <Suspense fallback={null}>
+        <ArchivedBanner leagueId={params.then((p) => p.leagueId)} />
+      </Suspense>
+      {children}
+    </AppShell>
+  );
 }

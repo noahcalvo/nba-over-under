@@ -85,7 +85,9 @@ export function DraftLobby({
           description="Send this to the group. Anyone with it can claim an open seat. Manage it in League settings."
         />
       )}
-      <p className="text-sm text-fog-400">Open seats are drafted by the commissioner until someone claims them.</p>
+      {league.archivedAt === null && (
+        <p className="text-sm text-fog-400">Open seats are drafted by the commissioner until someone claims them.</p>
+      )}
       {canControl ? (
         <div className="flex flex-col gap-3">
           <label className="flex items-center gap-2 text-sm text-fog-50">
@@ -103,7 +105,9 @@ export function DraftLobby({
           {startBlocker && <p className="text-sm text-fog-400">{startBlocker}</p>}
         </div>
       ) : (
-        <p className="text-sm font-semibold text-fog-300">Waiting for the commissioner to start the draft.</p>
+        <p className="text-sm font-semibold text-fog-300">
+          {league.archivedAt === null ? "Waiting for the commissioner to start the draft." : "This league was deleted. The draft never started."}
+        </p>
       )}
     </Panel>
   );

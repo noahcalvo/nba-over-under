@@ -27,6 +27,7 @@ export function buildTutorialLeague(): League {
     isDemo: false,
     commissionerId: TUTORIAL_VIEWER_ID,
     version: 1,
+    archivedAt: null,
     managers: seatOrder.map((id, seat) => ({ id, seat, displayName: TUTORIAL_MANAGER_NAMES[seat] })),
     draft: started.state,
     fades: [],

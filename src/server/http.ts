@@ -6,6 +6,8 @@ const STATUS: Record<ApiError, number> = {
   invalid_link: 404,
   forbidden: 403,
   demo_league: 403,
+  archived: 409,
+  name_mismatch: 400,
   invalid_name: 400,
   invalid_league_name: 400,
   invalid_request: 400,

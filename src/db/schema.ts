@@ -41,6 +41,8 @@ export const leagues = pgTable(
     /** Commissioner-entered lines before the draft starts (teamId → line). */
     lineOverrides: jsonb("line_overrides").$type<Record<string, number>>().notNull().default({}),
     version: integer("version").notNull().default(1),
+    /** Set once when the commissioner deletes the league; never cleared. */
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

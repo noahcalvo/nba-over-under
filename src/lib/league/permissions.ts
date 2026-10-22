@@ -1,16 +1,16 @@
 import { managerOnTheClock } from "@/lib/draft";
 import type { League } from "@/lib/types";
 
-export type DraftAccess = Pick<League, "isDemo" | "commissionerId" | "managers" | "draft">;
+export type DraftAccess = Pick<League, "isDemo" | "commissionerId" | "managers" | "draft" | "archivedAt">;
 
-/** Start, pause and resume belong to the commissioner. The demo league is read-only. */
-export function canControlDraft(league: Pick<League, "isDemo" | "commissionerId">, actorId: string | null): boolean {
-  return !league.isDemo && actorId !== null && actorId === league.commissionerId;
+/** Start, pause and resume belong to the commissioner. The demo league and archived leagues are read-only. */
+export function canControlDraft(league: Pick<League, "isDemo" | "commissionerId" | "archivedAt">, actorId: string | null): boolean {
+  return !league.isDemo && league.archivedAt === null && actorId !== null && actorId === league.commissionerId;
 }
 
 /** The manager on the clock picks; the commissioner picks for an unclaimed seat. */
 export function canPickNow(league: DraftAccess, actorId: string | null): boolean {
-  if (league.isDemo || actorId === null || league.draft.status !== "live") return false;
+  if (league.isDemo || league.archivedAt !== null || actorId === null || league.draft.status !== "live") return false;
   const onClockId = managerOnTheClock(league.draft);
   if (onClockId === null) return false;
   if (onClockId === actorId) return true;
@@ -20,24 +20,24 @@ export function canPickNow(league: DraftAccess, actorId: string | null): boolean
 
 /** During the fade stage a manager submits their own fade; the commissioner also submits for an unclaimed seat. */
 export function canFadeFor(
-  league: Pick<League, "isDemo" | "commissionerId" | "managers" | "draft">,
+  league: Pick<League, "isDemo" | "commissionerId" | "managers" | "draft" | "archivedAt">,
   actorId: string | null,
   managerId: string,
 ): boolean {
-  if (league.isDemo || actorId === null || league.draft.status !== "fades") return false;
+  if (league.isDemo || league.archivedAt !== null || actorId === null || league.draft.status !== "fades") return false;
   if (managerId === actorId) return true;
   const seat = league.managers.find((manager) => manager.id === managerId);
   return actorId === league.commissionerId && seat !== undefined && seat.displayName === null;
 }
 
 /** Invite links and seat resets belong to the commissioner. The demo league is read-only. */
-export function canManageSeats(league: Pick<League, "isDemo" | "commissionerId">, actorId: string | null): boolean {
-  return !league.isDemo && actorId !== null && actorId === league.commissionerId;
+export function canManageSeats(league: Pick<League, "isDemo" | "commissionerId" | "archivedAt">, actorId: string | null): boolean {
+  return !league.isDemo && league.archivedAt === null && actorId !== null && actorId === league.commissionerId;
 }
 
 /** The commissioner may reset any claimed seat except their own. */
 export function canResetSeat(
-  league: Pick<League, "isDemo" | "commissionerId" | "managers">,
+  league: Pick<League, "isDemo" | "commissionerId" | "managers" | "archivedAt">,
   actorId: string | null,
   targetId: string,
 ): boolean {
@@ -47,6 +47,6 @@ export function canResetSeat(
 }
 
 /** Refreshing team records belongs to the commissioner. The demo league is read-only. */
-export function canRefreshRecords(league: Pick<League, "isDemo" | "commissionerId">, actorId: string | null): boolean {
-  return !league.isDemo && actorId !== null && actorId === league.commissionerId;
+export function canRefreshRecords(league: Pick<League, "isDemo" | "commissionerId" | "archivedAt">, actorId: string | null): boolean {
+  return !league.isDemo && league.archivedAt === null && actorId !== null && actorId === league.commissionerId;
 }

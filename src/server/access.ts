@@ -20,9 +20,9 @@ export async function readLinkToken(token: string): Promise<LinkRecord | null> {
   return linkId ? findLink(await getDb(), linkId) : null;
 }
 
-/** The links this viewer may see: the league invite and pending seat invites, for the commissioner only. */
+/** The links this viewer may see: the league invite and pending seat invites, for the commissioner only. None once the league is archived. */
 export async function getLeagueAccess(league: League, viewerId: string | null): Promise<LeagueAccess> {
-  if (league.isDemo || viewerId !== league.commissionerId) return NO_ACCESS;
+  if (league.isDemo || league.archivedAt !== null || viewerId !== league.commissionerId) return NO_ACCESS;
   let invitePath: string | null = null;
   const seatInvitePaths: Record<string, string> = {};
   for (const link of await listActiveLinks(await getDb(), league.id)) {

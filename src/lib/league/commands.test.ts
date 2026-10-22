@@ -3,6 +3,7 @@ import { draftTotalPicks, managerOnTheClock, seatForPick, type DraftAction } fro
 import type { FadeAction } from "@/lib/fades";
 import {
   createLeague,
+  decideArchive,
   decideClaim,
   decideDraftAction,
   decideDraftOrder,
@@ -10,6 +11,7 @@ import {
   decideLeagueConfig,
   decideLineOverrides,
   decideSeatReset,
+  matchesLeagueName,
   type ClaimActor,
   type ClaimInput,
 } from "@/lib/league/commands";
@@ -485,5 +487,81 @@ describe("decideDraftOrder", () => {
     expect(shrunk.draft.seatOrder).toEqual(["m4", "m1", "m2"]);
     const grown = must(decideLeagueConfig(shrunk, "m1", { managerCount: 5, rounds: 11 }));
     expect(grown.draft.seatOrder).toEqual(["m4", "m1", "m2", "m3", "m5"]);
+  });
+});
+
+describe("archived leagues", () => {
+  const ARCHIVED_AT = "2026-10-22T15:00:00.000Z";
+  const refused = { ok: false, error: "archived" };
+  const archive = (league: League): League => ({ ...league, archivedAt: ARCHIVED_AT });
+
+  it("refuses every command", () => {
+    const joined = join(newLeague(), "m2", "Ben");
+    const live = must(act(joined, "m1", { type: "start" }));
+    expect(act(archive(live), "m1", { type: "pause" })).toEqual(refused);
+    expect(act(archive(live), "m1", pick(live, "MIN", "OVER"))).toEqual(refused);
+    const sides: Array<[string, Side]> = [["MIN", "OVER"], ["MIN", "UNDER"], ["OKC", "OVER"], ["OKC", "UNDER"]];
+    const picks = sides.map(([teamId, side], i) => ({ pickNumber: i + 1, managerId: `m${i + 1}`, teamId, side }));
+    const fades = archive({ ...joined, lines: LINES, draft: { ...joined.draft, status: "fades", picks } });
+    expect(act(fades, "m2", { type: "fade", managerId: "m2", targetPickNumber: 1 })).toEqual(refused);
+    const league = archive(joined);
+    expect(decideLineOverrides(league, "m1", { MIN: 40.5 })).toEqual(refused);
+    expect(decideLeagueConfig(league, "m1", { managerCount: 5, rounds: 4 })).toEqual(refused);
+    expect(decideDraftOrder(league, "m1", ["m2", "m1", "m3", "m4"])).toEqual(refused);
+    expect(decideClaim(league, LEAGUE_INVITE, NEWCOMER, { managerId: "m3", displayName: "Cy" })).toEqual(refused);
+    expect(decideInviteChange(league, "m1")).toEqual(refused);
+    expect(decideSeatReset(league, "m1", "m2")).toEqual(refused);
+  });
+});
+
+describe("matchesLeagueName", () => {
+  it("compares the trimmed, whitespace-collapsed input case-sensitively", () => {
+    expect(matchesLeagueName("Hoop Dreams", "Hoop Dreams")).toBe(true);
+    expect(matchesLeagueName("  Hoop   Dreams ", "Hoop Dreams")).toBe(true);
+    expect(matchesLeagueName("hoop dreams", "Hoop Dreams")).toBe(false);
+    expect(matchesLeagueName("", "Hoop Dreams")).toBe(false);
+    expect(matchesLeagueName(42, "Hoop Dreams")).toBe(false);
+  });
+});
+
+describe("decideArchive", () => {
+  const NAME = "Hoop Dreams";
+
+  it("lets the commissioner archive with the exact name", () => {
+    const league = newLeague();
+    expect(decideArchive(league, "m1", NAME)).toEqual({ ok: true, value: null });
+    expect(decideArchive(league, "m1", "  Hoop   Dreams ")).toEqual({ ok: true, value: null });
+  });
+
+  it("refuses a name that does not match", () => {
+    const league = newLeague();
+    for (const input of ["hoop dreams", "", 42]) {
+      expect(decideArchive(league, "m1", input)).toEqual({ ok: false, error: "name_mismatch" });
+    }
+  });
+
+  it("refuses anyone but the commissioner", () => {
+    const league = join(newLeague(), "m2", "Ben");
+    expect(decideArchive(league, "m2", NAME)).toEqual({ ok: false, error: "forbidden" });
+    expect(decideArchive(league, null, NAME)).toEqual({ ok: false, error: "forbidden" });
+  });
+
+  it("refuses an archived league and the demo league", () => {
+    const league = newLeague();
+    expect(decideArchive({ ...league, archivedAt: "2026-10-22T15:00:00.000Z" }, "m1", NAME)).toEqual({
+      ok: false,
+      error: "archived",
+    });
+    expect(decideArchive({ ...league, isDemo: true }, "m1", NAME)).toEqual({ ok: false, error: "demo_league" });
+  });
+
+  it("is allowed at every draft stage", () => {
+    const league = newLeague();
+    for (const status of ["not_started", "live", "paused", "fades", "complete"] as const) {
+      expect(decideArchive({ ...league, draft: { ...league.draft, status } }, "m1", NAME)).toEqual({
+        ok: true,
+        value: null,
+      });
+    }
   });
 });

@@ -29,6 +29,11 @@ export function normalizeName(raw: unknown, max: number): string | null {
   return name.length > 0 && name.length <= max ? name : null;
 }
 
+/** True when the typed text is the league's name (trimmed, whitespace collapsed, case-sensitive). */
+export function matchesLeagueName(input: unknown, name: string): boolean {
+  return normalizeName(input, LEAGUE_NAME_MAX) === name;
+}
+
 export function randomLeagueId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(LEAGUE_ID_LENGTH));
   return Array.from(bytes, (byte) => LEAGUE_ID_ALPHABET[byte % LEAGUE_ID_ALPHABET.length]).join("");
@@ -56,6 +61,7 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
     isDemo: false,
     commissionerId: seatOrder[0],
     version: 1,
+    archivedAt: null,
     managers,
     draft: createDraftState(seatOrder, LEAGUE_DEFAULTS.rounds),
     fades: [],
@@ -79,6 +85,7 @@ export function decideDraftAction(
   now: Date = new Date(),
 ): Result<League> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (action.type === "fade") return decideFade(league, actorId, action);
   if (action.type === "confirm") {
     if (league.draft.status !== "live") return fail("not_live");
@@ -120,6 +127,7 @@ export function decideLineOverrides(
   overrides: Readonly<Record<TeamId, number>>,
 ): Result<League> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (!canControlDraft(league, actorId)) return fail("forbidden");
   if (league.draft.status !== "not_started") return fail("lines_locked");
   return succeed({ ...league, lineOverrides: overrides });
@@ -131,6 +139,7 @@ export function decideLineOverrides(
  */
 export function decideLeagueConfig(league: League, actorId: string | null, config: LeagueConfig): Result<League> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (!canControlDraft(league, actorId)) return fail("forbidden");
   if (league.draft.status !== "not_started") return fail("config_locked");
   if (!isValidLeagueConfig(config)) return fail("invalid_config");
@@ -150,6 +159,7 @@ export function decideLeagueConfig(league: League, actorId: string | null, confi
  */
 export function decideDraftOrder(league: League, actorId: string | null, order: readonly string[]): Result<League> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (!canControlDraft(league, actorId)) return fail("forbidden");
   const { draft } = league;
   if (draft.status !== "not_started" || draft.picks.length > 0 || draft.voidedPicks.length > 0) {
@@ -198,6 +208,7 @@ export function decideClaim(
   input: ClaimInput,
 ): Result<Claim> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (link.kind === "league_invite") {
     if (actor.seatId !== null) return fail("already_joined");
     const seat = findManager(league.managers, typeof input.managerId === "string" ? input.managerId : null);
@@ -227,13 +238,23 @@ function nameSeat(league: League, managerId: string, rawName: unknown): Result<C
 /** Rotating or revoking the league invite. */
 export function decideInviteChange(league: League, actorId: string | null): Result<null> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   return canManageSeats(league, actorId) ? succeed(null) : fail("forbidden");
 }
 
 /** Resetting a claimed seat: its account is unbound and a seat invite replaces its personal link. */
 export function decideSeatReset(league: League, actorId: string | null, targetId: string): Result<null> {
   if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
   if (!canManageSeats(league, actorId)) return fail("forbidden");
   if (!findManager(league.managers, targetId)) return fail("not_found");
   return canResetSeat(league, actorId, targetId) ? succeed(null) : fail("forbidden");
+}
+
+/** Archiving (deleting) a league: commissioner only, at any draft stage, once the typed name matches. */
+export function decideArchive(league: League, actorId: string | null, confirmName: unknown): Result<null> {
+  if (league.isDemo) return fail("demo_league");
+  if (league.archivedAt !== null) return fail("archived");
+  if (!canControlDraft(league, actorId)) return fail("forbidden");
+  return matchesLeagueName(confirmName, league.name) ? succeed(null) : fail("name_mismatch");
 }

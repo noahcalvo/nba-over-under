@@ -93,6 +93,8 @@ export interface League {
   commissionerId: string;
   /** Incremented on every mutation; clients ignore responses older than what they hold. */
   version: number;
+  /** Set once when the commissioner deletes the league; never cleared. ISO timestamp, null while active. */
+  archivedAt: string | null;
   managers: Manager[];
   draft: DraftState;
   fades: Fade[];

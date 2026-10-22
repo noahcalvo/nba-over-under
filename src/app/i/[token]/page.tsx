@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/i/[token]">): Pro
   const { token } = await params;
   const link = await readLinkToken(token);
   const league = link && linkStatus(link, new Date()) === "active" ? await findLeague(link.leagueId) : null;
-  if (!link || !league) return { title: "Courtline" };
+  if (!link || !league || league.archivedAt !== null) return { title: "Courtline" };
 
   const seat = league.managers.find((manager) => manager.id === link.managerId);
   const title =
@@ -66,6 +66,17 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
         <p className="text-fog-300">{ERROR_MESSAGES.invalid_link}</p>
         <Link href="/" className={buttonClasses("secondary")}>
           Back to Courtline
+        </Link>
+      </Panel>
+    );
+  }
+
+  if (league.archivedAt !== null) {
+    return (
+      <Panel title="League deleted" bodyClassName="flex flex-col items-start gap-4 p-4 sm:p-5">
+        <p className="text-fog-300">This league was deleted by its commissioner.</p>
+        <Link href={`/l/${league.id}`} className={buttonClasses("secondary")}>
+          View the league
         </Link>
       </Panel>
     );

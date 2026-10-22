@@ -276,7 +276,7 @@ export function DraftRoomView({
               onFiltersChange={setFilters}
               selection={activeSelection}
               onSelect={setSelection}
-              selectable={draft.status === "live"}
+              selectable={draft.status === "live" && league.archivedAt === null}
               blockedFor={blockedFor}
             />
             <div className="min-w-0 xl:sticky xl:top-8 xl:self-start">

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createLeagueFor, runDraftAction } from "@/db/actions";
 import type { Db } from "@/db/client";
@@ -35,6 +35,15 @@ describe("loadLeague", () => {
     });
     expect(league!.managers.map((m) => m.displayName)).toEqual(["Ana", null, null, null]);
     expect(await loadLeague(db, "nope")).toBeNull();
+  });
+
+  it("loads a stored league as active", async () => {
+    expect((await loadLeague(db, "lg0001"))!.archivedAt).toBeNull();
+  });
+
+  it("loads archived_at as an ISO string", async () => {
+    await db.update(leagues).set({ archivedAt: new Date("2026-10-22T15:00:00Z") }).where(eq(leagues.id, "lg0001"));
+    expect((await loadLeague(db, "lg0001"))!.archivedAt).toBe("2026-10-22T15:00:00.000Z");
   });
 
   it("round-trips frozen lines", async () => {
@@ -135,6 +144,11 @@ describe("listSessionLeagues", () => {
     const sessionId = await createSession(db, "hash-legacy");
     await bindSeat(db, sessionId, "lg0001", "m1");
     await bindSeat(db, sessionId, "lg0002", "m1");
+    // Rows inserted in the same millisecond tie on created_at, so give the first seat an earlier time.
+    await db
+      .update(sessionSeats)
+      .set({ createdAt: new Date(Date.now() - 60_000) })
+      .where(and(eq(sessionSeats.sessionId, sessionId), eq(sessionSeats.leagueId, "lg0001")));
     const listed = await listSessionLeagues(db, sessionId);
     expect(listed.map((league) => [league.id, league.name, league.manager.displayName])).toEqual([
       ["lg0002", "Second", "Ana"],

@@ -11,7 +11,7 @@ import {
 } from "@/db/accounts";
 import type { Db } from "@/db/client";
 import { insertLeague } from "@/db/leagues";
-import { challengeEntries, challengeSeasons, managers } from "@/db/schema";
+import { challengeEntries, challengeSeasons, leagues, managers, userSeats } from "@/db/schema";
 import { createTestDb, createTestUser } from "@/db/test-db";
 
 let db: Db;
@@ -64,6 +64,11 @@ describe("user seats", () => {
     await bindUserSeat(db, u1, "lg0001", "m1");
     await bindUserSeat(db, u1, "lg0002", "m3");
     await bindUserSeat(db, u2, "lg0002", "m1");
+    // Rows inserted in the same millisecond tie on created_at, so give the first seat an earlier time.
+    await db
+      .update(userSeats)
+      .set({ createdAt: new Date(Date.now() - 60_000) })
+      .where(and(eq(userSeats.userId, u1), eq(userSeats.leagueId, "lg0001")));
     const listed = await listUserLeagues(db, u1);
     expect(listed.map((league) => [league.id, league.name, league.manager.id])).toEqual([
       ["lg0002", "Second", "m3"],
@@ -71,6 +76,15 @@ describe("user seats", () => {
     ]);
     expect(await loadUserSeats(db, u1)).toEqual({ lg0001: "m1", lg0002: "m3" });
     expect(await loadUserSeats(db, await createTestUser(db))).toEqual({});
+  });
+
+  it("leaves archived leagues out of a user's leagues", async () => {
+    await createLeague("lg0002", "Second");
+    await bindUserSeat(db, u1, "lg0001", "m1");
+    await bindUserSeat(db, u1, "lg0002", "m3");
+    await db.update(leagues).set({ archivedAt: new Date() }).where(eq(leagues.id, "lg0001"));
+    const listed = await listUserLeagues(db, u1);
+    expect(listed.map((league) => league.id)).toEqual(["lg0002"]);
   });
 });
 

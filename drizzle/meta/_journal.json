@@ -50,6 +50,13 @@
       "when": 1792618206125,
       "tag": "0006_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792688893689,
+      "tag": "0007_league_archive",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@ import { createLeagueFor } from "@/db/actions";
 import { freezeChallenge, loadEntry, loadEntryForUser, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import type { Db } from "@/db/client";
 import { claimLegacy, listLegacyItems } from "@/db/legacy";
-import { challengeEntries, challengePicks, sessionSeats } from "@/db/schema";
+import { challengeEntries, challengePicks, leagues, sessionSeats } from "@/db/schema";
 import { bindSeat, createSession, findSession } from "@/db/sessions";
 import { createTestDb, createTestUser } from "@/db/test-db";
 import { TEAM_INFO } from "@/data/teams";
@@ -47,6 +47,15 @@ describe("listLegacyItems", () => {
     expect(await listLegacyItems(db, session, 2026)).toMatchObject({ entry: null });
   });
 
+  it("skips seats in archived leagues", async () => {
+    const session = await createSession(db, "hash-s1");
+    await bindSeat(db, session, "lg0001", "m2");
+    await bindSeat(db, session, "lg0002", "m3");
+    await db.update(leagues).set({ archivedAt: new Date() }).where(eq(leagues.id, "lg0001"));
+    const items = await listLegacyItems(db, session, SEASON);
+    expect(items.seats.map((seat) => seat.id)).toEqual(["lg0002"]);
+  });
+
   it("is empty for a session with nothing", async () => {
     const session = await createSession(db, "hash-s1");
     expect(await listLegacyItems(db, session, SEASON)).toEqual({ seats: [], entry: null });
@@ -54,6 +63,18 @@ describe("listLegacyItems", () => {
 });
 
 describe("claimLegacy", () => {
+  it("finishes with nothing left when the only seat is in an archived league", async () => {
+    const user = await createTestUser(db, "Ben");
+    const session = await createSession(db, "hash-s1");
+    await bindSeat(db, session, "lg0001", "m2");
+    await db.update(leagues).set({ archivedAt: new Date() }).where(eq(leagues.id, "lg0001"));
+    const result = await claimLegacy(db, session, user, SEASON);
+    expect(result.seats).toEqual([]);
+    expect(result.sessionCleared).toBe(true);
+    expect(await findSession(db, "hash-s1")).toBeNull();
+    expect(await seatHolder(db, "lg0001", "m2")).toBeNull();
+  });
+
   it("moves seats and the entry into the account", async () => {
     const user = await createTestUser(db, "Ben");
     const session = await createSession(db, "hash-s1");

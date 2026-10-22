@@ -17,6 +17,7 @@ function league(status: DraftStatus, pickCount = 0): DraftAccess {
   return {
     isDemo: false,
     commissionerId: "m1",
+    archivedAt: null,
     managers: MANAGERS,
     draft: {
       status,
@@ -35,6 +36,12 @@ function league(status: DraftStatus, pickCount = 0): DraftAccess {
 }
 
 describe("describeTurn", () => {
+  it("is not actionable once the league is archived mid-draft", () => {
+    const archived = { ...league("live", 1), archivedAt: "2026-10-22T00:00:00.000Z" };
+    expect(describeTurn(archived, "m2")).toEqual({ kind: "archived", managerId: "m2" });
+    expect(describeTurn({ ...archived, draft: { ...archived.draft, status: "paused" } }, "m1")).toEqual({ kind: "archived", managerId: "m2" });
+  });
+
   it("reports who picks first before the draft starts", () => {
     expect(describeTurn(league("not_started"), "m2")).toEqual({ kind: "not_started", managerId: "m1" });
   });

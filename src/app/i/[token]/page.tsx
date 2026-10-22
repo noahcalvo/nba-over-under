@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/i/[token]">): Pro
   const { token } = await params;
   const link = await readLinkToken(token);
   const league = link && linkStatus(link, new Date()) === "active" ? await findLeague(link.leagueId) : null;
-  if (!link || !league) return { title: "Courtline" };
+  if (!link || !league || league.archivedAt !== null) return { title: "Courtline" };
 
   const seat = league.managers.find((manager) => manager.id === link.managerId);
   const title =

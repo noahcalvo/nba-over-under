@@ -47,6 +47,12 @@ export function DeleteLeaguePanel({
         return;
       }
       const data = await response.json().catch(() => null);
+      if (response.status === 409 && data?.error === "archived") {
+        // Already deleted from another tab: leave Settings, which is read-only now.
+        router.push("/");
+        router.refresh();
+        return;
+      }
       setError(typeof data?.message === "string" ? data.message : "Couldn't delete the league.");
     } catch {
       setError("Couldn't reach the server. Try again.");

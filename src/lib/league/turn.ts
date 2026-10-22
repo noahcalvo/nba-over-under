@@ -1,7 +1,7 @@
 import { managerOnTheClock } from "@/lib/draft";
 import { canPickNow, type DraftAccess } from "@/lib/league/permissions";
 
-export type TurnKind = "not_started" | "your_turn" | "picking_for_open_seat" | "on_the_clock" | "paused" | "fades" | "complete";
+export type TurnKind = "not_started" | "your_turn" | "picking_for_open_seat" | "on_the_clock" | "paused" | "archived" | "fades" | "complete";
 
 export interface TurnSummary {
   kind: TurnKind;
@@ -14,6 +14,8 @@ export function describeTurn(league: DraftAccess, viewerId: string | null): Turn
   const managerId = managerOnTheClock(draft);
   if (draft.status === "complete") return { kind: "complete", managerId: null };
   if (draft.status === "fades") return { kind: "fades", managerId: null };
+  // A deleted league keeps its board but nobody is on the clock any more.
+  if (league.archivedAt !== null) return { kind: "archived", managerId };
   if (draft.status === "not_started") return { kind: "not_started", managerId };
   if (draft.status === "paused") return { kind: "paused", managerId };
   if (managerId === viewerId) return { kind: "your_turn", managerId };

@@ -47,7 +47,7 @@ export function SelectionPreview({
             {notice}
           </p>
         )}
-        <p>{EMPTY_MESSAGE[league.draft.status]}</p>
+        <p>{league.archivedAt !== null && !["fades", "complete"].includes(league.draft.status) ? "This league was deleted. The draft is read-only." : EMPTY_MESSAGE[league.draft.status]}</p>
       </div>
     );
   }

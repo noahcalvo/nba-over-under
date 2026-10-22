@@ -47,6 +47,8 @@ function violatesUnique(error: unknown, constraint: string): boolean {
 async function claimSeat(db: Db, sessionId: string, userId: string, seated: SeatedLeague): Promise<LegacyClaimResult["seats"][number] | null> {
   const leagueId = seated.id;
   const result = await withLockedLeague(db, leagueId, userId, async ({ tx, league, actorId }) => {
+    // Seats in archived leagues are intentionally not moved.
+    if (league.archivedAt !== null) return succeed(null);
     // Re-read under the lock: a seat reset deletes the legacy row, and then there is nothing left to move.
     const [legacy] = await tx
       .select({ managerId: sessionSeats.managerId })

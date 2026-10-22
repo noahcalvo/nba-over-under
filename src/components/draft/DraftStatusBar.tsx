@@ -38,6 +38,7 @@ export function DraftStatusBar({
   const manager = findManager(managers, turn.managerId);
   const upNext = findManager(managers, managerUpNext(draft));
   const paused = draft.status === "paused";
+  const archived = league.archivedAt !== null;
   const picksIn =
     draft.blockedPick === null
       ? `All ${total} picks are in`
@@ -104,7 +105,7 @@ export function DraftStatusBar({
             </Button>
           )
         ) : (
-          <Badge tone={paused ? "danger" : "accent"}>{paused ? "Paused" : "Live"}</Badge>
+          <Badge tone={archived ? "neutral" : paused ? "danger" : "accent"}>{archived ? "Archived" : paused ? "Paused" : "Live"}</Badge>
         )}
       </div>
     </section>
@@ -134,6 +135,8 @@ function TurnHeadline({ turn, manager }: { turn: TurnSummary; manager: Manager |
           <span className="text-negative">Draft paused</span> · {name} is up
         </>
       );
+    case "archived":
+      return <>Draft stopped · read-only</>;
     case "fades":
       return (
         <>

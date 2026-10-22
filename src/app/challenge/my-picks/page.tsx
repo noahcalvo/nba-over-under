@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignInLink } from "@/components/account/SignInLink";
 import { Suspense } from "react";
 import { ChallengePageHeader } from "@/components/challenge/ChallengePageHeader";
 import { EntryResults } from "@/components/challenge/EntryResults";
@@ -7,7 +8,6 @@ import { buttonClasses } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { CHALLENGE } from "@/config/challenge";
 import { isLocked } from "@/lib/challenge/phase";
-import { signInHref } from "@/lib/access/next-path";
 import { getAccount } from "@/server/account";
 import { loadMyResults } from "@/server/challenge-pages";
 import { prepareChallenge } from "@/server/challenge";
@@ -35,9 +35,9 @@ async function MyPicks() {
           <p className="text-fog-300">
             Your entry belongs to your Google account. Sign in to see and edit it, or find it on the leaderboard.
           </p>
-          <Link href={signInHref("/challenge/my-picks")} className={buttonClasses("primary")}>
+          <SignInLink next="/challenge/my-picks" className={buttonClasses("primary")}>
             Sign in
-          </Link>
+          </SignInLink>
         </Panel>
       </div>
     );

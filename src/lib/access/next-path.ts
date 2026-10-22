@@ -16,3 +16,11 @@ export function safeNextPath(raw: unknown): string {
 export function signInHref(next: string): string {
   return `/sign-in?next=${encodeURIComponent(next)}`;
 }
+
+/**
+ * Starts Google sign-in straight away (`src/app/sign-in/start/route.ts`), skipping the sign-in page. Link to it only
+ * through `SignInLink` (a plain `<a>`): a prefetching `<Link>` would start a sign-in on every prefetch.
+ */
+export function startSignInHref(next: string): string {
+  return `/sign-in/start?next=${encodeURIComponent(next)}`;
+}

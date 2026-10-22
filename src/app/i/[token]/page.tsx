@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SignInLink } from "@/components/account/SignInLink";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { alt as ogImageAlt, size as ogImageSize } from "@/app/opengraph-image";
@@ -8,7 +9,6 @@ import { Logo } from "@/components/shell/Logo";
 import { buttonClasses } from "@/components/ui/Button";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
-import { signInHref } from "@/lib/access/next-path";
 import { legacySeatIn } from "@/lib/access/legacy";
 import { linkStatus, type LinkKind } from "@/lib/access/links";
 import { ERROR_MESSAGES } from "@/lib/league/errors";
@@ -120,9 +120,9 @@ async function LinkContent({ params }: { params: PageProps<"/i/[token]">["params
             ) : (
               <p className="text-fog-300">Join {league.name} as one of its managers.</p>
             )}
-            <Link href={signInHref(`/i/${token}`)} className={buttonClasses("primary", "lg")}>
+            <SignInLink next={`/i/${token}`} className={buttonClasses("primary", "lg")}>
               Sign in with Google to continue
-            </Link>
+            </SignInLink>
           </div>
         )}
       </Panel>

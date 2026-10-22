@@ -6,7 +6,7 @@ import { LegacyClaim } from "@/components/account/LegacyClaim";
 import { Logo } from "@/components/shell/Logo";
 import { PageFallback } from "@/components/ui/PageFallback";
 import { Panel } from "@/components/ui/Panel";
-import { signInHref } from "@/lib/access/next-path";
+import { startSignInHref } from "@/lib/access/next-path";
 import { managerLabel } from "@/lib/league/managers";
 import { getAccount } from "@/server/account";
 import { getLegacyItems } from "@/server/legacy";
@@ -29,7 +29,7 @@ export default function AccountPage() {
 
 async function AccountContent() {
   const account = await getAccount();
-  if (!account) redirect(signInHref("/account"));
+  if (!account) redirect(startSignInHref("/account"));
   const legacy = await getLegacyItems();
   const items = legacy && {
     seats: legacy.seats.map((league) => ({

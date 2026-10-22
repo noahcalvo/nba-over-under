@@ -1,12 +1,12 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { SignInLink } from "@/components/account/SignInLink";
 import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { buttonClasses } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { LEAGUE_LIMITS } from "@/config/league";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
-import { signInHref } from "@/lib/access/next-path";
 import { managerLabel } from "@/lib/league/managers";
 import { getAccount } from "@/server/account";
 import { listViewerLeagues } from "@/server/league";
@@ -73,9 +73,9 @@ async function CreateLeague() {
   const account = await getAccount();
   if (!account) {
     return (
-      <Link href={signInHref("/home")} className={buttonClasses("primary", "lg")}>
+      <SignInLink next="/home" className={buttonClasses("primary", "lg")}>
         Sign in with Google to create a league
-      </Link>
+      </SignInLink>
     );
   }
   return <CreateLeagueForm accountName={account.name} />;

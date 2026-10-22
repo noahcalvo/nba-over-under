@@ -8,6 +8,18 @@
       "port": 8765
     },
     {
+      "name": "archive-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3100"],
+      "env": {
+        "AUTH_DEV_LOGIN": "1",
+        "RECORD_SOURCE": "static",
+        "LINE_SOURCE": "static",
+        "BETTER_AUTH_URL": "http://localhost:3100"
+      },
+      "port": 3100
+    },
+    {
       "name": "dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],

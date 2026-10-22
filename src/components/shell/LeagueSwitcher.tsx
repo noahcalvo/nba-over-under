@@ -41,7 +41,7 @@ export function LeagueSwitcher({
         <LeagueMenu
           leagues={otherLeagues}
           onNavigate={() => setOpen(false)}
-          className={compact ? "right-0 w-64" : "inset-x-0"}
+          className={compact ? "left-0 w-64" : "inset-x-0"}
         />
       )}
     </div>

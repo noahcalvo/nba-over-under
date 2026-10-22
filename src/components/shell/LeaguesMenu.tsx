@@ -19,7 +19,7 @@ export function LeaguesMenu({ leagues }: { leagues: LeagueSummary[] }) {
         <span className="block min-w-0 flex-1 truncate text-sm font-semibold">Your leagues</span>
         <ChevronDown aria-hidden className="size-4 shrink-0 text-fog-300" />
       </button>
-      {open && <LeagueMenu leagues={leagues} onNavigate={() => setOpen(false)} className="right-0 w-64" />}
+      {open && <LeagueMenu leagues={leagues} onNavigate={() => setOpen(false)} className="left-0 w-64" />}
     </div>
   );
 }

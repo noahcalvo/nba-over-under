@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LogIn } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,7 +9,17 @@ import type { Account } from "@/server/account";
 import { authClient } from "./auth-client";
 import { SignInLink } from "./SignInLink";
 
-export type AccountPlacement = "sidebar" | "header";
+/** "tab" is the last cell of a shell's mobile bottom tab bar. */
+export type AccountPlacement = "sidebar" | "header" | "tab";
+
+/** The bottom tab bar's cell, matching the shells' tabs. */
+const ACCOUNT_TAB_CLASS = "flex h-16 w-full flex-col items-center justify-center gap-0.5 text-xs";
+
+const MENU_POSITION: Record<AccountPlacement, string> = {
+  sidebar: "inset-x-0 bottom-full mb-2",
+  header: "right-0 mt-2 w-64",
+  tab: "bottom-full right-2 mb-2 w-64",
+};
 
 function initialsOf(name: string): string {
   const letters = name
@@ -20,7 +30,8 @@ function initialsOf(name: string): string {
   return letters.join("") || "?";
 }
 
-function AccountAvatar({ account }: { account: Account }) {
+function AccountAvatar({ account, small = false }: { account: Account; small?: boolean }) {
+  const size = small ? "size-5 text-[10px]" : "size-8 text-sm";
   const [broken, setBroken] = useState(false);
   if (account.image && !broken) {
     return (
@@ -34,14 +45,14 @@ function AccountAvatar({ account }: { account: Account }) {
         unoptimized
         referrerPolicy="no-referrer"
         onError={() => setBroken(true)}
-        className="size-8 shrink-0 rounded-full object-cover"
+        className={`${size} shrink-0 rounded-full object-cover`}
       />
     );
   }
   return (
     <span
       aria-hidden
-      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-seat-1 font-display text-sm font-bold text-white"
+      className={`${size} inline-flex shrink-0 items-center justify-center rounded-full bg-seat-1 font-display font-bold text-white`}
     >
       {initialsOf(account.name)}
     </span>
@@ -61,9 +72,18 @@ export function AccountMenu({ account, placement }: { account: Account | null; p
 function SignInButton({ placement }: { placement: AccountPlacement }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
+  const next = search ? `${pathname}?${search}` : pathname;
+  if (placement === "tab") {
+    return (
+      <SignInLink next={next} className={`${ACCOUNT_TAB_CLASS} text-fog-300`}>
+        <LogIn aria-hidden className="size-5" />
+        <span>Sign in</span>
+      </SignInLink>
+    );
+  }
   return (
     <SignInLink
-      next={search ? `${pathname}?${search}` : pathname}
+      next={next}
       className={`${buttonClasses("secondary", "md")} ${placement === "sidebar" ? "w-full" : "shrink-0"}`}
     >
       Sign in
@@ -112,6 +132,41 @@ function SignedInMenu({ account, placement }: { account: Account; placement: Acc
   }
 
   const sidebar = placement === "sidebar";
+  const menu = open && (
+    <div
+      className={`absolute z-40 rounded-lg border border-ink-600 bg-ink-900 p-2 shadow-xl ${MENU_POSITION[placement]}`}
+    >
+      <p className="truncate border-b border-ink-700 px-3 pb-2 pt-1 text-sm text-fog-300">{account.email}</p>
+      <button
+        type="button"
+        onClick={signOut}
+        disabled={signingOut}
+        className="mt-2 block w-full rounded-md px-3 py-2 text-left text-sm font-semibold hover:bg-ink-800 disabled:opacity-40"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+  if (placement === "tab") {
+    // No positioned wrapper: the menu opens above the whole (fixed) tab bar, against its right edge.
+    return (
+      <div ref={root}>
+        <button
+          ref={trigger}
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="true"
+          aria-label={`Account menu, ${account.name}`}
+          onClick={() => setOpen((value) => !value)}
+          className={`${ACCOUNT_TAB_CLASS} ${open ? "font-semibold text-accent" : "text-fog-300"}`}
+        >
+          <AccountAvatar account={account} small />
+          <span>Account</span>
+        </button>
+        {menu}
+      </div>
+    );
+  }
   return (
     <div ref={root} className={`relative min-w-0 ${sidebar ? "w-full" : "shrink-0"}`}>
       <button
@@ -131,23 +186,7 @@ function SignedInMenu({ account, placement }: { account: Account; placement: Acc
         </span>
         <ChevronDown aria-hidden className="size-4 shrink-0 text-fog-300" />
       </button>
-      {open && (
-        <div
-          className={`absolute z-40 rounded-lg border border-ink-600 bg-ink-900 p-2 shadow-xl ${
-            sidebar ? "inset-x-0 bottom-full mb-2" : "right-0 mt-2 w-64"
-          }`}
-        >
-          <p className="truncate border-b border-ink-700 px-3 pb-2 pt-1 text-sm text-fog-300">{account.email}</p>
-          <button
-            type="button"
-            onClick={signOut}
-            disabled={signingOut}
-            className="mt-2 block w-full rounded-md px-3 py-2 text-left text-sm font-semibold hover:bg-ink-800 disabled:opacity-40"
-          >
-            Sign out
-          </button>
-        </div>
-      )}
+      {menu}
     </div>
   );
 }

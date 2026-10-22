@@ -7,13 +7,15 @@ export interface NbaNavItem {
   icon: LucideIcon;
   /** Match the path exactly (Home must not light up on every page). */
   exact: boolean;
+  /** Shown in the sidebar only: below lg the challenge is in the top bar (GlobalNav). */
+  sidebarOnly?: boolean;
 }
 
 export function nbaNavItems(): NbaNavItem[] {
   return [
     { href: "/", label: "Home", shortLabel: "Home", icon: House, exact: true },
     { href: "/nba", label: "NBA schedule", shortLabel: "Schedule", icon: CalendarDays, exact: false },
-    { href: "/challenge", label: "30/30 Challenge", shortLabel: "Challenge", icon: Zap, exact: false },
+    { href: "/challenge", label: "30/30 Challenge", shortLabel: "Challenge", icon: Zap, exact: false, sidebarOnly: true },
   ];
 }
 

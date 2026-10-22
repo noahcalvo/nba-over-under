@@ -22,28 +22,31 @@ function ItemContent({ item }: { item: NavItem }) {
   );
 }
 
-/** Six tabs (the league plus the NBA schedule and the 30/30 Challenge) need six columns; the demo league has four. */
-function columnsClass(count: number): string {
-  return count > 4 ? "grid-cols-6" : "grid-cols-4";
+/** The league's own pages; the NBA schedule and the 30/30 Challenge are in the top bar (GlobalNav). */
+function leagueTabs(leagueId: string): NavItem[] {
+  return navItems(leagueId).filter((item) => !item.global);
 }
 
-function NavBar({ count, children }: { count: number; children: ReactNode }) {
+/** The league's four tabs, then the account. */
+function NavBar({ account, children }: { account: ReactNode; children: ReactNode }) {
   return (
     <nav
       aria-label="League"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-700 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
-      <ul className={`grid ${columnsClass(count)}`}>{children}</ul>
+      <ul className="grid grid-cols-5">
+        {children}
+        <li>{account}</li>
+      </ul>
     </nav>
   );
 }
 
-export function BottomNav({ leagueId }: { leagueId: string }) {
+export function BottomNav({ leagueId, account }: { leagueId: string; account: ReactNode }) {
   const pathname = usePathname();
-  const items = navItems(leagueId);
   return (
-    <NavBar count={items.length}>
-      {items.map((item) => {
+    <NavBar account={account}>
+      {leagueTabs(leagueId).map((item) => {
         const active = isActive(item, pathname);
         return (
           <li key={item.href}>
@@ -63,11 +66,10 @@ export function BottomNav({ leagueId }: { leagueId: string }) {
 }
 
 /** The same tabs before the league is known (the prerendered shell): they look the same but don't link yet. */
-export function BottomNavSkeleton() {
-  const items = navItems("");
+export function BottomNavSkeleton({ account }: { account: ReactNode }) {
   return (
-    <NavBar count={items.length}>
-      {items.map((item) => (
+    <NavBar account={account}>
+      {leagueTabs("").map((item) => (
         <li key={item.label}>
           <span aria-disabled="true" className={itemClass(false)}>
             <ItemContent item={item} />

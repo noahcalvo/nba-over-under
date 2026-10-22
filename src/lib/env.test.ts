@@ -86,6 +86,8 @@ describe("readAuthConfig", () => {
         google: { clientId: "client-id", clientSecret: "client-secret" },
         devLogin: false,
         usingDevSecret: false,
+        productionURL: "https://nba-over-under-iota.vercel.app",
+        previewHosts: [],
       },
     });
   });
@@ -112,6 +114,8 @@ describe("readAuthConfig", () => {
         google: null,
         devLogin: true,
         usingDevSecret: true,
+        productionURL: "http://localhost:3000",
+        previewHosts: [],
       },
     });
   });
@@ -136,5 +140,63 @@ describe("readAuthConfig", () => {
   it("rejects a non-http URL", () => {
     const result = readAuthConfig({ NODE_ENV: "development", BETTER_AUTH_URL: "ftp://example.com", ...GOOGLE });
     expect(result).toEqual({ ok: false, problems: ["BETTER_AUTH_URL must be an http:// or https:// URL."] });
+  });
+
+  describe("preview deployments", () => {
+    const PRODUCTION = {
+      NODE_ENV: "production",
+      BETTER_AUTH_SECRET: SECRET,
+      BETTER_AUTH_URL: "https://nba-over-under-iota.vercel.app",
+      ...GOOGLE,
+    };
+    const PREVIEW_HOSTS = { AUTH_PREVIEW_HOSTS: " Nba-Over-Under-*-Team.vercel.app , other-*.example.com " };
+    const PREVIEW = { ...PRODUCTION, VERCEL_ENV: "preview", VERCEL_URL: "nba-over-under-abc123-team.vercel.app" };
+
+    it("production trusts the preview hosts", () => {
+      expect(readAuthConfig({ ...PRODUCTION, VERCEL_ENV: "production", ...PREVIEW_HOSTS })).toMatchObject({
+        ok: true,
+        config: {
+          baseURL: "https://nba-over-under-iota.vercel.app",
+          productionURL: "https://nba-over-under-iota.vercel.app",
+          previewHosts: ["nba-over-under-*-team.vercel.app", "other-*.example.com"],
+        },
+      });
+    });
+
+    it("a preview signs in on its own URL through production", () => {
+      expect(readAuthConfig({ ...PREVIEW, ...PREVIEW_HOSTS })).toMatchObject({
+        ok: true,
+        config: {
+          baseURL: "https://nba-over-under-abc123-team.vercel.app",
+          productionURL: "https://nba-over-under-iota.vercel.app",
+          previewHosts: ["nba-over-under-*-team.vercel.app", "other-*.example.com"],
+        },
+      });
+    });
+
+    it("a preview without preview hosts keeps the production URL", () => {
+      expect(readAuthConfig(PREVIEW)).toMatchObject({
+        ok: true,
+        config: { baseURL: "https://nba-over-under-iota.vercel.app", previewHosts: [] },
+      });
+    });
+
+    it("a preview with preview hosts needs its own URL", () => {
+      expect(readAuthConfig({ ...PREVIEW, ...PREVIEW_HOSTS, VERCEL_URL: "" })).toEqual({
+        ok: false,
+        problems: ["VERCEL_URL is required for sign-in on a preview deployment."],
+      });
+    });
+
+    it("rejects preview hosts that aren't narrow host patterns", () => {
+      for (const hosts of ["*.vercel.app", "https://app-*.vercel.app", "app-*.vercel.app/path", "*", "app .vercel.app"]) {
+        expect(readAuthConfig({ ...PRODUCTION, AUTH_PREVIEW_HOSTS: hosts })).toEqual({
+          ok: false,
+          problems: [
+            "AUTH_PREVIEW_HOSTS takes host names like app-*-team.vercel.app (no scheme or path; a wildcard needs a fixed prefix).",
+          ],
+        });
+      }
+    });
   });
 });

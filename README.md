@@ -35,8 +35,13 @@ Accounts use [Better Auth](https://www.better-auth.com/) with Google as the only
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: from the OAuth client.
    - `BETTER_AUTH_SECRET`: at least 32 random characters, e.g. `openssl rand -base64 32`.
    - `BETTER_AUTH_URL`: the site origin, e.g. `https://your-site.vercel.app`. On Vercel it falls back to `https://$VERCEL_PROJECT_PRODUCTION_URL`.
-
-Preview deployments cannot sign in unless their own URL is registered with Google as an origin and redirect URI. Without these variables the site still serves every page (the server log says what is missing), but `/sign-in` reports that sign-in isn't available and nothing can be created or saved. Outside production the secret and URL fall back to development values, so only the Google pair (or `AUTH_DEV_LOGIN=1`) is needed locally. Browsers that held seats or a 30/30 entry from before sign-in see a notice that links to `/account`, where one button moves them to the signed-in account.
+4. Optional, sign-in on preview deployments: Google takes no wildcard redirect URIs, so previews sign in through production
+   (Better Auth's OAuth proxy: production completes the Google sign-in and hands the encrypted profile back to the preview).
+   Set `AUTH_PREVIEW_HOSTS` to your project's preview host pattern, e.g. `your-project-*-your-team.vercel.app` (comma-separate
+   several; a wildcard needs a fixed prefix, so `*.vercel.app` is refused), and set it, the Google pair, `BETTER_AUTH_SECRET`
+   (the same value) and `BETTER_AUTH_URL` (the production origin) for **both** Production and Preview. Nothing more is
+   registered with Google. Previews then sign in on their own URL; without `AUTH_PREVIEW_HOSTS` they can't sign in.
+   A preview that shares the production database creates real accounts and sessions in it. Without these variables the site still serves every page (the server log says what is missing), but `/sign-in` reports that sign-in isn't available and nothing can be created or saved. Outside production the secret and URL fall back to development values, so only the Google pair (or `AUTH_DEV_LOGIN=1`) is needed locally. Browsers that held seats or a 30/30 entry from before sign-in see a notice that links to `/account`, where one button moves them to the signed-in account.
 
 ## Commands
 

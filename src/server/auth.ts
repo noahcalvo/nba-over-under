@@ -1,6 +1,7 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { oAuthProxy } from "better-auth/plugins";
 import { ACCESS } from "@/config/access";
 import type { Db } from "@/db/client";
 import { authAccounts, authSessions, authVerifications, users } from "@/db/schema";
@@ -10,9 +11,14 @@ import { getDb } from "@/server/db";
 // The one place sign-in providers are configured. Every value comes from AuthConfig, so Better Auth never reads
 // BETTER_AUTH_SECRET or BETTER_AUTH_URL from the environment itself.
 function buildAuth(db: Db, config: AuthConfig) {
+  const previews = config.previewHosts.length > 0;
   return betterAuth({
     appName: "Courtline",
-    baseURL: config.baseURL,
+    // A preview answers on its deployment and branch URLs: each request's host, when it matches AUTH_PREVIEW_HOSTS.
+    baseURL:
+      previews && config.baseURL !== config.productionURL
+        ? { allowedHosts: config.previewHosts, fallback: config.baseURL, protocol: "https" }
+        : config.baseURL,
     secret: config.secret,
     database: drizzleAdapter(db, {
       provider: "pg",
@@ -38,7 +44,12 @@ function buildAuth(db: Db, config: AuthConfig) {
     emailAndPassword: { enabled: config.devLogin },
     advanced: { cookiePrefix: "courtline" },
     telemetry: { enabled: false },
-    trustedOrigins: [config.baseURL],
+    trustedOrigins: [...new Set([config.baseURL, config.productionURL])].concat(
+      config.previewHosts.map((host) => `https://${host}`),
+    ),
+    // Google only knows the production callback: a preview's sign-in goes through production, which hands the
+    // encrypted profile back to the preview (only to a trusted origin above).
+    plugins: previews ? [oAuthProxy({ productionURL: config.productionURL })] : [],
   });
 }
 

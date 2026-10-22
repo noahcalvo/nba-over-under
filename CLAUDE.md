@@ -242,7 +242,10 @@ Next API.
   Auth email/password and the "Development sign-in" form. Sessions expire `ACCESS.sessionIdleDays` after last use and renew at most
   every `ACCESS.sessionRenewHours`; server renders read the session with `disableRefresh` (a render can't set the cookie), and the
   client `AccountMenu` renews it once on mount through `/api/auth/get-session`. Google needs each redirect URI
-  (`{origin}/api/auth/callback/google`) registered, so preview deployments can't sign in. Telemetry is off.
+  (`{origin}/api/auth/callback/google`) registered and takes no wildcards, so previews sign in through production (Better Auth's
+  `oAuthProxy`) when `AUTH_PREVIEW_HOSTS` (host patterns with a fixed prefix, e.g. `nba-over-under-*-team.vercel.app`) is set on
+  Production and Preview: production trusts those origins, and a preview (`VERCEL_ENV=preview`) answers on its own host
+  (`VERCEL_URL` fallback) with `productionURL` = `BETTER_AUTH_URL`. Without it previews can't sign in. Telemetry is off.
 - Sign-in required (401 `sign_in_required`, or 503 `auth_unavailable` when sign-in isn't configured: `signedOutError()`): creating a league, claiming any link, every league mutation, saving a challenge entry,
   the legacy claim. Public league pages, `/nba`, the challenge board, leaderboards, entry pages and the guided demo stay open.
   `/sign-in?next=<path>`: `safeNextPath` accepts only a same-site path, anything else goes to `/`; a cancelled Google sign-in

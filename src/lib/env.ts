@@ -64,6 +64,10 @@ export interface AuthConfig {
   devLogin: boolean;
   /** True when BETTER_AUTH_SECRET is unset outside production and the development fallback is in use. */
   usingDevSecret: boolean;
+  /** The production origin. Google only knows its callback; previews sign in through it (Better Auth's OAuth proxy). */
+  productionURL: string;
+  /** Preview host patterns (AUTH_PREVIEW_HOSTS), lowercase. Empty: previews can't sign in. */
+  previewHosts: string[];
 }
 
 export type AuthConfigResult = { ok: true; config: AuthConfig } | { ok: false; problems: string[] };
@@ -71,6 +75,8 @@ export type AuthConfigResult = { ok: true; config: AuthConfig } | { ok: false; p
 const AUTH_SECRET_MIN_LENGTH = 32;
 const DEV_AUTH_SECRET = "courtline-development-auth-secret-not-for-production";
 const DEV_AUTH_URL = "http://localhost:3000";
+/** A host, optionally with one `*` after a fixed prefix in its first label (never `*.vercel.app`: other teams' sites). */
+const PREVIEW_HOST_PATTERN = /^[a-z0-9-]+(\*[a-z0-9-]*)?(\.[a-z0-9-]+)+$/;
 
 /** Sign-in settings. Unlike readServerConfig, a failure here only turns sign-in off; the site keeps serving reads. */
 export function readAuthConfig(env: Env): AuthConfigResult {
@@ -107,6 +113,23 @@ export function readAuthConfig(env: Env): AuthConfigResult {
     else problems.push("BETTER_AUTH_URL must be an http:// or https:// URL.");
   }
 
+  const previewHosts = (env.AUTH_PREVIEW_HOSTS ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter((host) => host !== "");
+  if (previewHosts.some((host) => !PREVIEW_HOST_PATTERN.test(host))) {
+    problems.push(
+      "AUTH_PREVIEW_HOSTS takes host names like app-*-team.vercel.app (no scheme or path; a wildcard needs a fixed prefix).",
+    );
+  }
+  // A preview signs in on its own URL; the OAuth proxy sends Google through productionURL and back.
+  const productionURL = baseURL;
+  if (env.VERCEL_ENV === "preview" && previewHosts.length > 0) {
+    const previewHost = env.VERCEL_URL?.trim();
+    if (previewHost) baseURL = `https://${previewHost}`;
+    else problems.push("VERCEL_URL is required for sign-in on a preview deployment.");
+  }
+
   if (problems.length > 0) return { ok: false, problems };
-  return { ok: true, config: { baseURL, secret, google, devLogin, usingDevSecret } };
+  return { ok: true, config: { baseURL, secret, google, devLogin, usingDevSecret, productionURL, previewHosts } };
 }

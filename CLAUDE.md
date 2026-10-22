@@ -219,13 +219,22 @@ Next API.
   `/challenge/teams/{id}`, schedule and standings names are plain text. Hidden in the demo. Always reads ESPN (no static mode): offline shows the feed error.
 - Commissioner = `m1` (`commissionerId`), wherever they sit in the draft order. Only the commissioner starts, pauses and
   resumes, picks for unclaimed seats, manages the league invite and resets seats.
+- League deletion (archive): only the commissioner, from the "Delete league" panel in Settings, typing the league name
+  (`matchesLeagueName`: extra spaces ignored, case-sensitive). `POST /api/leagues/{id}/archive` `{ confirmName }` →
+  `withLockedLeague` → `decideArchive` (`demo_league`, `archived`, `forbidden`, `name_mismatch`); sets `leagues.archived_at`
+  (`now()`, migration `0007_league_archive`, surfaced as `League.archivedAt`) and bumps `version`. One-way: nothing clears it.
+  Read-only, with `ArchivedBanner` in the league layout: every `decide*` refuses `archived` (409), every permission helper is
+  false, `refreshLeagueRecords` returns `archived`, `getLeagueAccess` exposes no links, and the draft room stops polling
+  (one `router.refresh()`). Pages still load and team records keep updating. `listUserLeagues` / `listSessionLeagues` skip
+  archived leagues (homepage, `/nba`, switcher, stakes, legacy claim). `/i/{token}` says "deleted" and links to the read-only league.
 
 ## State and identity
 - Leagues live in Postgres (`DATABASE_URL`; `DATABASE_URL_UNPOOLED` is used for migrations when present). Without
   `DATABASE_URL`, outside production, PGlite at `.data/pglite` (delete the folder to reset). A production server
   without `DATABASE_URL` or `LINK_SECRET` still boots, but `register()` (`src/instrumentation.ts`, checks in
   `src/lib/env.ts`) logs what is missing and every request returns 500. The demo league
-  (`/l/demo`) lives in code, never in the database, and is read-only.
+  (`/l/demo`) lives in code, never in the database, and is read-only. `leagues.archived_at` (set once, by deletion; see
+  League deletion above) makes a league read-only for everyone.
 - Every league write goes through `withLockedLeague` (`src/db/leagues.ts`): it locks the league row, re-reads the
   caller's seat (`user_seats`) and any link under the lock, then runs the pure decision. Never authorize a write with
   `getViewerId()`; it is for rendering.

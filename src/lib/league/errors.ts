@@ -27,10 +27,13 @@ export type DomainError =
   | "deadline_unavailable"
   | "incomplete_entry"
   | "invalid_picks"
+  | "sign_in_required"
+  | "seat_owned"
+  | "entry_exists"
   | DraftError
   | FadeError;
 
-export type ApiError = DomainError | "invalid_request";
+export type ApiError = DomainError | "invalid_request" | "auth_unavailable";
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: DomainError };
 
@@ -76,5 +79,9 @@ export const ERROR_MESSAGES: Record<ApiError, string> = {
   deadline_unavailable: "The season schedule hasn't been read yet, so saving is paused. Try again in a few minutes.",
   incomplete_entry: "Pick Over or Under for all 30 teams before saving.",
   invalid_picks: "Those picks weren't valid. Reload the page and try again.",
+  sign_in_required: "Sign in with Google to do that.",
+  seat_owned: "Another account already holds this seat. Ask your commissioner to reset it.",
+  entry_exists: "Your account already has a 30/30 entry this season.",
   invalid_request: "Invalid request.",
+  auth_unavailable: "Sign-in isn't available right now.",
 };

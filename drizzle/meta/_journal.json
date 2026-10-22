@@ -43,6 +43,13 @@
       "when": 1791910022537,
       "tag": "0005_challenge",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792618206125,
+      "tag": "0006_accounts",
+      "breakpoints": true
     }
   ]
 }

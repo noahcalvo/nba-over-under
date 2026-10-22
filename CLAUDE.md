@@ -21,7 +21,10 @@ Mockups: `wiremocks/`.
 - `npm run db:generate -- --name <change>` after editing `src/db/schema.ts`; commit the new file in `drizzle/`
 - `npm run db:migrate` — apply migrations to `DATABASE_URL` (Postgres). PGlite migrates itself on open.
 - `TEST_DATABASE_URL=postgres://… npm run test:pg` — row-lock concurrency tests on a real Postgres
-- `scripts/smoke.sh http://localhost:3000` — two-browser API smoke test against a running server (challenge saves are skipped when the challenge is locked)
+- `AUTH_DEV_LOGIN=1 npm run dev` — local sign-in without Google credentials: `/sign-in` shows a "Development sign-in" form
+  (Better Auth email/password; never enabled when `NODE_ENV=production`)
+- `scripts/smoke.sh http://localhost:3000` — two-browser API smoke test against a running server started with `AUTH_DEV_LOGIN=1`
+  (each curl "browser" signs up through `/api/auth/sign-up/email`; challenge saves are skipped when the challenge is locked)
 - Before claiming work is done: `npm test && npm run lint && npm run typecheck && npm run build`
 
 ## Stack
@@ -41,7 +44,7 @@ Next API.
   `NBA_SCHEDULE` (`schedule.ts`: schedule season, source, fetch timeout, Central time zone and label, schedule/summary cache and retry timings, form games and hot/cold thresholds, date strip length).
 - `src/lib/` — pure TypeScript (no React, no `next/*`, no `server-only`), unit tested. Scoring, standings, season awards
   (`awards.ts`), snake draft, formatting, permissions, league commands (`league/commands.ts`: every mutation's
-  decision), tokens and link rules (`access/`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
+  decision), tokens and link rules (`access/`; `legacy.ts` the legacy seat decision and guards, `next-path.ts` `safeNextPath` / `signInHref`), lines (`lines.ts`), team records (`records/`: ESPN parsing and checks),
   game logs (`game-log/`: ESPN schedule parsing, cumulative wins and pace, chart model, per-team cache), chart window
   and Y axis (`chart-window.ts`), team page decisions (`team-detail.ts`: ownership, pick and fade statuses, latest
   market line), feed errors (`feed-error.ts`), league size rules (`league/config.ts`), draft order
@@ -60,16 +63,21 @@ Next API.
   mock lines), `game-logs.ts` (mock game-by-game results that add up to the mock records) `demo-league.ts` and
   `tutorial-league.ts` (the guided demo's fixture: live 4 × 11, empty board). Never add per-page fixtures.
 - `src/db/` — Drizzle schema, repositories and `actions.ts` (every league mutation); `challenge.ts` (every challenge write and read:
-  snapshots, schedule sync, freeze, entry save). No `server-only`, so Vitest can
+  snapshots, schedule sync, freeze, entry save); `accounts.ts` (`user_seats`: seat holder, bind, unbind); `legacy.ts` (the legacy
+  claim: list and move a pre-sign-in browser's seats and entry). No `server-only`, so Vitest can
   load it; only `src/server/` and `src/app/` (the route handlers) import it, never components. Migrations live in
   `drizzle/`.
-- `src/server/` — server-only glue (`import "server-only"`): database singleton, session cookie, league loading, links,
+- `src/server/` — server-only glue (`import "server-only"`): database singleton, Better Auth (`auth.ts`: `getAuth`, the one place
+  providers are configured), the signed-in account (`account.ts`: `getAccount`), the legacy session cookie (`session.ts`) and
+  what it could still move (`legacy.ts`), league loading, links,
   line source, outside feeds (`feed.ts`), record source (`records.ts`), game-log source (`game-log.ts`), team page
   loader (`team-page.ts`), challenge orchestration (`challenge.ts`: `prepareChallenge`, board loader; `challenge-pages.ts`:
   results, leaderboard and team loaders), NBA schedule (`nba-schedule.ts`: cached ESPN scoreboard, summary and team form reads;
   `game-interest.ts`: the viewer's league and challenge stakes; `nba-pages.ts`: `/nba` and game page loaders), cron auth (`cron.ts`), HTTP helpers.
 - `src/app/api/` — JSON route handlers for every mutation. Pages read through `src/server/` in server components and
   pass plain data to client components.
+- `src/components/account/` sign-in and account UI: `AccountMenu` / `AccountSlot` (in every shell), Google and development sign-in
+  forms, `LegacyNotice` / `LegacyClaim` (the `/account` page), `YourAccountPanel` (league settings).
 - `src/components/challenge/` the 30/30 Challenge pages (own shell and nav; `challenge-draft.ts` the local draft store, `use-clock.ts` the countdown clock).
 - `src/components/nba/` the NBA schedule and game pages (own shell `NbaShell` / `NbaNav`; pages in `src/app/nba/`).
 - `src/components/ui/` shared primitives, `shell/` navigation, then one folder per page area. `tour/` reusable
@@ -158,7 +166,7 @@ Next API.
   `computeStandings` / `evaluateCall`.
 - 30/30 Challenge (`/challenge`, spec `docs/superpowers/specs/2026-10-13-30-30-challenge-design.md`, whose "Decisions taken" list
   is the source of truth): a single-player competition beside the leagues. One side for each of the 30 teams, one entry per
-  browser session per season (`CHALLENGE.seasonYear`), editable until one global deadline.
+  Google account per season (`CHALLENGE.seasonYear`), editable until one global deadline. Saving needs sign-in.
   - Deadline = the season's first regular-season tip-off minus `lockMinutesBeforeTipoff` (30), read from ESPN's team
     schedules (earliest game across the 30; `src/lib/challenge/schedule.ts`), unless `CHALLENGE.deadlineOverride` (an ISO
     time; 2026–27: 2026-10-25 00:00 CT) replaces it. A future override is written by the next challenge request
@@ -191,9 +199,12 @@ Next API.
     count or list entrants (`countEntries`, `listEntrants`), never load or score picks; `prepareChallenge` runs once per
     request (React `cache`; the cron's `refreshChallenge` is uncached). Ranking: tied totals (unrounded, `tieTolerance`) share a rank (1, 1, 3); display order among ties is name
     (case-insensitive) then entry id; before any game there are no ranks and scores read "–".
-  - Identity limitation: the entry belongs to the session (`challenge_entries.owner_session_id`, `ON DELETE SET NULL`);
-    there is no verification, so one person can enter from several browsers, and when the session ends (cleared cookies,
-    or `ACCESS.sessionIdleDays` idle) the entry stays on the leaderboard but nobody can edit it. Name required (1–24 characters, not unique), changeable until the deadline.
+  - Identity: the entry belongs to the Google account (`challenge_entries.owner_user_id`, `ON DELETE SET NULL`, unique per
+    season; a second entry is `entry_exists`), so sign in anywhere to edit it until the deadline. Legacy entries (saved before
+    sign-in) keep `owner_session_id` and stay on the leaderboard, uneditable, until their browser moves them through the legacy
+    claim (`/account`): only the owner changes, never picks, lines, names or times, whatever the phase; `entry_exists` if the
+    account already has one. Signed in with no entry and a legacy one waiting, the board holds Save and links to `/account`
+    (`legacyEntry`, `holdsSaveForLegacyEntry`). One person can still hold several Google accounts. Name required (1–24 characters, not unique), changeable until the deadline.
     No endpoint takes an entry id for writing (`PUT /api/challenge/entry` saves the caller's own).
   - Unsaved work is a local draft only (`localStorage` `courtline.challenge.draft.v1.{season}`: picks and name, dropped
     once locked; memory when storage refuses a write, until one succeeds); it never reaches the server until Save.
@@ -201,9 +212,9 @@ Next API.
     `CHALLENGE_MOCK_TIPOFF=<ISO time>` overrides it to try the open and locked states. Delete `.data/pglite` between
     tries: a passed deadline cannot be moved back.
   - Cron: `GET /api/cron/challenge` (daily 16:00 UTC, `CRON_SECRET`) re-reads the schedule, records the lines and freezes when due.
-- NBA schedule (`/nba`, `/nba/games/{id}`): player-level, read-only pages in their own shell; the viewer comes only from the `courtline_session`
-  cookie. ESPN scoreboard/summary, DraftKings moneylines shown pre-game only as vig-free win chances; all times US Central ("CT").
-  Interests = every same-season league the session holds a seat in (all picks and fades on either team, the viewer's rows marked "You") plus
+- NBA schedule (`/nba`, `/nba/games/{id}`): player-level, read-only pages in their own shell; the viewer comes only from the signed-in account
+  (`getAccount`; signed out means no interests). ESPN scoreboard/summary, DraftKings moneylines shown pre-game only as vig-free win chances; all times US Central ("CT").
+  Interests = every same-season league the account holds a seat in (all picks and fades on either team, the viewer's rows marked "You") plus
   the viewer's own challenge side (`getViewerEntry`, never `prepareChallenge`); league rows link to that league's team page, challenge rows to
   `/challenge/teams/{id}`, schedule and standings names are plain text. Hidden in the demo. Always reads ESPN (no static mode): offline shows the feed error.
 - Commissioner = `m1` (`commissionerId`), wherever they sit in the draft order. Only the commissioner starts, pauses and
@@ -216,17 +227,42 @@ Next API.
   `src/lib/env.ts`) logs what is missing and every request returns 500. The demo league
   (`/l/demo`) lives in code, never in the database, and is read-only.
 - Every league write goes through `withLockedLeague` (`src/db/leagues.ts`): it locks the league row, re-reads the
-  caller's seat and any link under the lock, then runs the pure decision. Never authorize a write with
+  caller's seat (`user_seats`) and any link under the lock, then runs the pure decision. Never authorize a write with
   `getViewerId()`; it is for rendering.
 - Challenge tables (`challenge_seasons`, `challenge_line_snapshots`, `challenge_entries`, `challenge_picks`; migration
   `0005_challenge`) are separate from leagues. Saves lock the season row `FOR SHARE` and read `clock_timestamp()` after the lock;
   the freeze and schedule changes lock it `FOR UPDATE`, so they serialize with saves.
-- Identity: cookie `courtline_session` holds a random token; the database stores only its SHA-256. A session holds one
-  seat per league (`session_seats`). No accounts. The old `courtline_seats` cookie grants nothing and is deleted the next
-  time a route handler sets the session cookie.
-- Links (`/i/{token}`, HMAC-signed with `LINK_SECRET`): one shared league invite (claims any open seat), a single-use
-  seat invite (issued by a seat reset; the seat stays claimed), and a personal link per manager (signs in another
-  browser). Opening a link never changes anything; only the claim POST does.
+- Identity: Google accounts through Better Auth (`src/server/auth.ts`; tables `users`, `auth_sessions`, `auth_accounts`,
+  `auth_verifications`; cookie `courtline.session_token`, `__Secure-` prefixed over HTTPS; migration `0006_accounts`). Seats are `user_seats` rows (one seat per
+  account per league, one account per seat, `ON DELETE CASCADE`); a viewer is a manager only through their account. Env:
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET` (≥ 32 chars), `BETTER_AUTH_URL` (falls back to
+  `https://$VERCEL_PROJECT_PRODUCTION_URL`; outside production to `http://localhost:3000`, and the secret to a development
+  constant); checked by `readAuthConfig` (`src/lib/env.ts`). Missing sign-in env never fails `register()` or reads: it logs,
+  `/api/auth/*` answers 503 `auth_unavailable` and `/sign-in` says so. `AUTH_DEV_LOGIN=1` (never in production) turns on Better
+  Auth email/password and the "Development sign-in" form. Sessions expire `ACCESS.sessionIdleDays` after last use and renew at most
+  every `ACCESS.sessionRenewHours`; server renders read the session with `disableRefresh` (a render can't set the cookie), and the
+  client `AccountMenu` renews it once on mount through `/api/auth/get-session`. Google needs each redirect URI
+  (`{origin}/api/auth/callback/google`) registered and takes no wildcards, so previews sign in through production (Better Auth's
+  `oAuthProxy`) when `AUTH_PREVIEW_HOSTS` (host patterns with a fixed prefix, e.g. `nba-over-under-*-team.vercel.app`) is set on
+  Production and Preview: production trusts those origins, and a preview (`VERCEL_ENV=preview`) answers on its own host
+  (`VERCEL_URL` fallback) with `productionURL` = `BETTER_AUTH_URL`. Without it previews can't sign in. Telemetry is off.
+- Sign-in required (401 `sign_in_required`, or 503 `auth_unavailable` when sign-in isn't configured: `signedOutError()`): creating a league, claiming any link, every league mutation, saving a challenge entry,
+  the legacy claim. Public league pages, `/nba`, the challenge board, leaderboards, entry pages and the guided demo stay open.
+  `/sign-in?next=<path>`: `safeNextPath` accepts only a same-site path, anything else goes to `/`; a cancelled Google sign-in
+  returns there with `?error=` ("Sign-in didn't finish").
+- Legacy session: cookie `courtline_session` (random token; the database stores its SHA-256; tables `sessions`, `session_seats`)
+  predates sign-in. No new one is ever created and it authorizes nothing. A signed-in user whose browser still has one sees
+  `LegacyNotice` linking to `/account`; `POST /api/account/legacy` (`claimLegacy`) moves, per item, each seat (under that league's
+  lock: `moved`, `already_yours`, or the final conflicts `already_joined` / `seat_owned`) and the season's entry (`entry_exists`
+  conflict), nothing merged. When nothing claimable remains the legacy session is deleted and the cookie cleared. The old
+  `courtline_seats` cookie grants nothing.
+- Links (`/i/{token}`, HMAC-signed with `LINK_SECRET`): one shared league invite (claims any open seat; `already_joined` when the
+  account holds a seat there), a single-use seat invite (issued by a seat reset), and legacy personal links (no longer issued):
+  a personal link only binds a seat no account holds (`seat_owned` when another does, `already_joined` for a different seat).
+  A link never moves a seat between accounts. Signed out, `/i/{token}` shows "Sign in with Google to continue"; signed in with a legacy seat in that league
+  (`legacySeatIn`), it links to `/account` instead of the claim form, so the seat moves first. Opening a link
+  never changes anything; only the claim POST does. A seat reset unbinds the account and every legacy session from the seat,
+  revokes its personal link and invite, and issues a new seat invite: the recovery for a manager who lost their Google account.
 
 ## UI conventions
 - Dark theme only. Use tokens (`bg-ink-850`, `text-fog-400`, `text-accent`, `bg-under-deep`, …), not raw hex — team

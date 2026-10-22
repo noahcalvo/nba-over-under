@@ -208,11 +208,12 @@ export async function loadEntry(db: Db | Tx, entryId: string): Promise<Challenge
   return (await withPicks(db, rows))[0] ?? null;
 }
 
-export async function loadEntryForSession(db: Db, season: number, sessionId: string): Promise<ChallengeEntry | null> {
+/** The account's entry for the season (never a legacy session entry). */
+export async function loadEntryForUser(db: Db, season: number, userId: string): Promise<ChallengeEntry | null> {
   const rows = await db
     .select()
     .from(challengeEntries)
-    .where(and(eq(challengeEntries.season, season), eq(challengeEntries.ownerSessionId, sessionId)));
+    .where(and(eq(challengeEntries.season, season), eq(challengeEntries.ownerUserId, userId)));
   return (await withPicks(db, rows))[0] ?? null;
 }
 
@@ -245,7 +246,7 @@ export async function listEntrants(db: Db, season: number): Promise<ChallengeEnt
 
 export interface SaveEntryInput {
   season: number;
-  sessionId: string;
+  userId: string;
   displayName: string;
   /** All 30 teams (checked by parseChallengeSave). */
   picks: PickMap;
@@ -260,7 +261,7 @@ class Abort extends Error {
 }
 
 /**
- * Saves the session's entry for the season in one transaction. The season row is locked FOR SHARE (a schedule change or
+ * Saves the account's entry for the season in one transaction. The season row is locked FOR SHARE (a schedule change or
  * the freeze waits, and waits for this), then the clock is read: at or after the deadline, or once frozen, nothing is
  * written (`challenge_locked`); without a deadline, `deadline_unavailable`. Unchanged sides keep their reference line
  * and time (rebasePicks). `options.now` replaces the database clock in tests.
@@ -275,12 +276,12 @@ export async function saveChallengeEntry(db: Db, input: SaveEntryInput, options:
 
       await tx
         .insert(challengeEntries)
-        .values({ id: createEntryId(), season: input.season, ownerSessionId: input.sessionId, displayName: input.displayName, createdAt: now, savedAt: now })
+        .values({ id: createEntryId(), season: input.season, ownerUserId: input.userId, displayName: input.displayName, createdAt: now, savedAt: now })
         .onConflictDoNothing();
       const [entry] = await tx
         .select()
         .from(challengeEntries)
-        .where(and(eq(challengeEntries.season, input.season), eq(challengeEntries.ownerSessionId, input.sessionId)))
+        .where(and(eq(challengeEntries.season, input.season), eq(challengeEntries.ownerUserId, input.userId)))
         .for("update");
       if (!entry) throw new Error("Challenge entry was not created");
       const stored = await tx.select().from(challengePicks).where(eq(challengePicks.entryId, entry.id));

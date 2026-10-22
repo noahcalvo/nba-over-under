@@ -20,21 +20,17 @@ export async function readLinkToken(token: string): Promise<LinkRecord | null> {
   return linkId ? findLink(await getDb(), linkId) : null;
 }
 
-/** The links this viewer may see: invites for the commissioner, their own personal link for any manager. */
+/** The links this viewer may see: the league invite and pending seat invites, for the commissioner only. */
 export async function getLeagueAccess(league: League, viewerId: string | null): Promise<LeagueAccess> {
-  if (league.isDemo || viewerId === null) return NO_ACCESS;
-  const isCommissioner = viewerId === league.commissionerId;
+  if (league.isDemo || viewerId !== league.commissionerId) return NO_ACCESS;
   let invitePath: string | null = null;
-  let personalPath: string | null = null;
   const seatInvitePaths: Record<string, string> = {};
   for (const link of await listActiveLinks(await getDb(), league.id)) {
-    if (link.kind === "personal" && link.managerId === viewerId) {
-      personalPath = await pathForLink(link.id);
-    } else if (isCommissioner && link.kind === "league_invite") {
+    if (link.kind === "league_invite") {
       invitePath = await pathForLink(link.id);
-    } else if (isCommissioner && link.kind === "seat_invite" && link.managerId) {
+    } else if (link.kind === "seat_invite" && link.managerId) {
       seatInvitePaths[link.managerId] = await pathForLink(link.id);
     }
   }
-  return { invitePath, seatInvitePaths, personalPath };
+  return { invitePath, seatInvitePaths };
 }

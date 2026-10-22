@@ -1,4 +1,7 @@
-/** league_invite: shared, claims any open seat. seat_invite: single use, re-claims a reset seat. personal: signs in. */
+/**
+ * league_invite: shared, claims any open seat. seat_invite: single use, re-claims a reset seat. personal: from before
+ * accounts; binds its seat to an account that no account holds yet. No new personal links are issued.
+ */
 export type LinkKind = "league_invite" | "seat_invite" | "personal";
 
 export type LinkStatus = "active" | "revoked" | "used" | "expired";
@@ -33,8 +36,6 @@ export interface LeagueAccess {
   invitePath: string | null;
   /** Commissioner only: managerId → path of that seat's pending seat invite. */
   seatInvitePaths: Readonly<Record<string, string>>;
-  /** The viewer's own personal link. */
-  personalPath: string | null;
 }
 
-export const NO_ACCESS: LeagueAccess = { invitePath: null, seatInvitePaths: {}, personalPath: null };
+export const NO_ACCESS: LeagueAccess = { invitePath: null, seatInvitePaths: {} };

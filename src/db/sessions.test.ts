@@ -4,7 +4,7 @@ import { createLeagueFor } from "@/db/actions";
 import type { Db } from "@/db/client";
 import { sessions } from "@/db/schema";
 import { bindSeat, createSession, findSession, seatInLeague, unbindSeat } from "@/db/sessions";
-import { createTestDb } from "@/db/test-db";
+import { createTestDb, createTestUser } from "@/db/test-db";
 
 let db: Db;
 
@@ -12,11 +12,17 @@ beforeEach(async () => {
   db = await createTestDb();
 });
 
+/** A league for legacy session seats to point at. Its commissioner seat belongs to an account, not a session. */
+async function storeLeague() {
+  await createLeagueFor(db, await createTestUser(db, "Ana"), { displayName: "Ana" }, () => "lg0001");
+}
+
 describe("sessions", () => {
   it("finds a session by token hash with its seats", async () => {
     const id = await createSession(db, "hash-a");
     expect(await findSession(db, "hash-a")).toEqual({ id, seats: {} });
-    await createLeagueFor(db, id, { displayName: "Ana" }, () => "lg0001");
+    await storeLeague();
+    await bindSeat(db, id, "lg0001", "m1");
     expect(await findSession(db, "hash-a")).toEqual({ id, seats: { lg0001: "m1" } });
     expect(await findSession(db, "unknown")).toBeNull();
   });
@@ -49,7 +55,8 @@ describe("sessions", () => {
   it("binds one seat per league, replacing the previous one, and signs seats out", async () => {
     const a = await createSession(db, "hash-a");
     const b = await createSession(db, "hash-b");
-    await createLeagueFor(db, a, { displayName: "Ana" }, () => "lg0001");
+    await storeLeague();
+    await bindSeat(db, a, "lg0001", "m1");
     await bindSeat(db, b, "lg0001", "m2");
     await bindSeat(db, b, "lg0001", "m3");
     expect(await seatInLeague(db, b, "lg0001")).toBe("m3");
@@ -64,7 +71,8 @@ describe("sessions", () => {
 
   it("ignores the seat of an expired session", async () => {
     const a = await createSession(db, "hash-a");
-    await createLeagueFor(db, a, { displayName: "Ana" }, () => "lg0001");
+    await storeLeague();
+    await bindSeat(db, a, "lg0001", "m1");
     await db.update(sessions).set({ expiresAt: sql`now() - interval '1 minute'` }).where(eq(sessions.id, a));
     expect(await seatInLeague(db, a, "lg0001")).toBeNull();
   });

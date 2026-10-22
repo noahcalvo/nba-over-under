@@ -4,7 +4,8 @@ import { cache } from "react";
 import type { LeagueChrome } from "@/components/shell/CurrentLeague";
 import { buildDemoLeague, DEMO_LEAGUE_ID } from "@/data/demo-league";
 import { TEAM_INFO } from "@/data/teams";
-import { listSessionLeagues, loadLeague, type SeatedLeague } from "@/db/leagues";
+import { listUserLeagues } from "@/db/accounts";
+import { loadLeague, type SeatedLeague } from "@/db/leagues";
 import { loadRefresh, loadTeamInfo, recordStatus } from "@/db/records";
 import { LINES } from "@/config/lines";
 import { buildLineReview, withAvailableLines, withLines } from "@/lib/lines";
@@ -13,7 +14,8 @@ import type { RecordStatus } from "@/lib/records/types";
 import type { League, LeagueView, LineReview, TeamInfo } from "@/lib/types";
 import { getDb } from "@/server/db";
 import { readLines } from "@/server/lines";
-import { getSession, getViewerId } from "@/server/session";
+import { getAccount } from "@/server/account";
+import { getViewerId } from "@/server/session";
 
 /** The demo league lives in code, never in the database. */
 const DEMO_LEAGUE = buildDemoLeague();
@@ -76,8 +78,8 @@ export async function leagueChrome(leagueId: string): Promise<LeagueChrome | nul
   };
 }
 
-/** The leagues this browser holds a seat in, most recently joined first. */
+/** The leagues the signed-in account holds a seat in, most recently joined first. Empty when signed out. */
 export async function listViewerLeagues(): Promise<SeatedLeague[]> {
-  const session = await getSession();
-  return session ? listSessionLeagues(await getDb(), session.id) : [];
+  const account = await getAccount();
+  return account ? listUserLeagues(await getDb(), account.userId) : [];
 }

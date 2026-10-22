@@ -9,8 +9,8 @@ import {
   decideInviteChange,
   decideLeagueConfig,
   decideLineOverrides,
-  decideOwnLinkReset,
   decideSeatReset,
+  type ClaimActor,
   type ClaimInput,
 } from "@/lib/league/commands";
 import type { Result } from "@/lib/league/errors";
@@ -25,6 +25,8 @@ const LINES: LineSet = {
   manual: [],
 };
 const LEAGUE_INVITE = { kind: "league_invite" as const, managerId: null };
+/** An account with no seat in the league, on a link whose seat no account holds. */
+const NEWCOMER: ClaimActor = { seatId: null, linkSeatHolder: "none" };
 
 function must<T>(result: Result<T>): T {
   if (!result.ok) throw new Error(`expected ok, got ${result.error}`);
@@ -36,7 +38,7 @@ function newLeague(): League {
 }
 
 function join(league: League, managerId: string, displayName: string): League {
-  return must(decideClaim(league, LEAGUE_INVITE, null, { managerId, displayName })).league;
+  return must(decideClaim(league, LEAGUE_INVITE, NEWCOMER, { managerId, displayName })).league;
 }
 
 function act(league: League, actorId: string | null, action: DraftAction | FadeAction): Result<League> {
@@ -78,7 +80,7 @@ describe("createLeague", () => {
 
 describe("decideClaim", () => {
   it("claims an open seat from the league invite", () => {
-    const claim = must(decideClaim(newLeague(), LEAGUE_INVITE, null, { managerId: "m3", displayName: " Cal " }));
+    const claim = must(decideClaim(newLeague(), LEAGUE_INVITE, NEWCOMER, { managerId: "m3", displayName: " Cal " }));
     expect(claim.managerId).toBe("m3");
     expect(claim.changed).toBe(true);
     expect(claim.league.managers[2].displayName).toBe("Cal");
@@ -86,14 +88,14 @@ describe("decideClaim", () => {
 
   it("rejects taken seats, a second seat, unknown seats, bad names and the demo league", () => {
     const league = newLeague();
-    const claim = (input: ClaimInput, browserSeatId: string | null = null) =>
-      decideClaim(league, LEAGUE_INVITE, browserSeatId, input);
+    const claim = (input: ClaimInput, seatId: string | null = null) =>
+      decideClaim(league, LEAGUE_INVITE, { seatId, linkSeatHolder: "none" }, input);
     expect(claim({ managerId: "m1", displayName: "Cal" })).toEqual({ ok: false, error: "seat_taken" });
     expect(claim({ managerId: "m2", displayName: "Cal" }, "m1")).toEqual({ ok: false, error: "already_joined" });
     expect(claim({ managerId: "m9", displayName: "Cal" })).toEqual({ ok: false, error: "not_found" });
     expect(claim({ displayName: "Cal" })).toEqual({ ok: false, error: "not_found" });
     expect(claim({ managerId: "m2", displayName: "" })).toEqual({ ok: false, error: "invalid_name" });
-    expect(decideClaim({ ...league, isDemo: true }, LEAGUE_INVITE, null, { managerId: "m2", displayName: "Cal" })).toEqual({
+    expect(decideClaim({ ...league, isDemo: true }, LEAGUE_INVITE, NEWCOMER, { managerId: "m2", displayName: "Cal" })).toEqual({
       ok: false,
       error: "demo_league",
     });
@@ -105,18 +107,55 @@ describe("decideClaim", () => {
     league = must(act(league, "m1", pick(league, "MIN", "OVER")));
     league = must(act(league, "m2", pick(league, "OKC", "OVER")));
     const seatInvite = { kind: "seat_invite" as const, managerId: "m2" };
-    const claim = must(decideClaim(league, seatInvite, null, { managerId: "m4", displayName: "Benny" }));
+    const claim = must(decideClaim(league, seatInvite, NEWCOMER, { managerId: "m4", displayName: "Benny" }));
     expect(claim.managerId).toBe("m2"); // the link's seat wins over a submitted managerId
     expect(claim.league.managers[1].displayName).toBe("Benny");
     expect(claim.league.draft.picks).toEqual(league.draft.picks);
-    expect(decideClaim(league, seatInvite, "m3", { displayName: "Ben" })).toEqual({ ok: false, error: "already_joined" });
-    expect(decideClaim(league, seatInvite, null, { displayName: " " })).toEqual({ ok: false, error: "invalid_name" });
+    expect(decideClaim(league, seatInvite, { seatId: "m3", linkSeatHolder: "none" }, { displayName: "Ben" })).toEqual({
+      ok: false,
+      error: "already_joined",
+    });
+    expect(decideClaim(league, seatInvite, NEWCOMER, { displayName: " " })).toEqual({ ok: false, error: "invalid_name" });
   });
 
-  it("signs a browser in with a personal link without changing the league", () => {
+  describe("personal link", () => {
     const league = join(newLeague(), "m2", "Ben");
-    const claim = must(decideClaim(league, { kind: "personal", managerId: "m2" }, "m4", {}));
-    expect(claim).toEqual({ league, managerId: "m2", changed: false });
+    const personal = { kind: "personal" as const, managerId: "m2" };
+
+    it("binds a seat no account holds without changing the league", () => {
+      expect(must(decideClaim(league, personal, NEWCOMER, {}))).toEqual({ league, managerId: "m2", changed: false });
+    });
+
+    it("succeeds unchanged when the account already holds the seat", () => {
+      const claim = must(decideClaim(league, personal, { seatId: "m2", linkSeatHolder: "self" }, {}));
+      expect(claim).toEqual({ league, managerId: "m2", changed: false });
+    });
+
+    it("never moves a seat another account holds", () => {
+      expect(decideClaim(league, personal, { seatId: null, linkSeatHolder: "other" }, {})).toEqual({
+        ok: false,
+        error: "seat_owned",
+      });
+    });
+
+    it("refuses an account that holds another seat in the league", () => {
+      expect(decideClaim(league, personal, { seatId: "m4", linkSeatHolder: "none" }, {})).toEqual({
+        ok: false,
+        error: "already_joined",
+      });
+      expect(decideClaim(league, personal, { seatId: "m4", linkSeatHolder: "other" }, {})).toEqual({
+        ok: false,
+        error: "already_joined",
+      });
+    });
+
+    it("refuses an unknown seat and the demo league", () => {
+      expect(decideClaim(league, { kind: "personal", managerId: "m9" }, NEWCOMER, {})).toEqual({
+        ok: false,
+        error: "not_found",
+      });
+      expect(decideClaim({ ...league, isDemo: true }, personal, NEWCOMER, {})).toEqual({ ok: false, error: "demo_league" });
+    });
   });
 });
 
@@ -299,11 +338,6 @@ describe("seat administration", () => {
     expect(decideSeatReset(league, "m1", "m3")).toEqual({ ok: false, error: "forbidden" }); // open seat
     expect(decideSeatReset(league, "m1", "m9")).toEqual({ ok: false, error: "not_found" });
     expect(decideSeatReset(league, "m2", "m1")).toEqual({ ok: false, error: "forbidden" });
-  });
-
-  it("lets any seated manager reset their own link", () => {
-    expect(decideOwnLinkReset(league, "m2")).toEqual({ ok: true, value: "m2" });
-    expect(decideOwnLinkReset(league, null)).toEqual({ ok: false, error: "forbidden" });
   });
 });
 

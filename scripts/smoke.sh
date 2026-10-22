@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Two-browser smoke test of leagues, invite links, sessions and draft rules against a running server.
-# Usage: scripts/smoke.sh [base-url]    (default http://localhost:3000, e.g. from `npm run dev`)
-# Each "browser" is a curl cookie jar. Exits non-zero when any check fails.
+# Two-browser smoke test of leagues, invite links, accounts and draft rules against a running server.
+# Usage: scripts/smoke.sh [base-url]    (default http://localhost:3000)
+# The server must run with development sign-in: `AUTH_DEV_LOGIN=1 npm run dev`. Each "browser" is a curl cookie jar and
+# signs up its own account through Better Auth's email/password endpoint. Exits non-zero when any check fails.
 set -u
 BASE=${1:-http://localhost:3000}
 JARS=$(mktemp -d)
 trap 'rm -rf "$JARS"' EXIT
 FAILED=0
+RUN=$(date +%s)-$$
+SIGNED_UP=""
 CODE=""
 BODY=""
 
@@ -28,8 +31,28 @@ check() {
   fi
 }
 
+# signup JAR NAME: signs this "browser" up (and in) as a new development account.
+signup() {
+  call "$1" POST /api/auth/sign-up/email "{\"name\":\"$2\",\"email\":\"smoke-$RUN-$1@example.com\",\"password\":\"smoke-password-1\"}"
+  # Any refusal of the first sign-up means development sign-in is off (404/503 without auth env, 400 with Google only).
+  if [ -z "$SIGNED_UP" ] && [ "$CODE" != "200" ]; then
+    echo "Development sign-in is off (sign-up answered $CODE). Start the server with AUTH_DEV_LOGIN=1 (npm run dev) and run this again." >&2
+    exit 2
+  fi
+  SIGNED_UP=1
+  check "$2 signs up" 200 '"token"'
+}
+
 links() { grep -o '/i/[A-Za-z0-9_-]\{22\}\.[A-Za-z0-9_-]\{22\}' <<<"$BODY" | awk '!seen[$0]++'; }
 confirm() { call "$1" POST "/api/leagues/$LEAGUE/draft" "{\"type\":\"confirm\",\"teamId\":\"$2\",\"side\":\"$3\",\"pickNumber\":$4}"; }
+
+signup ana Ana
+signup ben Ben
+signup cal Cal
+signup dan Dan
+
+call nobody POST /api/leagues '{"leagueName":"Signed Out","displayName":"Nobody"}'
+check "signed-out league creation is refused" 401 '"sign_in_required"'
 
 call ana POST /api/leagues '{"leagueName":"Smoke Test","displayName":"Ana"}'
 check "create a league" 201 '"leagueId"'
@@ -37,9 +60,8 @@ LEAGUE=$(sed -E 's/.*"leagueId":"([a-z0-9]+)".*/\1/' <<<"$BODY")
 
 call ana GET "/l/$LEAGUE/draft"
 INVITE=$(links | sed -n 1p)
-ANA_LINK=$(links | sed -n 2p)
-[ -n "$INVITE" ] && [ -n "$ANA_LINK" ] && echo "PASS commissioner sees the invite and their sign-in link" ||
-  { echo "FAIL commissioner links missing"; FAILED=1; }
+[ -n "$INVITE" ] && [ "$(links | wc -l)" -eq 1 ] && echo "PASS commissioner sees the league invite and no personal link" ||
+  { echo "FAIL commissioner links wrong (expected only the league invite)"; FAILED=1; }
 
 call nobody GET "/l/$LEAGUE/draft"
 check "a spectator can open the draft room" 200 "Waiting for the commissioner to start the draft."
@@ -47,6 +69,10 @@ check "a spectator can open the draft room" 200 "Waiting for the commissioner to
 
 call ben GET "$INVITE"
 check "invite page renders" 200 "Join the league"
+call nobody GET "$INVITE"
+check "signed out, the invite asks to sign in" 200 "Sign in with Google to continue"
+call nobody POST /api/links/claim "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m2\",\"displayName\":\"Ben\"}"
+check "a signed-out claim is refused" 401 '"sign_in_required"'
 
 CODE=$(curl -s -o "$JARS/body" -w "%{http_code}" -H "content-type: application/json" "$BASE/api/links/claim" \
   -d "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m2\",\"displayName\":\"Ben\"}")
@@ -56,7 +82,7 @@ check "claim without Origin is refused" 403 '"forbidden"'
 call ben POST /api/links/claim "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m2\",\"displayName\":\"Ben\"}"
 check "Ben claims seat 2" 200 '"managerId":"m2"'
 call ben POST /api/links/claim "{\"token\":\"${INVITE#/i/}\",\"managerId\":\"m3\",\"displayName\":\"Ben\"}"
-check "a second seat for the same browser is refused" 409 '"already_joined"'
+check "a second seat for the same account is refused" 409 '"already_joined"'
 
 call ana POST "/api/leagues/$LEAGUE/records/refresh"
 check "commissioner refreshes records" 200 '"records"'
@@ -109,20 +135,22 @@ check "Ben is seated" 200 '"viewerId":"m2"'
 call ana POST "/api/leagues/$LEAGUE/seats/m2/reset" '{}'
 check "commissioner resets seat 2" 200 '"ok":true'
 call ben GET "/api/leagues/$LEAGUE/draft"
-check "Ben is signed out everywhere" 200 '"viewerId":null'
+check "Ben no longer holds the seat" 200 '"viewerId":null'
 
 call ana GET "/l/$LEAGUE/settings"
-REJOIN=$(links | grep -vF -e "$INVITE" -e "$ANA_LINK" | head -1)
+REJOIN=$(links | grep -vF -e "$INVITE" | head -1)
 call cal POST /api/links/claim "{\"token\":\"${REJOIN#/i/}\",\"displayName\":\"Benny\"}"
 check "the rejoin link re-claims seat 2" 200 '"managerId":"m2"'
 call dan POST /api/links/claim "{\"token\":\"${REJOIN#/i/}\",\"displayName\":\"Dan\"}"
 check "the rejoin link works once" 404 '"invalid_link"'
+call cal GET "/api/leagues/$LEAGUE/draft"
+check "Cal's account holds seat 2" 200 '"viewerId":"m2"'
 
 call ana POST "/api/leagues/$LEAGUE/invite" '{}'
 check "commissioner rotates the invite" 200 '"ok":true'
-call eve GET "$INVITE"
+call dan GET "$INVITE"
 check "the old invite stops working" 200 "This link no longer works"
-call eve GET "/i/AAAAAAAAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAA"
+call dan GET "/i/AAAAAAAAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAA"
 check "a forged link gets the same message" 200 "This link no longer works"
 grep -qiE '^referrer-policy: no-referrer[[:space:]]*$' <(curl -s -D - -o /dev/null "$BASE$INVITE") &&
   echo "PASS link pages send no Referer" || { echo "FAIL Referrer-Policy header missing"; FAILED=1; }
@@ -135,7 +163,7 @@ CODE=$(curl -s -o "$JARS/body" -w "%{http_code}" -b "courtline_seats=$LEAGUE:m1"
 BODY=$(cat "$JARS/body")
 check "the old editable seat cookie grants nothing" 200 '"viewerId":null'
 
-# 30/30 Challenge: one entry per browser. Save checks run only while the challenge is open (a locked or
+# 30/30 Challenge: one entry per account. Save checks run only while the challenge is open (a locked or
 # schedule-less environment answers the first full save 409/503 and the rest is skipped).
 TEAMS=(ATL BKN BOS CHA CHI CLE DAL DEN DET GSW HOU IND LAC LAL MEM MIA MIL MIN NOP NYK OKC ORL PHI PHX POR SAC SAS TOR UTA WAS)
 # picks N [DUPLICATE]: a JSON array of N picks (Over/Under alternating); DUPLICATE repeats the first team as the last.
@@ -150,6 +178,11 @@ picks() {
   echo "[$out]"
 }
 
+signup chloe Chloe
+signup dev Dev
+call nobody PUT /api/challenge/entry "{\"displayName\":\"Smoke Nobody\",\"picks\":$(picks 30)}"
+check "a signed-out challenge save is refused" 401 '"sign_in_required"'
+
 call chloe PUT /api/challenge/entry "{\"displayName\":\"Smoke Chloe\",\"picks\":$(picks 30)}"
 if [ "$CODE" = "409" ] && grep -qF '"challenge_locked"' <<<"$BODY"; then
   echo "SKIP challenge saves (locked)"
@@ -163,15 +196,15 @@ else
   call chloe PUT /api/challenge/entry "{\"displayName\":\"Smoke Chloe\",\"picks\":$(picks 30 dup)}"
   check "a duplicate team is refused" 400 '"invalid_picks"'
   call dev PUT /api/challenge/entry "{\"displayName\":\"Smoke Dev\",\"picks\":$(picks 30)}"
-  check "another browser saves its own entry" 200 '"entry"'
+  check "another account saves its own entry" 200 '"entry"'
   DEV_ID=$(sed -E 's/.*"entry":\{"id":"([A-Za-z0-9_-]+)".*/\1/' <<<"$BODY")
   [ -n "$CHLOE_ID" ] && [ -n "$DEV_ID" ] && [ "$CHLOE_ID" != "$DEV_ID" ] &&
-    echo "PASS each browser has its own entry" || { echo "FAIL entries share an id ($CHLOE_ID, $DEV_ID)"; FAILED=1; }
+    echo "PASS each account has its own entry" || { echo "FAIL entries share an id ($CHLOE_ID, $DEV_ID)"; FAILED=1; }
   call chloe GET /challenge/leaderboard
   check "the leaderboard lists both entrants" 200 "Smoke Chloe"
   grep -qF "Smoke Dev" <<<"$BODY" || { echo "FAIL leaderboard misses Smoke Dev"; FAILED=1; }
 fi
-call nobody PUT /api/challenge/entry '{"displayName":"x","picks":[]}'
+call chloe PUT /api/challenge/entry '{"displayName":"x","picks":[]}'
 check "an empty challenge save is refused" 400 '"incomplete_entry"'
 
 exit $FAILED

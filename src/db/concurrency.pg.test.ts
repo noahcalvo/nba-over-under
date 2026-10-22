@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
@@ -5,13 +6,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildDemoLeague } from "@/data/demo-league";
 import { STATIC_LINES } from "@/data/static-lines";
 import { TEAM_INFO } from "@/data/teams";
-import { listEntries, loadEntryForSession, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
+import { seatHolder } from "@/db/accounts";
+import { listEntries, loadEntryForUser, saveChallengeEntry, syncChallengeSchedule } from "@/db/challenge";
 import { claimLink, createLeagueFor, resetSeat, runDraftAction, setDraftOrder, setLeagueConfig } from "@/db/actions";
 import { MIGRATIONS_FOLDER, type Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
-import { listActiveLinks } from "@/db/links";
+import { issueLink, listActiveLinks } from "@/db/links";
 import * as schema from "@/db/schema";
-import { createSession } from "@/db/sessions";
+import { createTestUser } from "@/db/test-db";
 import { blockedDraft, confirmsOf } from "@/lib/draft-scenarios";
 import { randomLeagueId } from "@/lib/league/commands";
 
@@ -37,26 +39,26 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
   });
 
   async function newLeague() {
-    const commissioner = await createSession(db, crypto.randomUUID());
+    const commissioner = await createTestUser(db, "Ana");
     const leagueId = randomLeagueId();
     const created = await createLeagueFor(db, commissioner, { displayName: "Ana" }, () => leagueId);
     if (!created.ok) throw new Error(created.error);
     return { leagueId, commissioner };
   }
 
-  it("creates one entry when a session saves in parallel for the first time", async () => {
+  it("creates one entry when an account saves in parallel for the first time", async () => {
     const season = 3000 + Math.floor(Math.random() * 20000);
     const tipoff = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     await syncChallengeSchedule(db, season, { ok: true, game: { tipoff, teams: [null, null] } }, new Date());
-    const sessionId = await createSession(db, crypto.randomUUID());
+    const userId = await createTestUser(db, "Ana");
     const picks = Object.fromEntries(TEAM_INFO.map((team) => [team.id, "OVER" as const]));
     const results = await Promise.all(
       Array.from({ length: PARALLEL }, () =>
-        saveChallengeEntry(db, { season, sessionId, displayName: "Ana", picks, currentLines: STATIC_LINES.values }),
+        saveChallengeEntry(db, { season, userId, displayName: "Ana", picks, currentLines: STATIC_LINES.values }),
       ),
     );
     expect(results.every((result) => result.ok)).toBe(true);
-    const entry = await loadEntryForSession(db, season, sessionId);
+    const entry = await loadEntryForUser(db, season, userId);
     expect(entry?.picks).toHaveLength(30);
     expect(await listEntries(db, season)).toHaveLength(1);
     expect(new Set(results.map((result) => (result.ok ? result.value.id : null)))).toEqual(new Set([entry?.id]));
@@ -77,15 +79,29 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
   it("lets exactly one of many parallel claims use a seat invite", async () => {
     const { leagueId, commissioner } = await newLeague();
     const invite = (await listActiveLinks(db, leagueId)).find((link) => link.kind === "league_invite")!;
-    await claimLink(db, invite.id, await createSession(db, crypto.randomUUID()), { managerId: "m2", displayName: "Ben" });
+    await claimLink(db, invite.id, await createTestUser(db, "Ben"), { managerId: "m2", displayName: "Ben" });
     await resetSeat(db, leagueId, commissioner, "m2");
     const seatInvite = (await listActiveLinks(db, leagueId)).find((link) => link.kind === "seat_invite")!;
-    const sessions = await Promise.all(Array.from({ length: PARALLEL }, () => createSession(db, crypto.randomUUID())));
-    const results = await Promise.all(
-      sessions.map((sessionId) => claimLink(db, seatInvite.id, sessionId, { displayName: "Ben" })),
-    );
+    const users = await Promise.all(Array.from({ length: PARALLEL }, () => createTestUser(db, "Ben")));
+    const results = await Promise.all(users.map((userId) => claimLink(db, seatInvite.id, userId, { displayName: "Ben" })));
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     expect(new Set(results.flatMap((result) => (result.ok ? [] : [result.error])))).toEqual(new Set(["invalid_link"]));
+  });
+
+  it("binds a personal link's seat to exactly one of many accounts claiming it in parallel", async () => {
+    const { leagueId } = await newLeague();
+    // A seat claimed before accounts: named, with a personal link, held by no account.
+    await db
+      .update(schema.managers)
+      .set({ displayName: "Ben" })
+      .where(and(eq(schema.managers.leagueId, leagueId), eq(schema.managers.id, "m2")));
+    const personal = await issueLink(db, { leagueId, managerId: "m2", kind: "personal" });
+    const users = await Promise.all(Array.from({ length: PARALLEL }, () => createTestUser(db, "Ben")));
+    const results = await Promise.all(users.map((userId) => claimLink(db, personal, userId, {})));
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    // The winner's claim revokes the link, so every later claim finds it gone.
+    expect(new Set(results.flatMap((result) => (result.ok ? [] : [result.error])))).toEqual(new Set(["invalid_link"]));
+    expect(users).toContain(await seatHolder(db, leagueId, "m2"));
   });
 
   /** Every seat but the commissioner's is open, so the commissioner makes all 44 picks and every fade. */
@@ -170,7 +186,7 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
   it("lets only one of a shrink and a claim of the last seat win", async () => {
     const { leagueId, commissioner } = await newLeague();
     const invite = (await listActiveLinks(db, leagueId)).find((link) => link.kind === "league_invite")!;
-    const guest = await createSession(db, crypto.randomUUID());
+    const guest = await createTestUser(db, "Dee");
     const [shrunk, claimed] = await Promise.all([
       setLeagueConfig(db, leagueId, commissioner, { managerCount: 3, rounds: 11 }),
       claimLink(db, invite.id, guest, { managerId: "m4", displayName: "Dee" }),
@@ -226,7 +242,7 @@ describe.skipIf(!url)("row lock on real Postgres", () => {
   it("keeps both a reorder and a claim that race each other", async () => {
     const { leagueId, commissioner } = await newLeague();
     const invite = (await listActiveLinks(db, leagueId)).find((link) => link.kind === "league_invite")!;
-    const guest = await createSession(db, crypto.randomUUID());
+    const guest = await createTestUser(db, "Dee");
     const [reordered, claimed] = await Promise.all([
       setDraftOrder(db, leagueId, commissioner, ["m4", "m3", "m2", "m1"]),
       claimLink(db, invite.id, guest, { managerId: "m3", displayName: "Dee" }),

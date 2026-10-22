@@ -145,7 +145,8 @@ export function decideLeagueConfig(league: League, actorId: string | null, confi
 
 /**
  * Sets the draft order before the draft: `order` lists every manager id once, round 1 first. Seats are renumbered;
- * ids, names, links and sessions stay with their manager. Commissioner only. Parse the request with parseDraftOrder first.
+ * ids, names, links and account seats stay with their manager. Commissioner only. Parse the request with
+ * parseDraftOrder first.
  */
 export function decideDraftOrder(league: League, actorId: string | null, order: readonly string[]): Result<League> {
   if (league.isDemo) return fail("demo_league");
@@ -171,25 +172,34 @@ export interface ClaimInput {
 export interface Claim {
   league: League;
   managerId: string;
-  /** False when only this browser's seat binding changes (a personal link). */
+  /** False when only the account's seat binding changes (a personal link). */
   changed: boolean;
 }
 
+/** Who is claiming, as read under the league lock. */
+export interface ClaimActor {
+  /** The seat the claiming account already holds in the league. */
+  seatId: string | null;
+  /** Whose account holds the link's seat. Always "none" for a league invite, which names no seat. */
+  linkSeatHolder: "none" | "self" | "other";
+}
+
 /**
- * Decides a claim of an active link. `browserSeatId` is the seat this browser already holds in the league.
+ * Decides an account's claim of an active link.
  * - League invite: claims an open seat and names it.
  * - Seat invite: re-claims a reset seat, which stays claimed: no open-seat check, picks kept, name updated.
- * - Personal link: signs this browser in as the seat; the league doesn't change.
+ * - Personal link (from before accounts): binds the seat to the account when no account holds it, or succeeds
+ *   unchanged when this account already does. It never moves a seat between accounts. The league doesn't change.
  */
 export function decideClaim(
   league: League,
   link: { kind: LinkKind; managerId: string | null },
-  browserSeatId: string | null,
+  actor: ClaimActor,
   input: ClaimInput,
 ): Result<Claim> {
   if (league.isDemo) return fail("demo_league");
   if (link.kind === "league_invite") {
-    if (browserSeatId !== null) return fail("already_joined");
+    if (actor.seatId !== null) return fail("already_joined");
     const seat = findManager(league.managers, typeof input.managerId === "string" ? input.managerId : null);
     if (!seat) return fail("not_found");
     if (seat.displayName !== null) return fail("seat_taken");
@@ -197,8 +207,11 @@ export function decideClaim(
   }
   const seat = findManager(league.managers, link.managerId);
   if (!seat) return fail("not_found");
-  if (link.kind === "personal") return succeed({ league, managerId: seat.id, changed: false });
-  if (browserSeatId !== null && browserSeatId !== seat.id) return fail("already_joined");
+  if (actor.seatId !== null && actor.seatId !== seat.id) return fail("already_joined");
+  if (link.kind === "personal") {
+    if (actor.linkSeatHolder === "other") return fail("seat_owned");
+    return succeed({ league, managerId: seat.id, changed: false });
+  }
   return nameSeat(league, seat.id, input.displayName);
 }
 
@@ -217,16 +230,10 @@ export function decideInviteChange(league: League, actorId: string | null): Resu
   return canManageSeats(league, actorId) ? succeed(null) : fail("forbidden");
 }
 
-/** Resetting a claimed seat: its devices are signed out and a seat invite replaces its personal link. */
+/** Resetting a claimed seat: its account is unbound and a seat invite replaces its personal link. */
 export function decideSeatReset(league: League, actorId: string | null, targetId: string): Result<null> {
   if (league.isDemo) return fail("demo_league");
   if (!canManageSeats(league, actorId)) return fail("forbidden");
   if (!findManager(league.managers, targetId)) return fail("not_found");
   return canResetSeat(league, actorId, targetId) ? succeed(null) : fail("forbidden");
-}
-
-/** Resetting your own personal link. Returns your manager id. */
-export function decideOwnLinkReset(league: League, actorId: string | null): Result<string> {
-  if (league.isDemo) return fail("demo_league");
-  return actorId === null ? fail("forbidden") : succeed(actorId);
 }

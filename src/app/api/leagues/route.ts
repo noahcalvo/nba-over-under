@@ -1,13 +1,14 @@
 import { createLeagueFor } from "@/db/actions";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
-import { ensureSession } from "@/server/session";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
+  const account = await getAccount();
+  if (!account) return errorResponse(signedOutError());
   const body = await readJsonBody(request);
-  const sessionId = await ensureSession();
-  const result = await createLeagueFor(await getDb(), sessionId, {
+  const result = await createLeagueFor(await getDb(), account.userId, {
     leagueName: body.leagueName,
     displayName: body.displayName,
   });

@@ -1,6 +1,5 @@
-// Session tokens and link tokens. Web Crypto only, so this stays plain TypeScript.
+// Legacy session tokens (read only) and link tokens. Web Crypto only, so this stays plain TypeScript.
 
-const SESSION_TOKEN_BYTES = 32;
 const LINK_ID_BYTES = 16;
 const LINK_SIGNATURE_BYTES = 16;
 
@@ -17,11 +16,6 @@ export function base64url(bytes: Uint8Array): string {
 
 function randomBase64url(byteLength: number): string {
   return base64url(crypto.getRandomValues(new Uint8Array(byteLength)));
-}
-
-/** The opaque value stored in the session cookie. */
-export function createSessionToken(): string {
-  return randomBase64url(SESSION_TOKEN_BYTES);
 }
 
 export function isSessionToken(value: string): boolean {

@@ -1,4 +1,6 @@
 import { Suspense, type ReactNode } from "react";
+import { AccountSlot } from "@/components/account/AccountSlot";
+import { LegacyNotice } from "@/components/account/LegacyNotice";
 import { BottomNavSkeleton } from "./BottomNav";
 import { CurrentLeagueProvider, type LeagueChrome } from "./CurrentLeague";
 import { LeagueSwitcherSkeleton } from "./LeagueSwitcher";
@@ -21,16 +23,23 @@ export function AppShell({ chrome, children }: { chrome: Promise<LeagueChrome | 
         <Suspense fallback={<SidebarNavSkeleton />}>
           <SidebarNavSlot chrome={chrome} />
         </Suspense>
+        <div className="mt-auto">
+          <AccountSlot placement="sidebar" />
+        </div>
       </aside>
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5 backdrop-blur lg:hidden">
         <Logo compact />
-        <div className="w-44 min-w-0 sm:w-56">
-          <Suspense fallback={<LeagueSwitcherSkeleton compact />}>
-            <LeagueSwitcherSlot chrome={chrome} compact />
-          </Suspense>
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="w-28 min-w-0 min-[400px]:w-44 sm:w-56">
+            <Suspense fallback={<LeagueSwitcherSkeleton compact />}>
+              <LeagueSwitcherSlot chrome={chrome} compact />
+            </Suspense>
+          </div>
+          <AccountSlot placement="header" />
         </div>
       </header>
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-10 lg:pt-8">
+        <LegacyNotice />
         <CurrentLeagueProvider chrome={chrome}>{children}</CurrentLeagueProvider>
       </main>
       <Suspense fallback={<BottomNavSkeleton />}>

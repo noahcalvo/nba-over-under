@@ -1,16 +1,17 @@
 import { claimLink } from "@/db/actions";
 import { verifyLink } from "@/server/access";
+import { getAccount, signedOutError } from "@/server/account";
 import { getDb } from "@/server/db";
 import { errorResponse, isSameOrigin, readJsonBody } from "@/server/http";
-import { ensureSession } from "@/server/session";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return errorResponse("forbidden");
+  const account = await getAccount();
+  if (!account) return errorResponse(signedOutError());
   const body = await readJsonBody(request);
   const linkId = typeof body.token === "string" ? await verifyLink(body.token) : null;
   if (!linkId) return errorResponse("invalid_link");
-  const sessionId = await ensureSession();
-  const result = await claimLink(await getDb(), linkId, sessionId, {
+  const result = await claimLink(await getDb(), linkId, account.userId, {
     managerId: body.managerId,
     displayName: body.displayName,
   });

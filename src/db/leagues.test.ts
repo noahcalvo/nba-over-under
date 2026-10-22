@@ -3,19 +3,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createLeagueFor, runDraftAction } from "@/db/actions";
 import type { Db } from "@/db/client";
 import { listSessionLeagues, loadLeague, withLockedLeague } from "@/db/leagues";
-import { accessLinks, leagues, managers, picks, sessions, sessionSeats } from "@/db/schema";
-import { createSession } from "@/db/sessions";
-import { createTestDb } from "@/db/test-db";
+import { accessLinks, leagues, managers, picks, sessions, sessionSeats, users, userSeats } from "@/db/schema";
+import { bindSeat, createSession } from "@/db/sessions";
+import { createTestDb, createTestUser } from "@/db/test-db";
 import { succeed } from "@/lib/league/errors";
 import type { LineSet } from "@/lib/types";
 import { STATIC_LINES } from "@/data/static-lines";
 
 let db: Db;
-let ana: string;
+let ana: string; // an account
 
 beforeEach(async () => {
   db = await createTestDb();
-  ana = await createSession(db, "hash-ana");
+  ana = await createTestUser(db, "Ana");
   await createLeagueFor(db, ana, { leagueName: "Hoops", displayName: "Ana" }, () => "lg0001");
 });
 
@@ -76,6 +76,23 @@ describe("withLockedLeague", () => {
     });
   });
 
+  it("never takes the actor from a legacy browser session", async () => {
+    const sessionId = await createSession(db, "hash-legacy");
+    await bindSeat(db, sessionId, "lg0001", "m2");
+    const seen = await withLockedLeague(db, "lg0001", sessionId, async ({ actorId }) => succeed(actorId));
+    expect(seen).toEqual({ ok: true, value: null });
+  });
+
+  it("maps the account-seat constraints to domain errors", async () => {
+    const bind = (userId: string, managerId: string) =>
+      withLockedLeague(db, "lg0001", ana, async ({ tx }) => {
+        await tx.insert(userSeats).values({ userId, leagueId: "lg0001", managerId });
+        return succeed(null);
+      });
+    expect(await bind(ana, "m2")).toEqual({ ok: false, error: "already_joined" });
+    expect(await bind(await createTestUser(db, "Ben"), "m1")).toEqual({ ok: false, error: "seat_owned" });
+  });
+
   it("rolls back everything the work wrote when it returns an error", async () => {
     const result = await withLockedLeague(db, "lg0001", ana, async ({ tx }) => {
       await tx.update(leagues).set({ name: "Changed" }).where(eq(leagues.id, "lg0001"));
@@ -113,9 +130,12 @@ describe("withLockedLeague", () => {
 });
 
 describe("listSessionLeagues", () => {
-  it("lists the session's seats, newest first", async () => {
+  it("lists a legacy session's seats, newest first", async () => {
     await createLeagueFor(db, ana, { leagueName: "Second", displayName: "Ana" }, () => "lg0002");
-    const listed = await listSessionLeagues(db, ana);
+    const sessionId = await createSession(db, "hash-legacy");
+    await bindSeat(db, sessionId, "lg0001", "m1");
+    await bindSeat(db, sessionId, "lg0002", "m1");
+    const listed = await listSessionLeagues(db, sessionId);
     expect(listed.map((league) => [league.id, league.name, league.manager.displayName])).toEqual([
       ["lg0002", "Second", "Ana"],
       ["lg0001", "Hoops", "Ana"],
@@ -124,13 +144,15 @@ describe("listSessionLeagues", () => {
 });
 
 describe("cascades", () => {
-  it("deleting a league removes its managers, picks, links and seats but not sessions", async () => {
+  it("deleting a league removes its managers, picks, links and seats but not accounts or sessions", async () => {
+    await bindSeat(db, await createSession(db, "hash-legacy"), "lg0001", "m1");
     await runDraftAction(db, "lg0001", ana, { type: "start" }, STATIC_LINES);
     await runDraftAction(db, "lg0001", ana, { type: "confirm", teamId: "MIN", side: "OVER", pickNumber: 1 }, null);
     await db.delete(leagues).where(eq(leagues.id, "lg0001"));
-    for (const table of [managers, picks, accessLinks, sessionSeats]) {
+    for (const table of [managers, picks, accessLinks, sessionSeats, userSeats]) {
       expect(await db.select().from(table)).toEqual([]);
     }
     expect(await db.select().from(sessions)).toHaveLength(1);
+    expect(await db.select().from(users)).toHaveLength(1);
   });
 });

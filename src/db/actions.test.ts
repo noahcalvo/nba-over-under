@@ -8,7 +8,6 @@ import {
   claimLinkInLeague,
   createLeagueFor,
   refreshLeagueRecords,
-  resetOwnLink,
   resetSeat,
   revokeLeagueInvite,
   rotateLeagueInvite,
@@ -17,13 +16,14 @@ import {
   setLeagueConfig,
   setLineOverrides,
 } from "@/db/actions";
+import { loadUserSeats, seatHolder, userSeatInLeague } from "@/db/accounts";
 import type { Db } from "@/db/client";
 import { loadLeague } from "@/db/leagues";
 import { loadSeasonRecords } from "@/db/records";
-import { findLink, listActiveLinks } from "@/db/links";
-import { accessLinks, fades, picks } from "@/db/schema";
-import { createSession, findSession, seatInLeague } from "@/db/sessions";
-import { createTestDb } from "@/db/test-db";
+import { findLink, issueLink, listActiveLinks } from "@/db/links";
+import { accessLinks, fades, managers, picks, sessionSeats } from "@/db/schema";
+import { bindSeat, createSession } from "@/db/sessions";
+import { createTestDb, createTestUser } from "@/db/test-db";
 import type { LinkKind } from "@/lib/access/links";
 import { FeedError } from "@/lib/feed-error";
 import { indexTeams, withLines } from "@/lib/lines";
@@ -36,7 +36,8 @@ import type { DraftState, Side } from "@/lib/types";
 const LEAGUE = "lg0001";
 
 let db: Db;
-let ana: string; // commissioner, m1
+// Accounts (user ids). Ana is the commissioner, m1.
+let ana: string;
 let ben: string;
 let cal: string;
 
@@ -46,17 +47,25 @@ async function activeLinkId(kind: LinkKind, managerId: string | null = null): Pr
   return link.id;
 }
 
-async function joinAs(sessionId: string, managerId: string, displayName: string) {
-  return claimLink(db, await activeLinkId("league_invite"), sessionId, { managerId, displayName });
+async function joinAs(userId: string, managerId: string, displayName: string) {
+  return claimLink(db, await activeLinkId("league_invite"), userId, { managerId, displayName });
 }
 
-function confirm(sessionId: string, pickNumber: number, teamId: string, side: Side) {
-  return runDraftAction(db, LEAGUE, sessionId, { type: "confirm", teamId, side, pickNumber }, null);
+function confirm(userId: string, pickNumber: number, teamId: string, side: Side) {
+  return runDraftAction(db, LEAGUE, userId, { type: "confirm", teamId, side, pickNumber }, null);
 }
 
-function fade(sessionId: string | null, managerId: string, targetPickNumber: number) {
-  return runDraftAction(db, LEAGUE, sessionId, { type: "fade", managerId, targetPickNumber }, null);
+function fade(userId: string | null, managerId: string, targetPickNumber: number) {
+  return runDraftAction(db, LEAGUE, userId, { type: "fade", managerId, targetPickNumber }, null);
 }
+
+/** A seat claimed before accounts: named, with a personal link, but no account holds it. Returns the link id. */
+async function legacySeat(managerId: string, displayName: string): Promise<string> {
+  await db.update(managers).set({ displayName }).where(and(eq(managers.leagueId, LEAGUE), eq(managers.id, managerId)));
+  return issueLink(db, { leagueId: LEAGUE, managerId, kind: "personal" });
+}
+
+const personalLinks = async () => (await listActiveLinks(db, LEAGUE)).filter((link) => link.kind === "personal");
 
 /** Ben holds m2; the commissioner picks for the open seats m3 and m4. Uses the demo league's 44 picks. */
 async function draftAllPicks() {
@@ -70,29 +79,31 @@ async function draftAllPicks() {
 
 beforeEach(async () => {
   db = await createTestDb();
-  [ana, ben, cal] = await Promise.all(["a", "b", "c"].map((name) => createSession(db, `hash-${name}`)));
+  [ana, ben, cal] = await Promise.all(["Ana", "Ben", "Cal"].map((name) => createTestUser(db, name)));
   await createLeagueFor(db, ana, { leagueName: "Hoops", displayName: "Ana" }, () => LEAGUE);
 });
 
 describe("creating a league", () => {
-  it("issues a league invite and the commissioner's personal link, and seats the creator", async () => {
+  it("creating a league issues no personal link", async () => {
     const links = await listActiveLinks(db, LEAGUE);
-    expect(links.map((link) => [link.kind, link.managerId])).toEqual([
-      ["league_invite", null],
-      ["personal", "m1"],
-    ]);
-    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m1");
+    expect(links.map((link) => [link.kind, link.managerId])).toEqual([["league_invite", null]]);
+  });
+
+  it("seats the creator's account as the commissioner, creating no browser session", async () => {
+    expect(await userSeatInLeague(db, ana, LEAGUE)).toBe("m1");
+    expect(await seatHolder(db, LEAGUE, "m1")).toBe(ana);
+    expect(await db.select().from(sessionSeats)).toEqual([]);
   });
 });
 
 describe("claiming the league invite", () => {
-  it("claims an open seat, issues its personal link and bumps the version", async () => {
+  it("claims an open seat for the account and bumps the version, issuing no personal link", async () => {
     expect(await joinAs(ben, "m2", "Ben")).toEqual({ ok: true, value: { leagueId: LEAGUE, managerId: "m2" } });
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.managers[1].displayName).toBe("Ben");
     expect(league.version).toBe(2);
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m2");
-    await expect(activeLinkId("personal", "m2")).resolves.toBeTruthy();
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBe("m2");
+    expect(await personalLinks()).toEqual([]);
     await expect(activeLinkId("league_invite")).resolves.toBeTruthy(); // reusable
   });
 
@@ -106,7 +117,7 @@ describe("claiming the league invite", () => {
     expect(results.filter((result) => !result.ok)).toEqual([{ ok: false, error: "seat_taken" }]);
   });
 
-  it("refuses a second seat for the same browser", async () => {
+  it("refuses a second seat for the same account", async () => {
     await joinAs(ben, "m2", "Ben");
     expect(await joinAs(ben, "m3", "Ben again")).toEqual({ ok: false, error: "already_joined" });
   });
@@ -159,7 +170,7 @@ describe("rechecking the link after the lock", () => {
     await resetSeat(db, LEAGUE, ana, "m2");
     const seatInvite = await activeLinkId("seat_invite", "m2");
     expect(await claimLink(db, seatInvite, cal, { displayName: "Ben" })).toMatchObject({ ok: true });
-    const dan = await createSession(db, "hash-d");
+    const dan = await createTestUser(db, "Dan");
     expect(await claimLinkInLeague(db, LEAGUE, seatInvite, dan, { displayName: "Ben" })).toEqual({
       ok: false,
       error: "invalid_link",
@@ -184,28 +195,31 @@ describe("seat reset and seat invites", () => {
     await confirm(ben, 2, "OKC", "OVER");
   });
 
-  it("signs the seat out everywhere, revokes its personal link and issues a seat invite", async () => {
-    const oldPersonal = await activeLinkId("personal", "m2");
-    expect(await resetSeat(db, LEAGUE, ana, "m2")).toEqual({ ok: true, value: null });
-    expect(await seatInLeague(db, ben, LEAGUE)).toBeNull();
-    expect((await findSession(db, "hash-b"))!.seats).toEqual({});
+  it("a seat reset unbinds the account and legacy sessions", async () => {
+    // From before accounts: two browsers signed in as m2, and m2's personal link.
+    const browsers = await Promise.all(["hash-b1", "hash-b2"].map((hash) => createSession(db, hash)));
+    for (const sessionId of browsers) await bindSeat(db, sessionId, LEAGUE, "m2");
+    await bindSeat(db, await createSession(db, "hash-a1"), LEAGUE, "m1");
+    const oldPersonal = await issueLink(db, { leagueId: LEAGUE, managerId: "m2", kind: "personal" });
+    expect((await loadUserSeats(db, ben))[LEAGUE]).toBe("m2"); // what Ben's page saw while rendering
+    await confirm(ana, 3, "BOS", "OVER"); // m3 is open: the commissioner picks
+    await confirm(ana, 4, "CLE", "OVER"); // m4 is open
+    await confirm(ana, 5, "DEN", "OVER"); // m4 again (snake)
+    await confirm(ana, 6, "LAL", "OVER"); // m3
+
+    expect(await resetSeat(db, LEAGUE, ana, "m2")).toEqual({ ok: true, value: null }); // m2 is on the clock for pick 7
+    expect(await seatHolder(db, LEAGUE, "m2")).toBeNull();
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBeNull();
+    const legacyRows = await db.select({ managerId: sessionSeats.managerId }).from(sessionSeats);
+    expect(legacyRows).toEqual([{ managerId: "m1" }]); // only m2's rows go
     expect((await findLink(db, oldPersonal))!.revokedAt).not.toBeNull();
     const seatInvite = (await findLink(db, await activeLinkId("seat_invite", "m2")))!;
     expect(seatInvite.expiresAt).not.toBeNull();
     // The seat stays claimed: the name and picks are kept.
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.managers[1].displayName).toBe("Ben");
-    expect(league.draft.picks.map((pick) => pick.managerId)).toEqual(["m1", "m2"]);
-  });
-
-  it("refuses a pick from a browser whose seat was reset after it loaded the page", async () => {
-    const viewer = await findSession(db, "hash-b"); // what the page saw while rendering
-    expect(viewer!.seats[LEAGUE]).toBe("m2");
-    await confirm(ana, 3, "BOS", "OVER"); // m3 is open: the commissioner picks
-    await confirm(ana, 4, "CLE", "OVER"); // m4 is open
-    await confirm(ana, 5, "DEN", "OVER"); // m4 again (snake)
-    await confirm(ana, 6, "LAL", "OVER"); // m3
-    await resetSeat(db, LEAGUE, ana, "m2"); // m2 is on the clock for pick 7
+    expect(league.draft.picks.map((pick) => pick.managerId)).toEqual(["m1", "m2", "m3", "m4", "m4", "m3"]);
+    // The old holder can no longer pick for the seat.
     expect(await confirm(ben, 7, "NYK", "OVER")).toEqual({ ok: false, error: "forbidden" });
   });
 
@@ -216,12 +230,12 @@ describe("seat reset and seat invites", () => {
       ok: true,
       value: { leagueId: LEAGUE, managerId: "m2" },
     });
-    expect(await seatInLeague(db, cal, LEAGUE)).toBe("m2");
+    expect(await seatHolder(db, LEAGUE, "m2")).toBe(cal);
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.managers[1].displayName).toBe("Benny");
     expect(league.draft.picks[1].managerId).toBe("m2");
-    await expect(activeLinkId("personal", "m2")).resolves.toBeTruthy();
-    const dan = await createSession(db, "hash-d");
+    expect(await personalLinks()).toEqual([]);
+    const dan = await createTestUser(db, "Dan");
     expect(await claimLink(db, seatInvite, dan, { displayName: "Dan" })).toEqual({ ok: false, error: "invalid_link" });
   });
 
@@ -239,32 +253,40 @@ describe("seat reset and seat invites", () => {
 });
 
 describe("personal links", () => {
-  it("sign another browser in without changing the league, replacing its seat in that league", async () => {
-    await joinAs(ben, "m2", "Ben");
+  it("a personal link binds a seat no account holds", async () => {
+    const personal = await legacySeat("m2", "Ben");
     const before = (await loadLeague(db, LEAGUE))!.version;
-    const personal = await activeLinkId("personal", "m2");
-    expect(await claimLink(db, personal, cal, {})).toEqual({ ok: true, value: { leagueId: LEAGUE, managerId: "m2" } });
-    expect(await seatInLeague(db, cal, LEAGUE)).toBe("m2");
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m2");
-    expect((await loadLeague(db, LEAGUE))!.version).toBe(before);
-    // A personal link is reusable.
-    expect(await claimLink(db, personal, ana, {})).toMatchObject({ ok: true });
-    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m2");
+    expect(await claimLink(db, personal, ben, {})).toEqual({ ok: true, value: { leagueId: LEAGUE, managerId: "m2" } });
+    expect(await seatHolder(db, LEAGUE, "m2")).toBe(ben);
+    expect((await findLink(db, personal))!.revokedAt).not.toBeNull();
+    expect(await personalLinks()).toEqual([]); // and no new one is issued
+    const league = (await loadLeague(db, LEAGUE))!;
+    expect(league.version).toBe(before);
+    expect(league.managers[1].displayName).toBe("Ben");
   });
 
-  it("can be reset by its manager, optionally signing out their other browsers", async () => {
+  it("a personal link never moves a seat between accounts", async () => {
+    await claimLink(db, await legacySeat("m2", "Ben"), ben, {});
+    const another = await issueLink(db, { leagueId: LEAGUE, managerId: "m2", kind: "personal" });
+    expect(await claimLink(db, another, cal, {})).toEqual({ ok: false, error: "seat_owned" });
+    expect(await seatHolder(db, LEAGUE, "m2")).toBe(ben);
+    expect(await loadUserSeats(db, cal)).toEqual({});
+    expect((await findLink(db, another))!.revokedAt).toBeNull(); // a refused claim changes nothing
+  });
+
+  it("a personal link for another seat is already_joined", async () => {
     await joinAs(ben, "m2", "Ben");
-    const oldLink = await activeLinkId("personal", "m2");
-    await claimLink(db, oldLink, cal, {}); // cal is Ben's second device
-    expect(await resetOwnLink(db, LEAGUE, ben, { signOutOtherDevices: true })).toEqual({ ok: true, value: null });
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m2");
-    expect(await seatInLeague(db, cal, LEAGUE)).toBeNull();
-    expect(await claimLink(db, oldLink, cal, {})).toEqual({ ok: false, error: "invalid_link" });
-    expect(await activeLinkId("personal", "m2")).not.toBe(oldLink);
-    expect(await resetOwnLink(db, LEAGUE, cal, { signOutOtherDevices: false })).toEqual({
-      ok: false,
-      error: "forbidden",
-    });
+    const personal = await legacySeat("m3", "Cal");
+    expect(await claimLink(db, personal, ben, {})).toEqual({ ok: false, error: "already_joined" });
+    expect(await seatHolder(db, LEAGUE, "m3")).toBeNull();
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBe("m2");
+  });
+
+  it("succeeds unchanged for the account that already holds the seat", async () => {
+    await joinAs(ben, "m2", "Ben");
+    const personal = await issueLink(db, { leagueId: LEAGUE, managerId: "m2", kind: "personal" });
+    expect(await claimLink(db, personal, ben, {})).toEqual({ ok: true, value: { leagueId: LEAGUE, managerId: "m2" } });
+    expect(await loadUserSeats(db, ben)).toEqual({ [LEAGUE]: "m2" });
   });
 });
 
@@ -486,18 +508,18 @@ describe("league size", () => {
     expect(league.draft).toMatchObject({ rounds: 10, seatOrder: ["m1", "m2", "m3", "m4", "m5", "m6"] });
     expect(league.version).toBe(2);
     expect((await joinAs(ben, "m6", "Ben")).ok).toBe(true);
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m6");
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBe("m6");
   });
 
-  it("shrinks by removing open seats only; claimed seats and their sessions stay", async () => {
+  it("shrinks by removing open seats only; claimed seats and their accounts stay", async () => {
     await joinAs(ben, "m3", "Ben");
     expect(await setLeagueConfig(db, LEAGUE, ana, { managerCount: 2, rounds: 11 })).toEqual({ ok: false, error: "seats_claimed" });
     expect((await setLeagueConfig(db, LEAGUE, ana, { managerCount: 3, rounds: 20 })).ok).toBe(true);
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.managers.map((m) => [m.id, m.displayName])).toEqual([["m1", "Ana"], ["m2", null], ["m3", "Ben"]]);
     expect(league.draft.rounds).toBe(20);
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m3");
-    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m1");
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBe("m3");
+    expect(await userSeatInLeague(db, ana, LEAGUE)).toBe("m1");
   });
 
   it("refuses other managers, invalid sizes and changes after the start, writing nothing", async () => {
@@ -586,15 +608,15 @@ describe("draft order", () => {
     expect(league.version).toBe(2);
   });
 
-  it("keeps names, sessions and links with their manager, and open seats stay claimable", async () => {
+  it("keeps names, accounts and links with their manager, and open seats stay claimable", async () => {
     await joinAs(ben, "m2", "Ben");
     const linksBefore = (await listActiveLinks(db, LEAGUE)).map((l) => [l.id, l.kind, l.managerId]);
     expect((await setDraftOrder(db, LEAGUE, ana, ORDER)).ok).toBe(true);
     const league = (await loadLeague(db, LEAGUE))!;
     expect(league.managers.find((m) => m.id === "m2")?.displayName).toBe("Ben");
     expect(league.commissionerId).toBe("m1");
-    expect(await seatInLeague(db, ana, LEAGUE)).toBe("m1");
-    expect(await seatInLeague(db, ben, LEAGUE)).toBe("m2");
+    expect(await userSeatInLeague(db, ana, LEAGUE)).toBe("m1");
+    expect(await userSeatInLeague(db, ben, LEAGUE)).toBe("m2");
     expect((await listActiveLinks(db, LEAGUE)).map((l) => [l.id, l.kind, l.managerId])).toEqual(linksBefore);
     expect((await joinAs(cal, "m3", "Cal")).ok).toBe(true);
     expect((await loadLeague(db, LEAGUE))!.managers[0]).toEqual({ id: "m3", seat: 0, displayName: "Cal" });

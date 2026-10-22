@@ -1,19 +1,23 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { LegacyNotice } from "@/components/account/LegacyNotice";
 import { CreateLeagueForm } from "@/components/landing/CreateLeagueForm";
 import { Logo } from "@/components/shell/Logo";
 import { buttonClasses } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { LEAGUE_LIMITS } from "@/config/league";
 import { DEMO_LEAGUE_ID } from "@/data/demo-league";
+import { signInHref } from "@/lib/access/next-path";
 import { managerLabel } from "@/lib/league/managers";
+import { getAccount } from "@/server/account";
 import { listViewerLeagues } from "@/server/league";
 
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:py-16">
       <Logo />
+      <LegacyNotice />
       <section>
         <h1 className="font-display text-4xl font-bold sm:text-5xl">Draft the season.</h1>
         <p className="mt-2 max-w-xl text-fog-300">
@@ -46,7 +50,9 @@ export default function Home() {
         </div>
       </Panel>
       <Panel title="Create league" bodyClassName="p-4 sm:p-5">
-        <CreateLeagueForm />
+        <Suspense fallback={<div aria-busy className="h-40 animate-pulse rounded-lg bg-ink-800/60" />}>
+          <CreateLeague />
+        </Suspense>
       </Panel>
       <Suspense fallback={null}>
         <YourLeagues />
@@ -64,6 +70,18 @@ export default function Home() {
       </Panel>
     </main>
   );
+}
+
+async function CreateLeague() {
+  const account = await getAccount();
+  if (!account) {
+    return (
+      <Link href={signInHref("/")} className={buttonClasses("primary", "lg")}>
+        Sign in with Google to create a league
+      </Link>
+    );
+  }
+  return <CreateLeagueForm accountName={account.name} />;
 }
 
 async function YourLeagues() {

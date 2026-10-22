@@ -56,6 +56,7 @@ export function createLeague(input: { leagueName?: unknown; displayName: unknown
     isDemo: false,
     commissionerId: seatOrder[0],
     version: 1,
+    archivedAt: null,
     managers,
     draft: createDraftState(seatOrder, LEAGUE_DEFAULTS.rounds),
     fades: [],

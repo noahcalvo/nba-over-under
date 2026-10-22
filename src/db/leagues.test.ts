@@ -37,6 +37,15 @@ describe("loadLeague", () => {
     expect(await loadLeague(db, "nope")).toBeNull();
   });
 
+  it("loads a stored league as active", async () => {
+    expect((await loadLeague(db, "lg0001"))!.archivedAt).toBeNull();
+  });
+
+  it("loads archived_at as an ISO string", async () => {
+    await db.update(leagues).set({ archivedAt: new Date("2026-10-22T15:00:00Z") }).where(eq(leagues.id, "lg0001"));
+    expect((await loadLeague(db, "lg0001"))!.archivedAt).toBe("2026-10-22T15:00:00.000Z");
+  });
+
   it("round-trips frozen lines", async () => {
     await runDraftAction(db, "lg0001", ana, { type: "start" }, STATIC_LINES);
     const lines = (await loadLeague(db, "lg0001"))!.lines as LineSet;

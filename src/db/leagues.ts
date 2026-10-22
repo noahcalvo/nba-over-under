@@ -45,6 +45,7 @@ async function assemble(db: Db, row: LeagueRow, parts?: LeagueParts): Promise<Le
     isDemo: false,
     commissionerId: row.commissionerId,
     version: row.version,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
     managers: roster,
     draft: {
       status: row.draftStatus,

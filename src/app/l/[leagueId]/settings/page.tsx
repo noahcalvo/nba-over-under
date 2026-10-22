@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { YourAccountPanel } from "@/components/account/YourAccountPanel";
+import { DeleteLeaguePanel } from "@/components/settings/DeleteLeaguePanel";
 import { ScoringRulesPanel } from "@/components/settings/ScoringRulesPanel";
 import { SeatsPanel } from "@/components/access/SeatsPanel";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -92,6 +93,7 @@ async function SettingsBody({ params }: { params: Params }) {
     <>
       <SeatsPanel league={league} invitePath={access.invitePath} seatInvitePaths={access.seatInvitePaths} />
       {accountPanel}
+      <DeleteLeaguePanel league={league} />
     </>
   );
 }
